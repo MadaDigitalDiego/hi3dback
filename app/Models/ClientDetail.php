@@ -21,6 +21,7 @@ class ClientDetail extends Model
         'registration_number',
         'birth_date',
         'preferences',
+        'test',
     ];
 
     protected $casts = [

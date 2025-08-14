@@ -15,9 +15,6 @@ return new class extends Migration
     {
         Log::warning('Dropping old profile tables. Make sure all data has been migrated correctly.');
 
-        // Disable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
         // Drop foreign key constraints using raw SQL to avoid Laravel's naming issues
         $this->dropForeignKeys('experiences', 'freelance_profile_id');
         // Add other tables with foreign keys to profile tables here
@@ -28,9 +25,6 @@ return new class extends Migration
         Schema::dropIfExists('company_profiles');
         Schema::dropIfExists('client_profiles');
 
-        // Re-enable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
         Log::info('All old profile tables have been dropped successfully');
     }
 
@@ -40,21 +34,46 @@ return new class extends Migration
     protected function dropForeignKeys(string $table, string $column): void
     {
         $connection = DB::connection();
-        $dbName = $connection->getDatabaseName();
+        $driver = $connection->getDriverName();
 
-        $constraints = $connection->select("
-            SELECT CONSTRAINT_NAME
-            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-            WHERE TABLE_SCHEMA = ?
-            AND TABLE_NAME = ?
-            AND COLUMN_NAME = ?
-            AND REFERENCED_TABLE_NAME IS NOT NULL
-        ", [$dbName, $table, $column]);
+        if ($driver === 'mysql') {
+            // MySQL syntax
+            $dbName = $connection->getDatabaseName();
+            $constraints = $connection->select("
+                SELECT CONSTRAINT_NAME
+                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = ?
+                AND TABLE_NAME = ?
+                AND COLUMN_NAME = ?
+                AND REFERENCED_TABLE_NAME IS NOT NULL
+            ", [$dbName, $table, $column]);
 
-        foreach ($constraints as $constraint) {
-            $constraintName = $constraint->CONSTRAINT_NAME;
-            $connection->statement("ALTER TABLE `$table` DROP FOREIGN KEY `$constraintName`");
-            Log::info("Dropped foreign key constraint: $constraintName");
+            foreach ($constraints as $constraint) {
+                $constraintName = $constraint->CONSTRAINT_NAME;
+                $connection->statement("ALTER TABLE `$table` DROP FOREIGN KEY `$constraintName`");
+                Log::info("Dropped foreign key constraint: $constraintName");
+            }
+        } elseif ($driver === 'pgsql') {
+            // PostgreSQL syntax
+            $constraints = $connection->select("
+                SELECT conname as constraint_name
+                FROM pg_constraint
+                JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
+                JOIN pg_attribute ON pg_attribute.attrelid = pg_class.oid
+                    AND pg_attribute.attnum = ANY(pg_constraint.conkey)
+                WHERE pg_class.relname = ?
+                AND pg_attribute.attname = ?
+                AND pg_constraint.contype = 'f'
+            ", [$table, $column]);
+
+            foreach ($constraints as $constraint) {
+                $constraintName = $constraint->constraint_name;
+                $connection->statement("ALTER TABLE \"$table\" DROP CONSTRAINT \"$constraintName\"");
+                Log::info("Dropped foreign key constraint: $constraintName");
+            }
+        } else {
+            // For other databases, try to drop the table without worrying about foreign keys
+            Log::warning("Unsupported database driver: $driver. Skipping foreign key constraint removal.");
         }
     }
 

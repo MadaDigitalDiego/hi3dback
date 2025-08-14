@@ -50,7 +50,7 @@ class MessageController extends Controller
         }
 
         try {
-            $messages = Message::with('sender', 'receiver') // Charger aussi le receiver
+            $messages = Message::with(['sender', 'receiver', 'files']) // Charger aussi le receiver et les fichiers
                 ->where('open_offer_id', $openOffer->id);
 
 
@@ -85,9 +85,10 @@ class MessageController extends Controller
     {
         $receiverId = $request->input('receiver_id'); // Récupérer le receiver_id depuis le body de la requête
 
+        
         // Validation
         $validator = Validator::make($request->all(), [
-            'message_text' => 'required|string',
+            'message_text' => 'nullable|string',
             'receiver_id' => 'nullable|exists:users,id,is_professional,1', // Valider que receiver_id est un professionnel existant
         ]);
 

@@ -24,23 +24,24 @@ class StoreServiceOfferRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
      */
     public function rules()
-{
-    return [
-        'title' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'price' => 'required|numeric|min:0',
-        'categories' => 'required|array', // Expecting an array for categories
-        'categories.*' => 'string|max:255', // Each category should be a string
-        'execution_time' => 'required|string', // Expecting string for execution_time
-        'concepts' => 'required|string', // Expecting string for concepts
-        'revisions' => 'required|string', // Expecting string for revisions
-        'is_private' => 'boolean', // Expecting boolean for is_private
-        'status' => 'required|string|in:published,draft,pending', // Status rule
-        'files' => 'nullable|array', // Files array
-        'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
-    ];
-}
-
+    {
+        return [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'price_unit' => 'required|string|in:par image,par m2,par projet',
+            'categories' => 'required|array', // Expecting an array for categories
+            'categories.*' => 'string|max:255', // Each category should be a string
+            'execution_time' => 'required|string', // Expecting string for execution_time
+            'concepts' => 'required|string', // Expecting string for concepts
+            'revisions' => 'required|string', // Expecting string for revisions
+            'is_private' => 'boolean', // Expecting boolean for is_private
+            'status' => 'required|string|in:published,draft,pending', // Status rule
+            'files' => 'nullable|array', // Files array
+            'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
+            'associated_project' => 'nullable|string|max:255',
+        ];
+    }
 
     /**
      * Get the error messages for the defined validation rules.

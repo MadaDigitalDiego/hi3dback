@@ -29,6 +29,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
+            'price_unit' => 'sometimes|string|in:par image,par m2,par projet',
             'categories' => 'sometimes|array',
             'categories.*' => 'string|max:255', // Each category should be a string
             'execution_time' => 'sometimes|string',
@@ -38,6 +39,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'status' => 'sometimes|string|in:published,draft,pending',
             'files' => 'sometimes|array', // Files array
             'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
+            'associated_project' => 'sometimes|string|max:255',
         ];
     }
 

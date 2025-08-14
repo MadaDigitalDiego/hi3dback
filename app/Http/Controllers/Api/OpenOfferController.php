@@ -208,6 +208,9 @@ class OpenOfferController extends Controller
         }
 
         $user = $request->user();
+
+
+
         if (!$user->is_professional || !$user->professionalProfile) {
             return response()->json(['message' => 'Seuls les professionnels avec un profil professionnel peuvent postuler.'], 403);
         }
@@ -247,6 +250,7 @@ class OpenOfferController extends Controller
                         'open_offer_id' => $openOffer->id,
                         'professional_profile_id' => $user->professionalProfile->id,
                         'proposal' => $validator->validated()['proposal'] ?? null,
+                        'status' => 'pending',
                     ]);
 
                     return response()->json(['application' => $application, 'message' => 'Candidature soumise avec succès.'], 201);
@@ -477,7 +481,7 @@ class OpenOfferController extends Controller
             return response()->json(['message' => 'Le professionnel invité n\'a pas de profil professionnel.'], 422);
         }
 
-        try {
+        // try {
             // Check if already invited or applied
             $existingInvitation = OfferApplication::where('open_offer_id', $openOffer->id)
                 ->where('professional_profile_id', $professionalUser->professionalProfile->id)
@@ -493,6 +497,7 @@ class OpenOfferController extends Controller
                 'open_offer_id' => $openOffer->id,
                 'professional_profile_id' => $professionalUser->professionalProfile->id,
                 'status' => 'invited', // Status to indicate it's an invitation
+                'proposal' => '',
             ]);
             // Send notification to the invited professional
             // Notification::send($professionalUser, new DirectOfferInvitationNotification($openOffer, auth()->user())); // Original line - sending to User, should be fine here if $professionalUser is indeed a User model.
@@ -509,10 +514,10 @@ class OpenOfferController extends Controller
                 'invitation' => $invitation,
                 'message' => 'Professionnel invité avec succès à l\'offre.',
             ], 201);
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'invitation du professionnel ID ' . $request->professional_id . ' à l\'offre ouverte ID ' . $openOffer->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de l\'invitation du professionnel.'], 500);
-        }
+        // } catch (\Exception $e) {
+        //     Log::error('Erreur lors de l\'invitation du professionnel ID ' . $request->professional_id . ' à l\'offre ouverte ID ' . $openOffer->id . ': ' . $e->getMessage());
+        //     return response()->json(['message' => 'Erreur lors de l\'invitation du professionnel.'], 500);
+        // }
     }
 
 

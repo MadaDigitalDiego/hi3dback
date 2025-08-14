@@ -1,0 +1,981 @@
+{
+	"info": {
+		"_postman_id": "hi3d-global-search-complete",
+		"name": "Hi3D Global Search API - Complete Collection",
+		"description": "Collection complète pour tester toutes les fonctionnalités de recherche globale avec Meilisearch",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔍 Search Endpoints",
+			"item": [
+				{
+					"name": "Global Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"});",
+									"",
+									"pm.test(\"Response has correct structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('query');",
+									"    pm.expect(jsonData.data).to.have.property('total_count');",
+									"    pm.expect(jsonData.data).to.have.property('results_by_type');",
+									"    pm.expect(jsonData.data).to.have.property('combined_results');",
+									"});",
+									"",
+									"pm.test(\"Results have scores\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.combined_results.data.length > 0) {",
+									"        jsonData.data.combined_results.data.forEach(function(result) {",
+									"            pm.expect(result).to.have.property('score');",
+									"            pm.expect(result.score).to.be.a('number');",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"// Store results for next tests",
+									"const jsonData = pm.response.json();",
+									"pm.globals.set(\"total_results\", jsonData.data.total_count);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search?q={{search_query}}&per_page={{pagination_size}}",
+							"host": ["{{base_url}}"],
+							"path": ["search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "per_page",
+									"value": "{{pagination_size}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Professionals",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results are professionals only\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(result.type).to.equal('professional_profile');",
+									"            pm.expect(result).to.have.property('full_name');",
+									"            pm.expect(result).to.have.property('title');",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/professionals?q={{search_query}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "professionals"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Services",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results are services only\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(result.type).to.equal('service_offer');",
+									"            pm.expect(result).to.have.property('title');",
+									"            pm.expect(result).to.have.property('price');",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/services?q={{search_query}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "services"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Achievements",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Results are achievements only\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(result.type).to.equal('achievement');",
+									"            pm.expect(result).to.have.property('title');",
+									"            pm.expect(result).to.have.property('organization');",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/achievements?q={{search_query}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "achievements"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Suggestions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Suggestions are returned\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('suggestions');",
+									"    pm.expect(jsonData.data.suggestions).to.be.an('array');",
+									"    pm.expect(jsonData.data.suggestions.length).to.be.at.most(parseInt(pm.variables.get('suggestion_limit')));",
+									"});",
+									"",
+									"pm.test(\"Suggestions contain query\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const query = pm.variables.get('suggestion_query').toLowerCase();",
+									"    jsonData.data.suggestions.forEach(function(suggestion) {",
+									"        pm.expect(suggestion.toLowerCase()).to.include(query);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/suggestions?q={{suggestion_query}}&limit={{suggestion_limit}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "suggestions"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{suggestion_query}}"
+								},
+								{
+									"key": "limit",
+									"value": "{{suggestion_limit}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🎯 Filtered Searches",
+			"item": [
+				{
+					"name": "Professionals by City",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Filtered results match city\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const expectedCity = pm.variables.get('test_city');",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(result.location).to.include(expectedCity);",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/professionals?q={{search_query}}&filters[city]={{test_city}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "professionals"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "filters[city]",
+									"value": "{{test_city}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Services by Price Range",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Services within price range\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const maxPrice = parseFloat(pm.variables.get('test_price'));",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(parseFloat(result.price)).to.be.at.most(maxPrice);",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/services?q={{search_query}}&filters[max_price]={{test_price}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "services"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "filters[max_price]",
+									"value": "{{test_price}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Professionals by Rating",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Professionals meet rating requirement\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const minRating = parseFloat(pm.variables.get('test_rating'));",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(parseFloat(result.rating)).to.be.at.least(minRating);",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/professionals?q={{search_query}}&filters[min_rating]={{test_rating}}",
+							"host": ["{{base_url}}"],
+							"path": ["search", "professionals"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "filters[min_rating]",
+									"value": "{{test_rating}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Services by Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Services match category\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const expectedCategory = pm.variables.get('test_category');",
+									"    if (jsonData.data.results.length > 0) {",
+									"        jsonData.data.results.forEach(function(result) {",
+									"            pm.expect(result.categories).to.include(expectedCategory);",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/services?q={{search_query}}&filters[categories][]=Laravel",
+							"host": ["{{base_url}}"],
+							"path": ["search", "services"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "filters[categories][]",
+									"value": "Laravel"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📊 Stats & Metrics",
+			"item": [
+				{
+					"name": "Search Statistics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Stats have correct structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('total_professionals');",
+									"    pm.expect(jsonData.data).to.have.property('total_services');",
+									"    pm.expect(jsonData.data).to.have.property('total_achievements');",
+									"    pm.expect(jsonData.data).to.have.property('cache_info');",
+									"});",
+									"",
+									"pm.test(\"Stats are numbers\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.total_professionals).to.be.a('number');",
+									"    pm.expect(jsonData.data.total_services).to.be.a('number');",
+									"    pm.expect(jsonData.data.total_achievements).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/stats",
+							"host": ["{{base_url}}"],
+							"path": ["search", "stats"]
+						}
+					}
+				},
+				{
+					"name": "Popular Searches",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Popular searches structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('popular_searches');",
+									"    pm.expect(jsonData.data.popular_searches).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Popular searches have correct format\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.popular_searches.length > 0) {",
+									"        jsonData.data.popular_searches.forEach(function(search) {",
+									"            pm.expect(search).to.have.property('query');",
+									"            pm.expect(search).to.have.property('count');",
+									"            pm.expect(search.count).to.be.a('number');",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/popular",
+							"host": ["{{base_url}}"],
+							"path": ["search", "popular"]
+						}
+					}
+				},
+				{
+					"name": "Real-time Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Real-time metrics structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('current_time');",
+									"    pm.expect(jsonData.data).to.have.property('server_status');",
+									"});",
+									"",
+									"pm.test(\"Timestamp is valid\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const timestamp = new Date(jsonData.data.current_time);",
+									"    pm.expect(timestamp.getTime()).to.be.a('number');",
+									"    pm.expect(timestamp.getTime()).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/metrics/realtime",
+							"host": ["{{base_url}}"],
+							"path": ["search", "metrics", "realtime"]
+						}
+					}
+				},
+				{
+					"name": "Detailed Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Detailed metrics structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('search_metrics');",
+									"    pm.expect(jsonData.data).to.have.property('performance_metrics');",
+									"});",
+									"",
+									"pm.test(\"Metrics contain useful data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const metrics = jsonData.data.search_metrics;",
+									"    if (metrics) {",
+									"        pm.expect(metrics).to.have.property('total_searches');",
+									"        pm.expect(metrics.total_searches).to.be.a('number');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/metrics",
+							"host": ["{{base_url}}"],
+							"path": ["search", "metrics"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "⚡ Performance Tests",
+			"item": [
+				{
+					"name": "Bulk Search Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bulk search performs well\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"pm.test(\"Large result set handled correctly\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('total_count');",
+									"    pm.expect(jsonData.data).to.have.property('combined_results');",
+									"    pm.expect(jsonData.data.combined_results).to.have.property('data');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search?q=a&per_page=50",
+							"host": ["{{base_url}}"],
+							"path": ["search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "a"
+								},
+								{
+									"key": "per_page",
+									"value": "50"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Concurrent Requests Simulation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Concurrent request handled\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response time acceptable under load\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search?q={{search_query}}&timestamp={{$timestamp}}",
+							"host": ["{{base_url}}"],
+							"path": ["search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "timestamp",
+									"value": "{{$timestamp}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Rate Limiting Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Rate limiting works correctly\", function () {",
+									"    // Should be 200 for normal requests",
+									"    // Should be 429 if rate limit exceeded",
+									"    pm.expect([200, 429]).to.include(pm.response.code);",
+									"});",
+									"",
+									"if (pm.response.code === 429) {",
+									"    pm.test(\"Rate limit response has correct structure\", function () {",
+									"        const jsonData = pm.response.json();",
+									"        pm.expect(jsonData).to.have.property('message');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/suggestions?q=test&limit=5",
+							"host": ["{{base_url}}"],
+							"path": ["search", "suggestions"],
+							"query": [
+								{
+									"key": "q",
+									"value": "test"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🛠️ Admin Endpoints",
+			"item": [
+				{
+					"name": "Clear Cache",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cache cleared successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Clear cache response\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/cache",
+							"host": ["{{base_url}}"],
+							"path": ["search", "cache"]
+						}
+					}
+				},
+				{
+					"name": "Clear Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Metrics cleared successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Clear metrics response\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search/metrics",
+							"host": ["{{base_url}}"],
+							"path": ["search", "metrics"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔍 Validation Tests",
+			"item": [
+				{
+					"name": "Missing Query Parameter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Missing query returns validation error\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test(\"Validation error structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search",
+							"host": ["{{base_url}}"],
+							"path": ["search"]
+						}
+					}
+				},
+				{
+					"name": "Query Too Short",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Short query returns validation error\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test(\"Short query error message\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.q).to.be.an('array');",
+									"    pm.expect(jsonData.errors.q[0]).to.include('at least 2 characters');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search?q=a",
+							"host": ["{{base_url}}"],
+							"path": ["search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "a"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Invalid Type Parameter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Invalid type returns validation error\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test(\"Invalid type error message\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors).to.have.property('types.0');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/search?q=test&types[]=invalid_type",
+							"host": ["{{base_url}}"],
+							"path": ["search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "test"
+								},
+								{
+									"key": "types[]",
+									"value": "invalid_type"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Set timestamp for performance tracking",
+					"pm.globals.set('request_start_time', new Date().getTime());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global performance test",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+					"});",
+					"",
+					"// Track performance",
+					"const startTime = pm.globals.get('request_start_time');",
+					"const endTime = new Date().getTime();",
+					"const totalTime = endTime - startTime;",
+					"console.log(`Total request time: ${totalTime}ms`);"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api"
+		},
+		{
+			"key": "search_query",
+			"value": "Laravel"
+		},
+		{
+			"key": "suggestion_query",
+			"value": "Lar"
+		},
+		{
+			"key": "test_city",
+			"value": "Paris"
+		},
+		{
+			"key": "test_rating",
+			"value": "4.5"
+		},
+		{
+			"key": "test_price",
+			"value": "3000"
+		},
+		{
+			"key": "test_category",
+			"value": "Laravel"
+		},
+		{
+			"key": "pagination_size",
+			"value": "10"
+		},
+		{
+			"key": "suggestion_limit",
+			"value": "5"
+		}
+	]
+}

@@ -736,94 +736,97 @@ class ProfileController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateClientProfileWithAvatar(Request $request): JsonResponse
-    {
-        // try {
-            Log::info('Début de la mise à jour du profil client avec avatar');
-            Log::info('Données reçues:', $request->except('avatar'));
+{
+    try {
+        Log::info('Début de la mise à jour du profil client avec avatar');
+        Log::info('Données reçues:', $request->except('avatar'));
 
-            // Validation des données
-            $request->validate([
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // 2MB max
-                'profile_data' => 'nullable|string' // si vous voulez aussi valider profile_data
-            ]);
+        // Validation des données
+        $request->validate([
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'profile_data' => 'nullable|string'
+        ]);
 
-            // Récupérer le profil client de l'utilisateur authentifié
-            $profile = ClientProfile::where('user_id', auth()->id())->first();
-            Log::info('Utilisateur authentifié ID: ' . auth()->id());
+        // Récupérer ou créer le profil client
+        $profile = ClientProfile::firstOrNew(['user_id' => auth()->id()]);
 
-            // Si aucun profil n'est trouvé, créer un nouveau profil client
-            if (!$profile) {
-                Log::info('Aucun profil client trouvé, création d\'un nouveau profil');
-                $user = auth()->user();
-                $profile = ClientProfile::create([
-                    'user_id' => $user->id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'email' => $user->email,
-                    'completion_percentage' => 20, // Pourcentage initial de complétion
-                ]);
-                Log::info('Nouveau profil client créé avec ID: ' . $profile->id);
-            } else {
-                Log::info('Profil client existant trouvé avec ID: ' . $profile->id);
-            }
+        if (!$profile->exists) {
+            Log::info('Aucun profil client trouvé, création d\'un nouveau profil');
+            $user = auth()->user();
+            $profile->fill([
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'completion_percentage' => 20,
+            ])->save();
+            Log::info('Nouveau profil client créé avec ID: ' . $profile->id);
+        } else {
+            Log::info('Profil client existant trouvé avec ID: ' . $profile->id);
+        }
 
-            // Traiter l'upload de l'avatar si présent
-            if ($request->hasFile('avatar')) {
-                Log::info('Avatar présent dans la requête');
-                $avatar = $request->file('avatar');
-                $filename = time() . '_' . $avatar->getClientOriginalName();
-                $path = $avatar->storeAs('avatars', $filename, 'public');
-                $avatarPath = '/storage/' . $path;
-                Log::info('Avatar enregistré: ' . $avatarPath);
-            } else {
-                Log::info('Aucun avatar dans la requête');
-                $avatarPath = null;
-            }
+        // Traiter l'upload de l'avatar
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            Log::info('Avatar présent dans la requête');
+            $avatar = $request->file('avatar');
+            $filename = time() . '_' . $avatar->getClientOriginalName();
+            $path = $avatar->storeAs('avatars', $filename, 'public');
+            $avatarPath = '/storage/' . $path;
+            Log::info('Avatar enregistré: ' . $avatarPath);
+        }
 
-            // Traiter les données du profil
-            $profileData = [];
-            if ($request->has('profile_data')) {
-                $profileDataJson = $request->input('profile_data');
-                $profileData = json_decode($profileDataJson, true);
-                Log::info('Données du profil décodées depuis JSON:', $profileData ?: []);
+        // Traiter les données du profil
+        $updateData = [];
 
-                // Si l'avatar a été uploadé, l'ajouter aux données du profil
-                if ($avatarPath) {
-                    $profileData['avatar'] = $avatarPath;
+        if ($avatarPath) {
+            $updateData['avatar'] = $avatarPath;
+        }
+
+        if ($request->has('profile_data')) {
+            $profileData = json_decode($request->input('profile_data'), true) ?? [];
+            Log::info('Données du profil décodées depuis JSON:', $profileData);
+
+            // Nettoyer les données avant la mise à jour
+            foreach ($profileData as $key => $value) {
+                // Gestion spéciale pour birth_date
+                if ($key === 'birth_date' && empty($value)) {
+                    $profileData[$key] = null;
                 }
 
-                // Calculer le pourcentage de complétion du profil
-                $completionPercentage = $this->calculateProfileCompletionPercentage($profile, $profileData);
-                $profileData['completion_percentage'] = $completionPercentage;
-                Log::info('Pourcentage de complétion calculé: ' . $completionPercentage);
-
-                // Mettre à jour le profil avec les données
-                Log::info('Données à mettre à jour:', $profileData);
-                $profile->update($profileData);
-                Log::info('Profil client mis à jour avec succès via FormData avec avatar');
-            } else if ($avatarPath) {
-                // Si seulement l'avatar a été envoyé, mettre à jour uniquement l'avatar
-                $profile->update(['avatar' => $avatarPath]);
-                Log::info('Profil client mis à jour avec succès (avatar uniquement)');
-            } else {
-                Log::warning('Aucune donnée de profil ni avatar n\'a été envoyé');
+                // Gestion des champs vides
+                if (is_string($value) && trim($value) === '') {
+                    $profileData[$key] = null;
+                }
             }
 
-            // Retourner une réponse de succès
-            return response()->json([
-                'message' => 'Profil client mis à jour avec succès.',
-                'profile' => $profile
-            ], 200);
-        // } catch (\Exception $e) {
-        //     Log::error('Erreur lors de la mise à jour du profil client avec avatar: ' . $e->getMessage());
-        //     Log::error('Trace: ' . $e->getTraceAsString());
-        //     return response()->json([
-        //         'message' => 'Une erreur est survenue lors de la mise à jour du profil client.',
-        //         'error' => $e->getMessage()
-        //     ], 500);
-        // }
-    }
+            $updateData = array_merge($updateData, $profileData);
 
+            // Calcul du pourcentage de complétion
+            $updateData['completion_percentage'] = $this->calculateProfileCompletionPercentage($profile, $profileData);
+            Log::info('Pourcentage de complétion calculé: ' . $updateData['completion_percentage']);
+        }
+
+        if (!empty($updateData)) {
+            Log::info('Données à mettre à jour:', $updateData);
+            $profile->update($updateData);
+            Log::info('Profil client mis à jour avec succès');
+        } else {
+            Log::warning('Aucune donnée de profil ni avatar n\'a été envoyé');
+        }
+
+        return response()->json([
+            'message' => 'Profil client mis à jour avec succès.',
+            'profile' => $profile->fresh()
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de la mise à jour du profil client: ' . $e->getMessage());
+        Log::error('Trace: ' . $e->getTraceAsString());
+        return response()->json([
+            'message' => 'Une erreur est survenue lors de la mise à jour du profil client.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
     /**
      * Mettre à jour la disponibilité et le délai de réponse du profil du professionnel.
      *

@@ -178,7 +178,12 @@ class ServiceOfferController extends Controller
             return response()->json(['message' => 'Offre de service non trouvée.'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour de l\'offre de service ID ' . $id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour de l\'offre de service.'], 500);
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'message' => 'Erreur lors de la mise à jour de l\'offre de service.',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
     }
 

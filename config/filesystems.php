@@ -73,4 +73,36 @@ return [
         public_path('storage') => storage_path('app/public'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | SwissTransfer Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for SwissTransfer file sharing service
+    |
+    */
+
+    'swisstransfer' => [
+        'enabled' => env('SWISSTRANSFER_ENABLED', true),
+        'base_url' => env('SWISSTRANSFER_BASE_URL', 'https://www.swisstransfer.com'),
+        'api_url' => env('SWISSTRANSFER_API_URL', 'https://www.swisstransfer.com/api'),
+        'max_file_size' => env('SWISSTRANSFER_MAX_FILE_SIZE', 50000), // MB
+        'timeout' => env('SWISSTRANSFER_TIMEOUT', 300), // seconds
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | File Management Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the intelligent file management system
+    |
+    */
+
+    'file_management' => [
+        'local_storage_limit' => env('FILE_LOCAL_STORAGE_LIMIT', 10), // MB
+        'max_upload_size' => env('FILE_MAX_UPLOAD_SIZE', 500), // MB
+        'allowed_mime_types' => explode(',', env('FILE_ALLOWED_MIME_TYPES', 'image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-rar-compressed,text/plain')),
+    ],
+
 ];

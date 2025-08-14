@@ -20,7 +20,7 @@ class ProfessionalController extends Controller
     {
         try {
             // Récupérer tous les profils professionnels avec les utilisateurs associés
-            $professionalProfiles = ProfessionalProfile::with('user')->get();
+            $professionalProfiles = ProfessionalProfile::with(['user', 'views', 'likers'])->get();
 
             // Formater les données pour correspondre au format attendu par le frontend
             $professionals = $professionalProfiles->map(function ($profile) {
@@ -64,6 +64,10 @@ class ProfessionalController extends Controller
                     'title' => $profile->title,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
+                    // Données de likes et views
+                    'likes_count' => $profile->getTotalLikesAttribute(),
+                    'views_count' => $profile->getTotalViewsAttribute(),
+                    'popularity_score' => $profile->getPopularityScore(),
                 ];
             });
 
@@ -188,7 +192,7 @@ class ProfessionalController extends Controller
         try {
             // Récupérer le profil professionnel avec l'utilisateur associé et ses réalisations
             // $profile = ProfessionalProfile::with(['user', 'achievements'])->findOrFail($id);
-            $profile = ProfessionalProfile::with('user')->findOrFail($id);
+            $profile = ProfessionalProfile::with(['user', 'views', 'likers'])->findOrFail($id);
 
             // Traiter les skills qui peuvent être une chaîne JSON ou un tableau
             $skills = [];
@@ -210,10 +214,10 @@ class ProfessionalController extends Controller
             try{
                 $achievements = $profile->achievements()->orderBy('date_obtained', 'desc')->get();
             } catch (\Exception $e) {
-            Log::error('Erreur lors de la récupération des réalisation : ' . $e->getMessage());
+            Log::error('Erreur lors de la récupération des réalisations : ' . $e->getMessage());
             return response()->json(['message' => $e->getMessage()], 404);
         }
-            
+
 
             // Formater les données pour correspondre au format attendu par le frontend
             $professional = [
@@ -241,6 +245,10 @@ class ProfessionalController extends Controller
                 'services_offered' => $profile->services_offered,
                 'portfolio' => $profile->portfolio,
                 'achievements' => $achievements, // Ajouter les réalisations
+                // Données de likes et views
+                'likes_count' => $profile->getTotalLikesAttribute(),
+                'views_count' => $profile->getTotalViewsAttribute(),
+                'popularity_score' => $profile->getPopularityScore(),
             ];
 
             // Retourner les données en JSON
@@ -262,7 +270,7 @@ class ProfessionalController extends Controller
     public function filter(Request $request): JsonResponse
     {
         try {
-            $query = ProfessionalProfile::with('user');
+            $query = ProfessionalProfile::with(['user', 'views', 'likers']);
 
             // Filtrage par recherche
             if ($request->has('search') && !empty($request->input('search'))) {
@@ -365,6 +373,10 @@ class ProfessionalController extends Controller
                     'title' => $profile->title,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
+                    // Données de likes et views
+                    'likes_count' => $profile->getTotalLikesAttribute(),
+                    'views_count' => $profile->getTotalViewsAttribute(),
+                    'popularity_score' => $profile->getPopularityScore(),
                 ];
             });
 

@@ -17,27 +17,10 @@ echo "1. Vérification de la structure de la base de données:\n";
 
 try {
     // Vérifier les colonnes de professional_profiles
-    $driver = DB::getDriverName();
-
-    if ($driver === 'mysql') {
-        $columns = DB::select("DESCRIBE professional_profiles");
-        echo "Colonnes de professional_profiles:\n";
-        foreach ($columns as $column) {
-            echo "  - {$column->Field} ({$column->Type})\n";
-        }
-    } elseif ($driver === 'pgsql') {
-        $columns = DB::select("
-            SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_name = 'professional_profiles'
-            ORDER BY ordinal_position
-        ");
-        echo "Colonnes de professional_profiles:\n";
-        foreach ($columns as $column) {
-            echo "  - {$column->column_name} ({$column->data_type})\n";
-        }
-    } else {
-        echo "Driver de base de données non supporté: $driver\n";
+    $columns = DB::select("DESCRIBE professional_profiles");
+    echo "Colonnes de professional_profiles:\n";
+    foreach ($columns as $column) {
+        echo "  - {$column->Field} ({$column->Type})\n";
     }
     echo "\n";
 } catch (Exception $e) {

@@ -19,6 +19,10 @@ use App\Http\Controllers\Api\ExplorerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\NewProfileController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\ProfessionalProfileLikeController;
+use App\Http\Controllers\Api\ProfessionalProfileViewController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\FileController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -54,14 +58,17 @@ Route::get('/explorer/professionals', [ExplorerController::class, 'getProfession
 Route::get('/explorer/professionals/{id}', [ExplorerController::class, 'getProfessionalDetails']);
 Route::get('/explorer/services', [ExplorerController::class, 'getServices']);
 Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/architectural/subcategories', [CategoryController::class, 'getArchitecturalSubcategories']);
+Route::get('/categories/hierarchy', [CategoryController::class, 'getHierarchy']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
-// Routes pour les professionnels (authentifiées)
+Route::get('/categories/parent/{parentValue}', [CategoryController::class, 'getSubcategories']);
+
+// Routes publiques pour les professionnels
 Route::get('/professionals/{id}', [ProfessionalController::class, 'show']);
-Route::get('/professionals/{id}/offers', [OpenOfferController::class, 'getAttributedOffersForProfessional']);
-Route::get('/professionals/{id}/achievements', [AchievementController::class, 'getByProfessionalId']);
 Route::get('/explorer/achievements', [AchievementController::class, 'explorerRealisation']);
 
+// Routes pour les professionnels (authentifiées)
+Route::get('/professionals/{id}/offers', [OpenOfferController::class, 'getAttributedOffersForProfessional']);
+Route::get('/professionals/{id}/achievements', [AchievementController::class, 'getByProfessionalId']);
 Route::get('/professionals/{id}/service-offers', [ServiceOfferController::class, 'getServiceOffersByProfessional']);
 
 // Routes protégées par authentification
@@ -117,7 +124,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/open-offers/test-email', [OpenOfferController::class, 'testEmailSending']);
     Route::post('/open-offers/{open_offer}/apply', [OpenOfferController::class, 'apply']);
     Route::get('/open-offers/{open_offer}/applications', [OpenOfferController::class, 'applications']);
+    Route::get('/open-offers/{open_offer}/accepted-applications', [OpenOfferController::class, 'acceptedApplications']);
     Route::patch('/offer-applications/{application}/status', [OpenOfferController::class, 'updateApplicationStatus']);
+    Route::post('/open-offers/{openOffer}/assign', [OpenOfferController::class, 'assignOfferToProfessional']);
     Route::put('/open-offers/{openOffer}/close', [OpenOfferController::class, 'close']);
     Route::put('/open-offers/{openOffer}/complete', [OpenOfferController::class, 'complete']);
     Route::post('/open-offers/{openOffer}/reject', [OpenOfferController::class, 'rejectOffer']);
@@ -184,4 +193,52 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Routes pour les abonnements
     Route::post('/subscriptions', [SubscriptionController::class, 'createSubscription']);
     Route::post('/subscriptions/confirm', [SubscriptionController::class, 'confirmPayment']);
+});
+
+// Routes publiques pour les vues (pas besoin d'authentification)
+Route::prefix('professionals/{professionalProfile}')->group(function () {
+    Route::post('/view', [ProfessionalProfileViewController::class, 'recordView']);
+    Route::get('/view/stats', [ProfessionalProfileViewController::class, 'getStats']);
+    Route::get('/view/status', [ProfessionalProfileViewController::class, 'hasViewed']);
+});
+
+// Routes protégées pour les likes (nécessitent une authentification)
+Route::middleware('auth:sanctum')->prefix('professionals/{professionalProfile}')->group(function () {
+    Route::post('/like', [ProfessionalProfileLikeController::class, 'like']);
+    Route::delete('/like', [ProfessionalProfileLikeController::class, 'unlike']);
+    Route::post('/like/toggle', [ProfessionalProfileLikeController::class, 'toggle']);
+    Route::get('/like/status', [ProfessionalProfileLikeController::class, 'status']);
+});
+
+// Routes de recherche globale (publiques avec rate limiting)
+Route::prefix('search')->middleware('search.ratelimit:100,1')->group(function () {
+    Route::get('/', [SearchController::class, 'globalSearch']);
+    Route::get('/professionals', [SearchController::class, 'searchProfessionals']);
+    Route::get('/services', [SearchController::class, 'searchServices']);
+    Route::get('/achievements', [SearchController::class, 'searchAchievements']);
+    Route::get('/suggestions', [SearchController::class, 'suggestions'])->middleware('search.ratelimit:200,1'); // Plus de suggestions autorisées
+    Route::get('/stats', [SearchController::class, 'stats'])->withoutMiddleware('search.ratelimit'); // Pas de limite pour les stats
+    Route::get('/popular', [SearchController::class, 'popularSearches'])->withoutMiddleware('search.ratelimit'); // Recherches populaires
+    Route::get('/metrics', [SearchController::class, 'metrics'])->withoutMiddleware('search.ratelimit'); // Métriques
+    Route::get('/metrics/realtime', [SearchController::class, 'realTimeMetrics'])->withoutMiddleware('search.ratelimit'); // Métriques temps réel
+    Route::delete('/cache', [SearchController::class, 'clearCache'])->withoutMiddleware('search.ratelimit'); // Admin seulement
+    Route::delete('/metrics', [SearchController::class, 'cleanMetrics'])->withoutMiddleware('search.ratelimit'); // Admin seulement
+});
+
+// Routes pour la gestion des fichiers (protégées par authentification)
+Route::middleware(['auth:sanctum', 'verified'])->prefix('files')->group(function () {
+    // Upload de fichiers
+    Route::post('/upload', [FileController::class, 'upload']);
+
+    // Gestion des fichiers
+    Route::get('/', [FileController::class, 'index']); // Liste des fichiers de l'utilisateur
+    Route::get('/{file}', [FileController::class, 'show']); // Détails d'un fichier
+    Route::get('/{file}/download', [FileController::class, 'download']); // URL de téléchargement
+    Route::delete('/{file}', [FileController::class, 'destroy']); // Suppression
+
+    // Récupération des fichiers d'un message
+    Route::get('/message/{messageId}', [FileController::class, 'getFilesByMessage']);
+
+    // Statistiques (admin seulement)
+    Route::get('/admin/stats', [FileController::class, 'stats'])->middleware('admin.access');
 });

@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\OpenOffer;
 use App\Models\OfferApplication;
 use App\Models\User;
-use App\Models\FreelanceProfile;
-use App\Models\CompanyProfile;
+use App\Models\ProfessionalProfile;
+use App\Models\ClientProfile;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -23,30 +23,30 @@ class DashboardController extends Controller
      */
     public function getDashboardData(Request $request): JsonResponse
     {
-        // try {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        if (!$user) {
-            return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+            if (!$user) {
+                return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+            }
+
+            // Données communes pour tous les utilisateurs
+            $data = [
+                'user' => $user,
+            ];
+
+            // Données spécifiques selon le type d'utilisateur
+            if ($user->is_professional) {
+                $data = array_merge($data, $this->getProfessionalDashboardData($user));
+            } else {
+                $data = array_merge($data, $this->getClientDashboardData($user));
+            }
+
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des données du tableau de bord: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la récupération des données du tableau de bord.'], 500);
         }
-
-        // Données communes pour tous les utilisateurs
-        $data = [
-            'user' => $user,
-        ];
-
-        // Données spécifiques selon le type d'utilisateur
-        if ($user->is_professional) {
-            $data = array_merge($data, $this->getProfessionalDashboardData($user));
-        } else {
-            $data = array_merge($data, $this->getClientDashboardData($user));
-        }
-
-        return response()->json($data, 200);
-        // } catch (\Exception $e) {
-        //     Log::error('Erreur lors de la récupération des données du tableau de bord: ' . $e->getMessage());
-        //     return response()->json(['message' => 'Erreur lors de la récupération des données du tableau de bord.'], 500);
-        // }
     }
 
     public function getAllACtivity(Request $request): JsonResponse
@@ -342,7 +342,7 @@ class DashboardController extends Controller
         });
 
         // Récupérer des professionnels recommandés
-        $recommendedProfessionals = FreelanceProfile::with('user')
+        $recommendedProfessionals = ProfessionalProfile::with('user')
             ->orderBy('rating', 'desc')
             ->take(3)
             ->get()

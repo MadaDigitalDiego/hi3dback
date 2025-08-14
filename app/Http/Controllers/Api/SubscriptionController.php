@@ -15,7 +15,8 @@ class SubscriptionController extends Controller
 
     public function __construct()
     {
-        $this->stripe = new StripeClient(config('services.stripe.secret'));
+        // Temporairement désactivé pour éviter les erreurs de configuration
+        // $this->stripe = new StripeClient(config('services.stripe.secret'));
     }
 
     // public function createSubscription(Request $request)

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Message extends Model
 {
@@ -60,5 +61,13 @@ class Message extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(ServiceOffer::class, 'service_id');
+    }
+
+    /**
+     * Get the files associated with this message.
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class);
     }
 }

@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\ServiceOffer;
+use App\Models\ClientProfile;
+use App\Models\OfferEmailLog;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\ProfessionalProfile;
+use Overtrue\LaravelLike\Traits\Liker;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, Liker;
 
     /**
      * The attributes that are mass assignable.
@@ -30,6 +35,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_professional', // Ajout pour distinguer le type d'utilisateur
         'email_verified_at', // Pour la vérification d'email
         'profile_completed', // Pour indiquer si le profil a été complété
+        'role', // Rôle de l'utilisateur dans l'administration
+        'google2fa_secret',
+        'google2fa_enabled',
+        'google2fa_enabled_at',
     ];
 
     /**
@@ -52,7 +61,74 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'is_professional' => 'boolean', // Cast en boolean
         'profile_completed' => 'boolean',
+        'google2fa_enabled' => 'boolean',
+        'google2fa_enabled_at' => 'datetime',
     ];
+
+    /**
+     * Boot method pour gérer les valeurs par défaut
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            // Si first_name ou last_name sont vides, les remplir avec des valeurs par défaut
+            if (empty($user->first_name)) {
+                $user->first_name = 'Admin';
+            }
+            if (empty($user->last_name)) {
+                $user->last_name = 'User';
+            }
+
+            // Si le rôle n'est pas défini, définir un rôle par défaut
+            if (empty($user->role)) {
+                $user->role = 'user';
+            }
+        });
+    }
+
+    /**
+     * Check if user has admin role or higher
+     */
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'super_admin']);
+    }
+
+    /**
+     * Check if user has super admin role
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    /**
+     * Check if user has moderator role or higher
+     */
+    public function isModerator(): bool
+    {
+        return in_array($this->role, ['moderator', 'admin', 'super_admin']);
+    }
+
+    /**
+     * Get the user's full name for Filament
+     */
+    public function getFilamentName(): string
+    {
+        $firstName = $this->first_name ?: 'Admin';
+        $lastName = $this->last_name ?: 'User';
+        return trim($firstName . ' ' . $lastName);
+    }
+
+    /**
+     * Get the user's name attribute (required by some Laravel features)
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->first_name . ' ' . $this->last_name;
+    }
 
     /**
      * Get the profile associated with the user.
@@ -132,5 +208,56 @@ class User extends Authenticatable implements MustVerifyEmail
     public function offerEmailLogs()
     {
         return $this->hasMany(OfferEmailLog::class);
+    }
+
+    /**
+     * Get the user's favorites.
+     */
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(UserFavorite::class);
+    }
+
+    /**
+     * Get the user's favorite professional profiles.
+     */
+    public function favoriteProfessionalProfiles()
+    {
+        return $this->favorites()
+            ->where('favoritable_type', ProfessionalProfile::class)
+            ->with('favoritable');
+    }
+
+    /**
+     * Add a professional profile to favorites.
+     */
+    public function addToFavorites(ProfessionalProfile $profile): UserFavorite
+    {
+        return $this->favorites()->firstOrCreate([
+            'favoritable_type' => ProfessionalProfile::class,
+            'favoritable_id' => $profile->id,
+        ]);
+    }
+
+    /**
+     * Remove a professional profile from favorites.
+     */
+    public function removeFromFavorites(ProfessionalProfile $profile): bool
+    {
+        return $this->favorites()
+            ->where('favoritable_type', ProfessionalProfile::class)
+            ->where('favoritable_id', $profile->id)
+            ->delete() > 0;
+    }
+
+    /**
+     * Check if a professional profile is in favorites.
+     */
+    public function hasFavorite(ProfessionalProfile $profile): bool
+    {
+        return $this->favorites()
+            ->where('favoritable_type', ProfessionalProfile::class)
+            ->where('favoritable_id', $profile->id)
+            ->exists();
     }
 }

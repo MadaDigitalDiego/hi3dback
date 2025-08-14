@@ -26,13 +26,13 @@ class AchievementRequest extends FormRequest
         Log::info('AchievementRequest rules method - request data:', $this->all());
         return [
             'title' => 'required|string|max:255',
-            'organization' => 'nullable|string|max:255',
-            'date_obtained' => 'nullable|date',
             'description' => 'nullable|string',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,jpeg,png,jpg,gif,svg,webp|max:2048', // Support pour un seul fichier (rétrocompatibilité)
-            'files' => 'nullable|array', // Support pour plusieurs fichiers
-            'files.*' => 'file|mimes:pdf,doc,docx,jpeg,png,jpg,gif,svg,webp|max:2048', // Validation pour chaque fichier
-            'achievement_url' => 'nullable|url|max:255',
+            'category' => 'nullable|string|max:255',
+            'cover_photo' => 'required|string|max:255',
+            'gallery_photos' => 'nullable|array',
+            'gallery_photos.*' => 'string|max:255',
+            'youtube_link' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:255',
         ];
     }
 
@@ -47,15 +47,19 @@ class AchievementRequest extends FormRequest
             'title.required' => 'Le titre de la réalisation est obligatoire.',
             'title.string' => 'Le titre de la réalisation doit être une chaîne de caractères.',
             'title.max' => 'Le titre de la réalisation ne doit pas dépasser 255 caractères.',
-            'organization.string' => 'L\'organisation doit être une chaîne de caractères.',
-            'organization.max' => 'L\'organisation ne doit pas dépasser 255 caractères.',
-            'date_obtained.date' => 'La date d\'obtention doit être une date valide.',
             'description.string' => 'La description doit être une chaîne de caractères.',
-            'file.file' => 'Le fichier doit être un fichier valide.',
-            'file.mimes' => 'Le fichier doit être de type: pdf, doc, docx, jpeg, png, jpg.',
-            'file.max' => 'Le fichier ne doit pas dépasser 2048 Ko.',
-            'achievement_url.url' => 'L\'URL de la réalisation doit être une URL valide.',
-            'achievement_url.max' => 'L\'URL de la réalisation ne doit pas dépasser 255 caractères.',
+            'category.string' => 'La catégorie doit être une chaîne de caractères.',
+            'category.max' => 'La catégorie ne doit pas dépasser 255 caractères.',
+            'cover_photo.required' => 'La photo de couverture est obligatoire.',
+            'cover_photo.string' => 'La photo de couverture doit être une chaîne de caractères.',
+            'cover_photo.max' => 'La photo de couverture ne doit pas dépasser 255 caractères.',
+            'gallery_photos.array' => 'La galerie doit être un tableau.',
+            'gallery_photos.*.string' => 'Chaque photo de la galerie doit être une chaîne de caractères.',
+            'gallery_photos.*.max' => 'Chaque photo de la galerie ne doit pas dépasser 255 caractères.',
+            'youtube_link.string' => 'Le lien YouTube doit être une chaîne de caractères.',
+            'youtube_link.max' => 'Le lien YouTube ne doit pas dépasser 255 caractères.',
+            'status.string' => 'Le statut doit être une chaîne de caractères.',
+            'status.max' => 'Le statut ne doit pas dépasser 255 caractères.',
         ];
     }
 

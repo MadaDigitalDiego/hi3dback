@@ -39,30 +39,8 @@ class AchievementController extends Controller
         try {
         $achievementData = $request->validated();
 
-        // File upload handling (your existing code remains the same)
-        $filePaths = [];
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                try {
-                    $path = $file->store('achievement_files', 'public');
-                    $filePaths[] = [
-                        'path' => $path,
-                        'original_name' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                        'size' => $file->getSize()
-                    ];
-                } catch (\Exception $e) {
-                    Log::error('Erreur lors de l\'upload du fichier d\'achievement: ' . $e->getMessage());
-                    return response()->json(['message' => 'Erreur lors de l\'upload d\'un fichier.'], 500);
-                }
-            }
-            $achievementData['files'] = $filePaths;
-        }
-
         $user = $request->user();
-
-        // Get the professional profile properly
-        $professionalProfile = $user->professionalProfile; // Adjust this based on your actual relationship
+        $professionalProfile = $user->professionalProfile;
 
         if (!$professionalProfile) {
             return response()->json(['message' => 'Profil freelance non trouvé.'], 404);
@@ -119,7 +97,6 @@ class AchievementController extends Controller
     public function update(AchievementRequest $request, Achievement $achievement): JsonResponse
     {
         try {
-            // Vérifier que l'utilisateur est autorisé à modifier cette réalisation
             $user = Auth::user();
             $profile = $user->professionalProfile;
 
@@ -128,68 +105,6 @@ class AchievementController extends Controller
             }
 
             $achievementData = $request->validated();
-
-            // Gestion de la mise à jour des fichiers de preuve (plusieurs fichiers supportés)
-            if ($request->hasFile('files')) {
-                $filePaths = [];
-
-                // Supprimer les anciens fichiers si ils existent
-                if ($achievement->files && is_array($achievement->files)) {
-                    foreach ($achievement->files as $file) {
-                        if (isset($file['path'])) {
-                            Storage::disk('public')->delete($file['path']);
-                        }
-                    }
-                }
-
-                // Uploader les nouveaux fichiers
-                foreach ($request->file('files') as $file) {
-                    try {
-                        $path = $file->store('achievement_files', 'public');
-                        $filePaths[] = [
-                            'path' => $path,
-                            'original_name' => $file->getClientOriginalName(),
-                            'mime_type' => $file->getMimeType(),
-                            'size' => $file->getSize()
-                        ];
-                    } catch (\Exception $e) {
-                        Log::error('Erreur lors de l\'upload du fichier d\'achievement (mise à jour): ' . $e->getMessage());
-                        return response()->json(['message' => 'Erreur lors de l\'upload d\'un fichier pendant la mise à jour.'], 500);
-                    }
-                }
-                $achievementData['files'] = $filePaths;
-            }
-
-            // Support pour l'ancien format (un seul fichier) pour la rétrocompatibilité
-            if ($request->hasFile('file') && !$request->hasFile('files')) {
-                // Supprimer les anciens fichiers si ils existent
-                if ($achievement->files && is_array($achievement->files)) {
-                    foreach ($achievement->files as $file) {
-                        if (isset($file['path'])) {
-                            Storage::disk('public')->delete($file['path']);
-                        }
-                    }
-                } elseif ($achievement->file_path) {
-                    // Support pour l'ancien format file_path
-                    Storage::disk('public')->delete($achievement->file_path);
-                }
-
-                $file = $request->file('file');
-                try {
-                    $path = $file->store('achievement_files', 'public');
-                    $filePaths = [[
-                        'path' => $path,
-                        'original_name' => $file->getClientOriginalName(),
-                        'mime_type' => $file->getMimeType(),
-                        'size' => $file->getSize()
-                    ]];
-                    $achievementData['files'] = $filePaths;
-                } catch (\Exception $e) {
-                    Log::error('Erreur lors de l\'upload du fichier d\'achievement (mise à jour): ' . $e->getMessage());
-                    return response()->json(['message' => 'Erreur lors de l\'upload du fichier pendant la mise à jour.'], 500);
-                }
-            }
-
             $achievement->update($achievementData);
             return response()->json(['achievement' => $achievement, 'message' => 'Réalisation/Certification mise à jour avec succès.'], 200);
         } catch (\Exception $e) {
@@ -204,7 +119,6 @@ class AchievementController extends Controller
     public function destroy(Achievement $achievement): JsonResponse
     {
         try {
-            // Vérifier que l'utilisateur est autorisé à supprimer cette réalisation
             $user = Auth::user();
             $profile = $user->freelanceProfile;
 
@@ -212,17 +126,6 @@ class AchievementController extends Controller
                 return response()->json(['message' => 'Non autorisé à supprimer cette réalisation.'], 403);
             }
 
-            // Supprimer les fichiers de preuve associés s'ils existent
-            if ($achievement->files && is_array($achievement->files)) {
-                foreach ($achievement->files as $file) {
-                    if (isset($file['path'])) {
-                        Storage::disk('public')->delete($file['path']);
-                    }
-                }
-            } elseif ($achievement->file_path) {
-                // Support pour l'ancien format file_path
-                Storage::disk('public')->delete($achievement->file_path);
-            }
             $achievement->delete();
             return response()->json(['message' => 'Réalisation/Certification supprimée avec succès.'], 200);
         } catch (\Exception $e) {
@@ -262,7 +165,7 @@ class AchievementController extends Controller
     {
         try {
             $profile = ProfessionalProfile::findOrFail($professionalId);
-            $achievements = $profile->achievements()->orderBy('date_obtained', 'desc')->get();
+            $achievements = $profile->achievements()->orderBy('created_at', 'desc')->get();
 
             $achievements = $achievements->map(function ($achievement) use ($profile) {
                 $achievement->professional = $profile;

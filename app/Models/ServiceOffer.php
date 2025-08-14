@@ -5,16 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravel\Scout\Searchable;
 
 class ServiceOffer extends Model
 {
-    use HasFactory;
+    use HasFactory, Searchable;
 
     protected $fillable = [
         'user_id',
         'title',
         'description',
         'price',
+        'price_unit',
         'execution_time',
         'concepts',
         'revisions',
@@ -26,6 +28,7 @@ class ServiceOffer extends Model
         'likes',
         'rating',
         'image',
+        'associated_project',
     ];
 
     protected $casts = [
@@ -40,14 +43,42 @@ class ServiceOffer extends Model
     }
 
     /**
-     * Méthode de recherche pour les offres de service
-     *
-     * @param string $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * Get the indexable data array for the model.
      */
-    public static function search($query)
+    public function toSearchableArray(): array
     {
-        return self::where('title', 'like', "%{$query}%")
-            ->orWhere('description', 'like', "%{$query}%");
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'description' => $this->description,
+            'price' => (float) $this->price,
+            'execution_time' => $this->execution_time,
+            'concepts' => $this->concepts,
+            'revisions' => $this->revisions,
+            'status' => $this->status,
+            'categories' => $this->categories ?? [],
+            'user_id' => $this->user_id,
+            'user_name' => $this->user ? $this->user->first_name . ' ' . $this->user->last_name : null,
+            'views' => (int) $this->views,
+            'likes' => (int) $this->likes,
+            'rating' => (float) $this->rating,
+            'type' => 'service_offer',
+        ];
+    }
+
+    /**
+     * Get the name of the index associated with the model.
+     */
+    public function searchableAs(): string
+    {
+        return 'service_offers_index';
+    }
+
+    /**
+     * Determine if the model should be searchable.
+     */
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === 'active' && !$this->is_private;
     }
 }

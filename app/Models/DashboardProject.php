@@ -18,17 +18,14 @@ class DashboardProject extends Model
         'title',
         'description',
         'category',
-        'budget',
-        'deadline',
-        'skills',
-        'attachments',
+        'cover_photo',
+        'gallery_photos',
+        'youtube_link',
         'status',
     ];
 
     protected $casts = [
-        'skills' => 'array',
-        'attachments' => 'array',
-        'deadline' => 'date',
+        'gallery_photos' => 'array',
     ];
 
     /**

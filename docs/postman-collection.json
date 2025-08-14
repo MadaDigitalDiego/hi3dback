@@ -1,0 +1,365 @@
+{
+	"info": {
+		"name": "Open Offers Workflow API",
+		"description": "Collection pour tester le workflow complet des offres ouvertes avec séparation candidatures/attribution",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"client@example.com\",\n    \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": ["{{base_url}}"],
+							"path": ["login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('client_token', 'Bearer ' + response.access_token);",
+									"    pm.environment.set('client_id', response.user.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login Professional",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"professional@example.com\",\n    \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": ["{{base_url}}"],
+							"path": ["login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('professional_token', 'Bearer ' + response.access_token);",
+									"    pm.environment.set('professional_id', response.user.id);",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Offer Management",
+			"item": [
+				{
+					"name": "Create Open Offer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Développement d'une application mobile\",\n    \"description\": \"Nous recherchons un développeur pour créer une app mobile\",\n    \"budget\": \"5000-10000€\",\n    \"deadline\": \"2024-06-01\",\n    \"company\": \"Ma Société\",\n    \"recruitment_type\": \"company\",\n    \"open_to_applications\": true,\n    \"filters\": {\n        \"skills\": [\"React Native\", \"Flutter\", \"Mobile Development\"]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/open-offers",
+							"host": ["{{base_url}}"],
+							"path": ["open-offers"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('offer_id', response.open_offer.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "View All Applications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/open-offers/{{offer_id}}/applications",
+							"host": ["{{base_url}}"],
+							"path": ["open-offers", "{{offer_id}}", "applications"]
+						}
+					}
+				},
+				{
+					"name": "View Accepted Applications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/open-offers/{{offer_id}}/accepted-applications",
+							"host": ["{{base_url}}"],
+							"path": ["open-offers", "{{offer_id}}", "accepted-applications"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Application Workflow",
+			"item": [
+				{
+					"name": "Apply to Offer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{professional_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"proposal\": \"Je suis expert en React Native avec 5 ans d'expérience. Je peux livrer votre projet en 3 mois avec un budget optimisé.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/open-offers/{{offer_id}}/apply",
+							"host": ["{{base_url}}"],
+							"path": ["open-offers", "{{offer_id}}", "apply"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('application_id', response.application.id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Accept Application",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"accepted\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/offer-applications/{{application_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["offer-applications", "{{application_id}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Reject Application",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"rejected\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/offer-applications/{{application_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["offer-applications", "{{application_id}}", "status"]
+						}
+					}
+				},
+				{
+					"name": "Assign Offer to Professional",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"application_id\": {{application_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/open-offers/{{offer_id}}/assign",
+							"host": ["{{base_url}}"],
+							"path": ["open-offers", "{{offer_id}}", "assign"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Error Cases",
+			"item": [
+				{
+					"name": "Assign Non-Accepted Application",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{client_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"application_id\": 99999\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/open-offers/{{offer_id}}/assign",
+							"host": ["{{base_url}}"],
+							"path": ["open-offers", "{{offer_id}}", "assign"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 400 error', function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Unauthorized Access",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid_token"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"accepted\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/offer-applications/{{application_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["offer-applications", "{{application_id}}", "status"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 401 or 403 error', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

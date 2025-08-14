@@ -1,0 +1,85 @@
+{
+	"id": "open-offers-workflow-env",
+	"name": "Open Offers Workflow Environment",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "client_token",
+			"value": "",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "professional_token",
+			"value": "",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "client_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "professional_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "offer_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "application_id",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "application_id_2",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "client_email",
+			"value": "client@example.com",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "client_password",
+			"value": "password",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "professional_email",
+			"value": "professional@example.com",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "professional_password",
+			"value": "password",
+			"type": "secret",
+			"enabled": true
+		},
+		{
+			"key": "professional_email_2",
+			"value": "professional2@example.com",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment"
+}

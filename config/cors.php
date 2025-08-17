@@ -31,7 +31,7 @@ return [
     'http://localhost:3001',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'https://hi-3d.salon.mada-digital.xyz',
+    'https://dev2.hi-3d.com/',
 ],
 
 'allowed_origins_patterns' => [],

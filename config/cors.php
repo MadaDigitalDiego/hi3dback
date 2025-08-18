@@ -31,6 +31,7 @@ return [
         'https://hi3d.mada-digital.xyz',
         'https://hi-3d.salon.mada-digital.xyz',
         'https://backhi3d.mada-digital.xyz',
+        'https://dev-backend.hi-3d.com',
         'https://dev2.mada-digital.xyz',
         'http://localhost:3000',
         'http://localhost:3001',
@@ -38,10 +39,21 @@ return [
 
     'allowed_origins_patterns' => [
         '/^https?:\/\/.*\.mada-digital\.xyz$/',
+        '/^https?:\/\/.*\.hi-3d\.com$/',
         '/^https?:\/\/localhost(:\d+)?$/',
     ],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => [
+        'Accept',
+        'Authorization',
+        'Content-Type',
+        'X-Requested-With',
+        'X-CSRF-TOKEN',
+        'X-XSRF-TOKEN',
+        'Origin',
+        'Cache-Control',
+        'Pragma',
+    ],
 
     'exposed_headers' => [],
 

@@ -17,7 +17,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,localhost:3001,127.0.0.1,127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:8000,::1',
+        'localhost,localhost:3000,localhost:3001,127.0.0.1,127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:8000,::1,hi3d.mada-digital.xyz,hi-3d.salon.mada-digital.xyz,backhi3d.mada-digital.xyz,dev-backend.hi-3d.com,dev2.mada-digital.xyz',
         Sanctum::currentApplicationUrlWithPort()
     ))),
 

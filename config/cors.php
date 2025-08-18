@@ -7,14 +7,47 @@ if (env('APP_ENV') === 'production') {
 }
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cross-Origin Resource Sharing (CORS) Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure your settings for cross-origin resource sharing
+    | or "CORS". This determines what cross-origin operations may execute
+    | in web browsers. You are free to adjust these settings as needed.
+    |
+    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    |
+    */
+
+    'paths' => ['*'],
+
     'allowed_methods' => ['*'],
+
     'allowed_origins' => [
-        'https://dev2.hi-3d.com',
+        env('FRONTEND_URL', 'http://localhost:3000'),
+        env('APP_URL', 'http://localhost:8000'),
+        'https://hi3d.mada-digital.xyz',
+        'https://hi-3d.salon.mada-digital.xyz',
+        'https://backhi3d.mada-digital.xyz',
+        'https://dev2.mada-digital.xyz',
+        'http://localhost:3000',
+        'http://localhost:3001',
     ],
+
+    'allowed_origins_patterns' => [
+        '/^https?:\/\/.*\.mada-digital\.xyz$/',
+        '/^https?:\/\/localhost(:\d+)?$/',
+    ],
+
     'allowed_headers' => ['*'],
+
     'exposed_headers' => [],
+
     'max_age' => 0,
-    'supports_credentials' => false,
+
+    'supports_credentials' => $supportedCredentials,
+
 ];
 

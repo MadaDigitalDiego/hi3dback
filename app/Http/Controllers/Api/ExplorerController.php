@@ -90,7 +90,7 @@ class ExplorerController extends Controller
             // Formater les données
             $formattedProfessionals = $professionals->map(function ($professional) use ($services) {
                 $userId = $professional->user_id;
-                
+
                 // Traiter les compétences
                 $skills = [];
                 if ($professional->skills) {
@@ -104,7 +104,41 @@ class ExplorerController extends Controller
                         }
                     }
                 }
-                
+
+                // Formater les services avec les images
+                $userServices = $services[$userId] ?? collect();
+                $formattedServices = $userServices->map(function ($service) {
+                    // Générer l'URL complète de l'image si elle existe
+                    $imageUrl = null;
+                    if ($service->image) {
+                        // Si l'image est déjà une URL complète, la garder telle quelle
+                        if (filter_var($service->image, FILTER_VALIDATE_URL)) {
+                            $imageUrl = $service->image;
+                        } else {
+                            // Sinon, générer l'URL complète pour le stockage local
+                            $imageUrl = asset('storage/' . $service->image);
+                        }
+                    }
+
+                    return [
+                        'id' => $service->id,
+                        'title' => $service->title,
+                        'description' => $service->description,
+                        'price' => $service->price,
+                        'execution_time' => $service->execution_time,
+                        'concepts' => $service->concepts,
+                        'revisions' => $service->revisions,
+                        'categories' => $service->categories,
+                        'files' => $service->files,
+                        'image' => $imageUrl, // ✅ Ajout du champ image avec URL complète
+                        'views' => $service->views,
+                        'likes' => $service->likes,
+                        'rating' => $service->rating,
+                        'created_at' => $service->created_at,
+                        'updated_at' => $service->updated_at,
+                    ];
+                });
+
                 return [
                     'id' => $professional->id,
                     'user_id' => $userId,
@@ -122,7 +156,7 @@ class ExplorerController extends Controller
                     'bio' => $professional->bio,
                     'title' => $professional->title,
                     'achievements' => $professional->achievements,
-                    'services' => $services[$userId] ?? [],
+                    'services' => $formattedServices,
                 ];
             });
             
@@ -158,9 +192,42 @@ class ExplorerController extends Controller
             $professional = ProfessionalProfile::with(['user', 'achievements'])->findOrFail($id);
             
             // Récupérer les services du professionnel
-            $services = ServiceOffer::where('user_id', $professional->user_id)
+            $rawServices = ServiceOffer::where('user_id', $professional->user_id)
                 ->where('is_private', false)
                 ->get();
+
+            // Formater les services avec les images
+            $services = $rawServices->map(function ($service) {
+                // Générer l'URL complète de l'image si elle existe
+                $imageUrl = null;
+                if ($service->image) {
+                    // Si l'image est déjà une URL complète, la garder telle quelle
+                    if (filter_var($service->image, FILTER_VALIDATE_URL)) {
+                        $imageUrl = $service->image;
+                    } else {
+                        // Sinon, générer l'URL complète pour le stockage local
+                        $imageUrl = asset('storage/' . $service->image);
+                    }
+                }
+
+                return [
+                    'id' => $service->id,
+                    'title' => $service->title,
+                    'description' => $service->description,
+                    'price' => $service->price,
+                    'execution_time' => $service->execution_time,
+                    'concepts' => $service->concepts,
+                    'revisions' => $service->revisions,
+                    'categories' => $service->categories,
+                    'files' => $service->files,
+                    'image' => $imageUrl, // ✅ Ajout du champ image avec URL complète
+                    'views' => $service->views,
+                    'likes' => $service->likes,
+                    'rating' => $service->rating,
+                    'created_at' => $service->created_at,
+                    'updated_at' => $service->updated_at,
+                ];
+            });
             
             // Traiter les compétences
             $skills = [];
@@ -311,7 +378,19 @@ class ExplorerController extends Controller
             $formattedServices = $services->map(function ($service) use ($professionals) {
                 $userId = $service->user_id;
                 $professional = $professionals[$userId] ?? null;
-                
+
+                // Générer l'URL complète de l'image si elle existe
+                $imageUrl = null;
+                if ($service->image) {
+                    // Si l'image est déjà une URL complète, la garder telle quelle
+                    if (filter_var($service->image, FILTER_VALIDATE_URL)) {
+                        $imageUrl = $service->image;
+                    } else {
+                        // Sinon, générer l'URL complète pour le stockage local
+                        $imageUrl = asset('storage/' . $service->image);
+                    }
+                }
+
                 return [
                     'id' => $service->id,
                     'title' => $service->title,
@@ -322,6 +401,7 @@ class ExplorerController extends Controller
                     'revisions' => $service->revisions,
                     'categories' => $service->categories,
                     'files' => $service->files,
+                    'image' => $imageUrl, // ✅ Ajout du champ image avec URL complète
                     'views' => $service->views,
                     'likes' => $service->likes,
                     'rating' => $service->rating,

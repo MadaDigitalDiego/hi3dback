@@ -10,9 +10,23 @@ use App\Models\ProfessionalProfile;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Faker\Generator as Faker;
 
 class ProfessionalSeeder extends Seeder
 {
+    /**
+     * @var Faker
+     */
+    protected $faker;
+
+    /**
+     * Create a new seeder instance.
+     */
+    public function __construct(Faker $faker)
+    {
+        $this->faker = $faker;
+    }
+
     /**
      * Run the database seeds.
      */
@@ -124,8 +138,8 @@ class ProfessionalSeeder extends Seeder
                 'first_name' => $professionalData['first_name'],
                 'last_name' => $professionalData['last_name'],
                 'email' => $professionalData['email'],
-                'phone' => '+33 ' . fake()->numerify('# ## ## ## ##'),
-                'address' => fake()->streetAddress(),
+                'phone' => '+33 ' . $this->faker->numerify('# ## ## ## ##'),
+                'address' => $this->faker->streetAddress(),
                 'city' => $professionalData['city'],
                 'country' => 'France',
                 'bio' => $professionalData['bio'],
@@ -139,10 +153,10 @@ class ProfessionalSeeder extends Seeder
                 'description' => $professionalData['bio'],
                 'skills' => $this->getSkillsForProfession($professionalData['profession']),
                 'portfolio' => $this->generatePortfolioLinks($professionalData['first_name']),
-                'availability_status' => fake()->randomElement(['available', 'busy', 'unavailable']),
+                'availability_status' => $this->faker->randomElement(['available', 'busy', 'unavailable']),
                 'languages' => ['Français', 'Anglais'],
                 'services_offered' => $this->getServicesForProfession($professionalData['profession']),
-                'rating' => fake()->randomFloat(1, 4.0, 5.0),
+                'rating' => $this->faker->randomFloat(1, 4.0, 5.0),
                 'social_links' => [
                     'linkedin' => "https://linkedin.com/in/{$professionalData['first_name']}-{$professionalData['last_name']}",
                     'website' => "https://{$professionalData['first_name']}-{$professionalData['last_name']}.com",
@@ -187,9 +201,9 @@ class ProfessionalSeeder extends Seeder
                 'status' => 'active',
                 'categories' => $serviceData['categories'],
                 'files' => null,
-                'views' => fake()->numberBetween(50, 500),
-                'likes' => fake()->numberBetween(5, 50),
-                'rating' => fake()->randomFloat(1, 4.0, 5.0),
+                'views' => $this->faker->numberBetween(50, 500),
+                'likes' => $this->faker->numberBetween(5, 50),
+                'rating' => $this->faker->randomFloat(1, 4.0, 5.0),
                 'image' => $serviceData['image'],
             ]);
 
@@ -217,7 +231,7 @@ class ProfessionalSeeder extends Seeder
                 'gallery_photos' => $achievementData['gallery_photos'],
                 'youtube_link' => $achievementData['youtube_link'] ?? null,
                 'status' => 'active',
-                'date_obtained' => fake()->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
+                'date_obtained' => $this->faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
             ]);
         }
     }
@@ -628,7 +642,7 @@ class ProfessionalSeeder extends Seeder
                     $this->getImageForServiceType($serviceType, $index, 2),
                     $this->getImageForServiceType($serviceType, $index, 3)
                 ],
-                'youtube_link' => $index === 0 ? "https://youtube.com/watch?v=" . fake()->regexify('[A-Za-z0-9]{11}') : null
+                'youtube_link' => $index === 0 ? "https://youtube.com/watch?v=" . $this->faker->regexify('[A-Za-z0-9]{11}') : null
             ];
         }
 
@@ -668,7 +682,7 @@ class ProfessionalSeeder extends Seeder
         ];
 
         $typeDescriptions = $descriptions[$serviceType] ?? $descriptions['Modélisation'];
-        return fake()->randomElement($typeDescriptions) . ' ' .
+        return $this->faker->randomElement($typeDescriptions) . ' ' .
                'Projet réalisé avec expertise technique et créativité, livré dans les délais convenus avec un résultat dépassant les attentes du client.';
     }
 

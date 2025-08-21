@@ -297,7 +297,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 2,
                     'categories' => ['Architecture 3D', 'Modélisation 3D'],
-                    'image' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop' // Architecture 3D moderne
                 ],
                 [
                     'title' => 'Rendu Photoréaliste Extérieur',
@@ -307,7 +307,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 3,
                     'categories' => ['Architecture 3D', 'Rendu'],
-                    'image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop' // Rendu architectural extérieur
                 ],
                 [
                     'title' => 'Plans 3D Interactifs',
@@ -317,7 +317,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Architecture 3D', 'Interactif'],
-                    'image' => 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop' // Plans 3D et modélisation
                 ],
                 [
                     'title' => 'Modélisation BIM Avancée',
@@ -327,7 +327,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 1,
                     'revisions' => 2,
                     'categories' => ['Architecture 3D', 'BIM'],
-                    'image' => 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop' // BIM et modélisation technique
                 ]
             ],
             'Designer d\'Intérieur 3D' => [
@@ -339,7 +339,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 3,
                     'categories' => ['Design d\'intérieur', 'Résidentiel'],
-                    'image' => 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop' // Design intérieur moderne
                 ],
                 [
                     'title' => 'Aménagement d\'Espace Commercial',
@@ -349,7 +349,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Design d\'intérieur', 'Commercial'],
-                    'image' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop' // Espace commercial moderne
                 ],
                 [
                     'title' => 'Rendu d\'Intérieur Haut de Gamme',
@@ -359,7 +359,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 4,
                     'revisions' => 3,
                     'categories' => ['Design d\'intérieur', 'Rendu'],
-                    'image' => 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop' // Rendu intérieur luxueux
                 ],
                 [
                     'title' => 'Mobilier Sur Mesure 3D',
@@ -369,7 +369,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 2,
                     'categories' => ['Design d\'intérieur', 'Mobilier'],
-                    'image' => 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop' // Mobilier design moderne
                 ]
             ]
         ];
@@ -395,7 +395,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Animation', 'Architecture 3D'],
-                    'image' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop' // Animation et motion design
                 ],
                 [
                     'title' => 'Motion Design pour Présentation',
@@ -405,7 +405,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 3,
                     'categories' => ['Animation', 'Motion Design'],
-                    'image' => 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=600&fit=crop' // Écrans et présentation digitale
                 ],
                 [
                     'title' => 'Visite Virtuelle Interactive',
@@ -415,7 +415,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 1,
                     'revisions' => 2,
                     'categories' => ['Animation', 'Réalité virtuelle'],
-                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop' // VR et réalité virtuelle
                 ],
                 [
                     'title' => 'Animation de Personnages 3D',
@@ -425,7 +425,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Animation', 'Personnage 3D'],
-                    'image' => 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop' // Animation de personnages
                 ]
             ],
             'Expert Modélisation Produit' => [
@@ -437,7 +437,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 3,
                     'categories' => ['Produit 3D', 'E-commerce'],
-                    'image' => 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop' // Produits 3D e-commerce
                 ],
                 [
                     'title' => 'Packaging 3D Interactif',
@@ -447,7 +447,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Produit 3D', 'Packaging'],
-                    'image' => 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=800&h=600&fit=crop' // Packaging et design produit
                 ],
                 [
                     'title' => 'Catalogue Produit 3D',
@@ -457,7 +457,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 1,
                     'revisions' => 2,
                     'categories' => ['Produit 3D', 'Catalogue'],
-                    'image' => 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop' // Catalogue et présentation produit
                 ],
                 [
                     'title' => 'Visualisation Technique Produit',
@@ -467,7 +467,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Produit 3D', 'Technique'],
-                    'image' => 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=600&fit=crop' // Visualisation technique
                 ]
             ]
         ];
@@ -488,7 +488,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Environnement 3D', 'Game Art'],
-                    'image' => 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop' // Environnements 3D immersifs
                 ],
                 [
                     'title' => 'Paysagisme Virtuel',
@@ -498,7 +498,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 2,
                     'categories' => ['Environnement 3D', 'Paysage'],
-                    'image' => 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop' // Paysages virtuels
                 ],
                 [
                     'title' => 'Texturing et Matériaux Avancés',
@@ -508,7 +508,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 4,
                     'revisions' => 3,
                     'categories' => ['Environnement 3D', 'Texturing'],
-                    'image' => 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop' // Textures et matériaux
                 ],
                 [
                     'title' => 'Éclairage 3D Professionnel',
@@ -518,7 +518,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 3,
                     'revisions' => 2,
                     'categories' => ['Environnement 3D', 'Éclairage'],
-                    'image' => 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop' // Éclairage professionnel
                 ]
             ],
             'Spécialiste VR/AR' => [
@@ -530,7 +530,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 1,
                     'revisions' => 2,
                     'categories' => ['Réalité virtuelle/augmentée', 'Expérience'],
-                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop' // Expérience VR immersive
                 ],
                 [
                     'title' => 'Application AR Marketing',
@@ -540,7 +540,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Réalité virtuelle/augmentée', 'Marketing'],
-                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=800&h=600&fit=crop' // Application AR marketing
                 ],
                 [
                     'title' => 'Formation VR Interactive',
@@ -550,7 +550,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 1,
                     'revisions' => 2,
                     'categories' => ['Réalité virtuelle/augmentée', 'Formation'],
-                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=800&h=600&fit=crop' // Formation VR interactive
                 ],
                 [
                     'title' => 'Visite Virtuelle 360°',
@@ -560,7 +560,7 @@ class ProfessionalSeeder extends Seeder
                     'concepts' => 2,
                     'revisions' => 2,
                     'categories' => ['Réalité virtuelle/augmentée', 'Visite'],
-                    'image' => 'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'
+                    'image' => 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop' // Visite virtuelle 360°
                 ]
             ]
         ];
@@ -693,46 +693,46 @@ class ProfessionalSeeder extends Seeder
     {
         $imageMap = [
             'Modélisation' => [
-                'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop', // Architecture 3D moderne
+                'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop', // Bâtiment futuriste
+                'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop', // Structure architecturale
+                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop'  // Rendu architectural
             ],
             'Rendu' => [
-                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop', // Rendu extérieur
+                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', // Intérieur moderne
+                'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop', // Design intérieur
+                'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop'  // Architecture moderne
             ],
             'Animation' => [
-                'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop', // Technologie et écrans
+                'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&h=600&fit=crop', // Présentation digitale
+                'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop', // Animation et mouvement
+                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'  // VR et immersion
             ],
             'Design' => [
-                'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop', // Design intérieur moderne
+                'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop', // Intérieur luxueux
+                'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop', // Espace commercial
+                'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop'  // Mobilier design
             ],
             'Produit' => [
-                'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop', // Produits 3D
+                'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=800&h=600&fit=crop', // Packaging design
+                'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop', // Catalogue produit
+                'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=600&fit=crop'  // Visualisation technique
             ],
             'Environnement' => [
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop', // Environnement immersif
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop', // Paysage virtuel
+                'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop', // Textures et matériaux
+                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop'  // Éclairage professionnel
             ],
             'VR/AR' => [
-                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop',
-                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop'
+                'https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=800&h=600&fit=crop', // VR immersive
+                'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=800&h=600&fit=crop', // AR marketing
+                'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=800&h=600&fit=crop', // Formation VR
+                'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=600&fit=crop'  // Visite virtuelle 360°
             ]
         ];
 

@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
            // PlanSeeder::class,
             CategorySeeder::class,
-            ProfessionalSeeder::class,
+            //ProfessionalSeeder::class,
         ]);
     }
 }

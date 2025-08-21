@@ -10,21 +10,21 @@ use App\Models\ProfessionalProfile;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Faker\Generator as Faker;
+use Faker\Factory as Faker;
 
 class ProfessionalSeeder extends Seeder
 {
     /**
-     * @var Faker
+     * @var \Faker\Generator
      */
     protected $faker;
 
     /**
      * Create a new seeder instance.
      */
-    public function __construct(Faker $faker)
+    public function __construct()
     {
-        $this->faker = $faker;
+        $this->faker = Faker::create('fr_FR');
     }
 
     /**

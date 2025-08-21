@@ -14,6 +14,18 @@ class ServiceOfferResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Générer l'URL complète de l'image si elle existe
+        $imageUrl = null;
+        if ($this->image) {
+            // Si l'image est déjà une URL complète, la garder telle quelle
+            if (filter_var($this->image, FILTER_VALIDATE_URL)) {
+                $imageUrl = $this->image;
+            } else {
+                // Sinon, générer l'URL complète pour le stockage local
+                $imageUrl = asset('storage/' . $this->image);
+            }
+        }
+
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
@@ -37,6 +49,7 @@ class ServiceOfferResource extends JsonResource
             'is_private' => $this->is_private,
             'categories' => $this->categories,
             'files' => $this->files,
+            'image' => $imageUrl, // ✅ Ajout du champ image avec URL complète
             'status' => $this->status,
             'likes' => $this->likes,
             'views' => $this->views,

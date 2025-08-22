@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
            // PlanSeeder::class,
             CategorySeeder::class,
             ProfessionalSeeder::class,
+            HeroImageSeeder::class,
         ]);
     }
 }

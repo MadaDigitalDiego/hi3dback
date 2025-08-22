@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\ProfessionalProfileLikeController;
 use App\Http\Controllers\Api\ProfessionalProfileViewController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\HeroImageController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -65,6 +66,11 @@ Route::get('/categories/parent/{parentValue}', [CategoryController::class, 'getS
 // Routes publiques pour les professionnels
 Route::get('/professionals/{id}', [ProfessionalController::class, 'show']);
 Route::get('/explorer/achievements', [AchievementController::class, 'explorerRealisation']);
+
+// Routes publiques pour les images Hero
+Route::get('/hero-images', [HeroImageController::class, 'index']);
+Route::get('/hero-images/stats', [HeroImageController::class, 'stats']);
+Route::get('/hero-images/{heroImage}', [HeroImageController::class, 'show']);
 
 // Routes pour les professionnels (authentifiées)
 Route::get('/professionals/{id}/offers', [OpenOfferController::class, 'getAttributedOffersForProfessional']);
@@ -241,4 +247,9 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('files')->group(function
 
     // Statistiques (admin seulement)
     Route::get('/admin/stats', [FileController::class, 'stats'])->middleware('admin.access');
+});
+
+// Routes administratives pour les images Hero (protégées par authentification)
+Route::middleware(['auth:sanctum', 'verified'])->prefix('admin/hero-images')->group(function () {
+    Route::get('/all', [HeroImageController::class, 'all']); // Toutes les images (actives et inactives)
 });

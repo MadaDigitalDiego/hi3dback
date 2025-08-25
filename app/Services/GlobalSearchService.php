@@ -35,6 +35,9 @@ class GlobalSearchService
                 // Tracker la recherche même si elle vient du cache
                 $this->cacheService->trackSearch($query);
                 $this->metricsService->recordCacheHit('search', true);
+                // Ajouter les informations de performance pour le cache
+                $cachedResults['performance']['from_cache'] = true;
+                $cachedResults['performance']['cache_retrieval_time_ms'] = round((microtime(true) - $startTime) * 1000, 2);
                 return $cachedResults;
             }
             $this->metricsService->recordCacheHit('search', false);
@@ -47,30 +50,43 @@ class GlobalSearchService
 
         $results = [];
         $totalCount = 0;
+        $searchTimes = []; // Pour stocker les temps de recherche individuels
 
         // Search in ProfessionalProfiles
         if (in_array('professional_profiles', $types)) {
+            $searchStartTime = microtime(true);
             $professionalResults = $this->searchProfessionalProfiles($query, $filters);
+            $searchTimes['professional_profiles_ms'] = round((microtime(true) - $searchStartTime) * 1000, 2);
+
             $results['professional_profiles'] = $professionalResults;
             $totalCount += $professionalResults->count();
         }
 
         // Search in ServiceOffers
         if (in_array('service_offers', $types)) {
+            $searchStartTime = microtime(true);
             $serviceResults = $this->searchServiceOffers($query, $filters);
+            $searchTimes['service_offers_ms'] = round((microtime(true) - $searchStartTime) * 1000, 2);
+
             $results['service_offers'] = $serviceResults;
             $totalCount += $serviceResults->count();
         }
 
         // Search in Achievements
         if (in_array('achievements', $types)) {
+            $searchStartTime = microtime(true);
             $achievementResults = $this->searchAchievements($query, $filters);
+            $searchTimes['achievements_ms'] = round((microtime(true) - $searchStartTime) * 1000, 2);
+
             $results['achievements'] = $achievementResults;
             $totalCount += $achievementResults->count();
         }
 
         // Combine and format results
         $combinedResults = $this->combineResults($results, $perPage, $page);
+
+        // Calculer le temps d'exécution total
+        $totalExecutionTime = microtime(true) - $startTime;
 
         $searchResults = [
             'query' => $query,
@@ -83,10 +99,16 @@ class GlobalSearchService
                 'total' => $totalCount,
                 'last_page' => ceil($totalCount / $perPage),
             ],
+            'performance' => [
+                'total_execution_time_ms' => round($totalExecutionTime * 1000, 2),
+                'search_method' => 'meilisearch',
+                'search_query' => $query,
+                'from_cache' => false,
+                'meilisearch_times' => $searchTimes,
+                'total_meilisearch_time_ms' => round(array_sum($searchTimes), 2),
+                'searched_types' => $types,
+            ],
         ];
-
-        // Calculer le temps d'exécution
-        $executionTime = microtime(true) - $startTime;
 
         // Mettre en cache les résultats et tracker la recherche
         if ($this->cacheService->isCacheEnabled()) {
@@ -95,7 +117,7 @@ class GlobalSearchService
         }
 
         // Enregistrer les métriques
-        $this->metricsService->recordSearch($query, $options, $searchResults, $executionTime);
+        $this->metricsService->recordSearch($query, $options, $searchResults, $totalExecutionTime);
 
         return $searchResults;
     }
@@ -324,7 +346,8 @@ class GlobalSearchService
             'title' => $achievement->title,
             'organization' => $achievement->organization,
             'description' => $achievement->description,
-            'date_obtained' => $achievement->date_obtained?->format('Y-m-d'),
+            'date_obtained' => $achievement->date_obtained ?
+                (is_string($achievement->date_obtained) ? $achievement->date_obtained : $achievement->date_obtained->format('Y-m-d')) : null,
             'professional_name' => $achievement->professionalProfile ?
                 $achievement->professionalProfile->first_name . ' ' . $achievement->professionalProfile->last_name : null,
             'url' => "/achievements/{$achievement->id}",

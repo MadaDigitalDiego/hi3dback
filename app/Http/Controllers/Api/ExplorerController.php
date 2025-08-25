@@ -7,6 +7,7 @@ use App\Models\ProfessionalProfile;
 // use App\Models\FreelanceProfile;
 use App\Models\ServiceOffer;
 use App\Models\User;
+use App\Services\GlobalSearchService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -14,8 +15,15 @@ use Illuminate\Support\Facades\DB;
 
 class ExplorerController extends Controller
 {
+    protected GlobalSearchService $searchService;
+
+    public function __construct(GlobalSearchService $searchService)
+    {
+        $this->searchService = $searchService;
+    }
     /**
      * Récupère la liste des professionnels avec leurs services et réalisations.
+     * Utilise Meilisearch pour la recherche et retourne le temps d'exécution.
      *
      * @param Request $request
      * @return JsonResponse
@@ -23,10 +31,12 @@ class ExplorerController extends Controller
     public function getProfessionals(Request $request): JsonResponse
     {
         try {
+            $startTime = microtime(true);
+
             // Paramètres de pagination
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-            
+
             // Paramètres de filtrage
             $search = $request->input('search');
             $skills = $request->input('skills');
@@ -35,51 +45,103 @@ class ExplorerController extends Controller
             $minRate = $request->input('min_rate');
             $maxRate = $request->input('max_rate');
             $availability = $request->input('availability');
-            
-            // Construire la requête
-            $query = ProfessionalProfile::with(['user', 'achievements'])
-                ->where('completion_percentage', '>=', 80); // Seulement les profils suffisamment complets
-            
-            // Appliquer les filtres
-            if ($search) {
-                $query->where(function($q) use ($search) {
-                    $q->where('first_name', 'like', "%{$search}%")
-                      ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('bio', 'like', "%{$search}%")
-                      ->orWhere('title', 'like', "%{$search}%");
-                });
-            }
-            
-            if ($skills) {
-                $skillsArray = explode(',', $skills);
-                foreach ($skillsArray as $skill) {
-                    $query->whereRaw("JSON_CONTAINS(skills, ?)", ['"' . trim($skill) . '"']);
+
+            // Si une recherche est spécifiée, utiliser Meilisearch
+            if ($search && strlen(trim($search)) >= 2) {
+                $searchStartTime = microtime(true);
+
+                // Préparer les filtres pour Meilisearch
+                $filters = [];
+
+                if ($city) {
+                    $filters['city'] = $city;
                 }
+
+                if ($country) {
+                    $filters['country'] = $country;
+                }
+
+                if ($minRate) {
+                    $filters['min_hourly_rate'] = $minRate;
+                }
+
+                if ($maxRate) {
+                    $filters['max_hourly_rate'] = $maxRate;
+                }
+
+                if ($availability) {
+                    $filters['availability_status'] = $availability;
+                }
+
+                // Utiliser le service de recherche Meilisearch
+                $searchResults = $this->searchService->searchProfessionalProfiles($search, $filters);
+                $searchTime = microtime(true) - $searchStartTime;
+
+                // Appliquer la pagination manuelle sur les résultats de recherche
+                $total = $searchResults->count();
+                $offset = ($page - 1) * $perPage;
+                $paginatedResults = $searchResults->slice($offset, $perPage);
+
+                // Récupérer les IDs des profils trouvés
+                $profileIds = $paginatedResults->pluck('id')->toArray();
+
+                // Récupérer les profils complets avec leurs relations
+                $professionals = ProfessionalProfile::with(['user', 'achievements'])
+                    ->whereIn('id', $profileIds)
+                    ->where('completion_percentage', '>=', 80)
+                    ->get()
+                    ->keyBy('id');
+
+                // Réorganiser selon l'ordre de Meilisearch
+                $orderedProfessionals = collect();
+                foreach ($profileIds as $id) {
+                    if (isset($professionals[$id])) {
+                        $orderedProfessionals->push($professionals[$id]);
+                    }
+                }
+
+                $professionals = $orderedProfessionals;
+
+            } else {
+                // Utiliser la requête Eloquent classique si pas de recherche
+                $query = ProfessionalProfile::with(['user', 'achievements'])
+                    ->where('completion_percentage', '>=', 80); // Seulement les profils suffisamment complets
+
+                // Appliquer les filtres classiques
+                if ($skills) {
+                    $skillsArray = explode(',', $skills);
+                    foreach ($skillsArray as $skill) {
+                        $query->whereRaw("JSON_CONTAINS(skills, ?)", ['"' . trim($skill) . '"']);
+                    }
+                }
+
+                if ($city) {
+                    $query->where('city', 'like', "%{$city}%");
+                }
+
+                if ($country) {
+                    $query->where('country', 'like', "%{$country}%");
+                }
+
+                if ($minRate) {
+                    $query->where('hourly_rate', '>=', $minRate);
+                }
+
+                if ($maxRate) {
+                    $query->where('hourly_rate', '<=', $maxRate);
+                }
+
+                if ($availability) {
+                    $query->where('availability_status', $availability);
+                }
+
+                // Récupérer les professionnels paginés
+                $paginatedProfessionals = $query->paginate($perPage, ['*'], 'page', $page);
+                $professionals = $paginatedProfessionals->getCollection();
+                $total = $paginatedProfessionals->total();
+                $searchTime = null; // Pas de recherche Meilisearch utilisée
             }
-            
-            if ($city) {
-                $query->where('city', 'like', "%{$city}%");
-            }
-            
-            if ($country) {
-                $query->where('country', 'like', "%{$country}%");
-            }
-            
-            if ($minRate) {
-                $query->where('hourly_rate', '>=', $minRate);
-            }
-            
-            if ($maxRate) {
-                $query->where('hourly_rate', '<=', $maxRate);
-            }
-            
-            if ($availability) {
-                $query->where('availability_status', $availability);
-            }
-            
-            // Récupérer les professionnels paginés
-            $professionals = $query->paginate($perPage, ['*'], 'page', $page);
-            
+
             // Récupérer les services pour chaque professionnel
             $professionalIds = $professionals->pluck('user_id')->toArray();
             $services = ServiceOffer::whereIn('user_id', $professionalIds)
@@ -159,17 +221,48 @@ class ExplorerController extends Controller
                     'services' => $formattedServices,
                 ];
             });
-            
-            return response()->json([
+
+            // Calculer le temps total d'exécution
+            $totalExecutionTime = microtime(true) - $startTime;
+
+            // Préparer les informations de pagination
+            $paginationInfo = [];
+            if (isset($paginatedProfessionals)) {
+                // Pagination Eloquent classique
+                $paginationInfo = [
+                    'total' => $paginatedProfessionals->total(),
+                    'per_page' => $paginatedProfessionals->perPage(),
+                    'current_page' => $paginatedProfessionals->currentPage(),
+                    'last_page' => $paginatedProfessionals->lastPage(),
+                ];
+            } else {
+                // Pagination manuelle pour Meilisearch
+                $lastPage = ceil($total / $perPage);
+                $paginationInfo = [
+                    'total' => $total,
+                    'per_page' => $perPage,
+                    'current_page' => $page,
+                    'last_page' => $lastPage,
+                ];
+            }
+
+            $response = [
                 'success' => true,
                 'professionals' => $formattedProfessionals,
-                'pagination' => [
-                    'total' => $professionals->total(),
-                    'per_page' => $professionals->perPage(),
-                    'current_page' => $professionals->currentPage(),
-                    'last_page' => $professionals->lastPage(),
+                'pagination' => $paginationInfo,
+                'performance' => [
+                    'total_execution_time_ms' => round($totalExecutionTime * 1000, 2),
+                    'search_method' => $search && strlen(trim($search)) >= 2 ? 'meilisearch' : 'eloquent',
                 ],
-            ]);
+            ];
+
+            // Ajouter le temps de recherche Meilisearch si disponible
+            if ($searchTime !== null) {
+                $response['performance']['meilisearch_time_ms'] = round($searchTime * 1000, 2);
+                $response['performance']['search_query'] = $search;
+            }
+
+            return response()->json($response);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des professionnels: ' . $e->getMessage());
             return response()->json([
@@ -284,6 +377,7 @@ class ExplorerController extends Controller
     
     /**
      * Récupère la liste des services avec les informations des professionnels.
+     * Utilise Meilisearch pour la recherche et retourne le temps d'exécution.
      *
      * @param Request $request
      * @return JsonResponse
@@ -291,10 +385,12 @@ class ExplorerController extends Controller
     public function getServices(Request $request): JsonResponse
     {
         try {
+            $startTime = microtime(true);
+
             // Paramètres de pagination
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-            
+
             // Paramètres de filtrage
             $search = $request->input('search');
             $category = $request->input('category');
@@ -302,78 +398,123 @@ class ExplorerController extends Controller
             $maxPrice = $request->input('max_price');
             $executionTime = $request->input('execution_time');
             $sortBy = $request->input('sort_by', 'newest');
-            
-            // Construire la requête
-            $query = ServiceOffer::with('user')
-                ->where('is_private', false);
-            
-            // Appliquer les filtres
-            if ($search) {
-                $query->where(function($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
-                });
-            }
-            
-            if ($category && $category !== 'all') {
-                $query->whereRaw("JSON_SEARCH(categories, 'one', ?) IS NOT NULL", [$category]);
-            }
-            
-            if ($minPrice) {
-                $query->where('price', '>=', $minPrice);
-            }
-            
-            if ($maxPrice) {
-                $query->where('price', '<=', $maxPrice);
-            }
-            
-            if ($executionTime && $executionTime !== 'all') {
-                switch ($executionTime) {
-                    case 'express':
-                        $query->where('execution_time', 'like', "%express%")
-                              ->orWhere('execution_time', 'like', "%rapide%")
-                              ->orWhere('execution_time', 'like', "%1-3 jours%");
+
+            // Si une recherche est spécifiée, utiliser Meilisearch
+            if ($search && strlen(trim($search)) >= 2) {
+                $searchStartTime = microtime(true);
+
+                // Préparer les filtres pour Meilisearch
+                $filters = [];
+
+                if ($minPrice) {
+                    $filters['min_price'] = $minPrice;
+                }
+
+                if ($maxPrice) {
+                    $filters['max_price'] = $maxPrice;
+                }
+
+                if ($category && $category !== 'all') {
+                    $filters['categories'] = [$category];
+                }
+
+                // Utiliser le service de recherche Meilisearch
+                $searchResults = $this->searchService->searchServiceOffers($search, $filters);
+                $searchTime = microtime(true) - $searchStartTime;
+
+                // Appliquer la pagination manuelle sur les résultats de recherche
+                $total = $searchResults->count();
+                $offset = ($page - 1) * $perPage;
+                $paginatedResults = $searchResults->slice($offset, $perPage);
+
+                // Récupérer les IDs des services trouvés
+                $serviceIds = $paginatedResults->pluck('id')->toArray();
+
+                // Récupérer les services complets avec leurs relations
+                $services = ServiceOffer::with('user')
+                    ->whereIn('id', $serviceIds)
+                    ->get()
+                    ->keyBy('id');
+
+                // Réorganiser selon l'ordre de Meilisearch
+                $orderedServices = collect();
+                foreach ($serviceIds as $id) {
+                    if (isset($services[$id])) {
+                        $orderedServices->push($services[$id]);
+                    }
+                }
+
+                $services = $orderedServices;
+
+            } else {
+                // Utiliser la requête Eloquent classique si pas de recherche
+                $query = ServiceOffer::with('user')
+                    ->where('is_private', false);
+
+                // Appliquer les filtres classiques
+                if ($category && $category !== 'all') {
+                    $query->whereRaw("JSON_SEARCH(categories, 'one', ?) IS NOT NULL", [$category]);
+                }
+
+                if ($minPrice) {
+                    $query->where('price', '>=', $minPrice);
+                }
+
+                if ($maxPrice) {
+                    $query->where('price', '<=', $maxPrice);
+                }
+
+                if ($executionTime && $executionTime !== 'all') {
+                    switch ($executionTime) {
+                        case 'express':
+                            $query->where('execution_time', 'like', "%express%")
+                                  ->orWhere('execution_time', 'like', "%rapide%")
+                                  ->orWhere('execution_time', 'like', "%1-3 jours%");
+                            break;
+                        case 'standard':
+                            $query->where('execution_time', 'like', "%standard%")
+                                  ->orWhere('execution_time', 'like', "%1-2 semaines%");
+                            break;
+                        case 'extended':
+                            $query->where('execution_time', 'like', "%extended%")
+                                  ->orWhere('execution_time', 'like', "%plus de 2 semaines%");
+                            break;
+                    }
+                }
+
+                // Tri des résultats
+                switch ($sortBy) {
+                    case 'newest':
+                        $query->orderBy('created_at', 'desc');
                         break;
-                    case 'standard':
-                        $query->where('execution_time', 'like', "%standard%")
-                              ->orWhere('execution_time', 'like', "%1-2 semaines%");
+                    case 'rating':
+                        $query->orderBy('rating', 'desc');
                         break;
-                    case 'extended':
-                        $query->where('execution_time', 'like', "%extended%")
-                              ->orWhere('execution_time', 'like', "%plus de 2 semaines%");
+                    case 'price_asc':
+                        $query->orderBy('price', 'asc');
+                        break;
+                    case 'price_desc':
+                        $query->orderBy('price', 'desc');
+                        break;
+                    default:
+                        $query->orderBy('created_at', 'desc');
                         break;
                 }
+
+                // Récupérer les services paginés
+                $paginatedServices = $query->paginate($perPage, ['*'], 'page', $page);
+                $services = $paginatedServices->getCollection();
+                $total = $paginatedServices->total();
+                $searchTime = null; // Pas de recherche Meilisearch utilisée
             }
-            
-            // Tri des résultats
-            switch ($sortBy) {
-                case 'newest':
-                    $query->orderBy('created_at', 'desc');
-                    break;
-                case 'rating':
-                    $query->orderBy('rating', 'desc');
-                    break;
-                case 'price_asc':
-                    $query->orderBy('price', 'asc');
-                    break;
-                case 'price_desc':
-                    $query->orderBy('price', 'desc');
-                    break;
-                default:
-                    $query->orderBy('created_at', 'desc');
-                    break;
-            }
-            
-            // Récupérer les services paginés
-            $services = $query->paginate($perPage, ['*'], 'page', $page);
-            
+
             // Récupérer les professionnels pour chaque service
             $userIds = $services->pluck('user_id')->unique()->toArray();
             $professionals = ProfessionalProfile::whereIn('user_id', $userIds)
                 ->with('achievements')
                 ->get()
                 ->keyBy('user_id');
-            
+
             // Formater les données
             $formattedServices = $services->map(function ($service) use ($professionals) {
                 $userId = $service->user_id;
@@ -419,22 +560,129 @@ class ExplorerController extends Controller
                     ] : null,
                 ];
             });
-            
-            return response()->json([
+
+            // Calculer le temps total d'exécution
+            $totalExecutionTime = microtime(true) - $startTime;
+
+            // Préparer les informations de pagination
+            $paginationInfo = [];
+            if (isset($paginatedServices)) {
+                // Pagination Eloquent classique
+                $paginationInfo = [
+                    'total' => $paginatedServices->total(),
+                    'per_page' => $paginatedServices->perPage(),
+                    'current_page' => $paginatedServices->currentPage(),
+                    'last_page' => $paginatedServices->lastPage(),
+                ];
+            } else {
+                // Pagination manuelle pour Meilisearch
+                $lastPage = ceil($total / $perPage);
+                $paginationInfo = [
+                    'total' => $total,
+                    'per_page' => $perPage,
+                    'current_page' => $page,
+                    'last_page' => $lastPage,
+                ];
+            }
+
+            $response = [
                 'success' => true,
                 'services' => $formattedServices,
-                'pagination' => [
-                    'total' => $services->total(),
-                    'per_page' => $services->perPage(),
-                    'current_page' => $services->currentPage(),
-                    'last_page' => $services->lastPage(),
+                'pagination' => $paginationInfo,
+                'performance' => [
+                    'total_execution_time_ms' => round($totalExecutionTime * 1000, 2),
+                    'search_method' => $search && strlen(trim($search)) >= 2 ? 'meilisearch' : 'eloquent',
                 ],
-            ]);
+            ];
+
+            // Ajouter le temps de recherche Meilisearch si disponible
+            if ($searchTime !== null) {
+                $response['performance']['meilisearch_time_ms'] = round($searchTime * 1000, 2);
+                $response['performance']['search_query'] = $search;
+            }
+
+            return response()->json($response);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des services: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des services: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Récupère les statistiques de performance de recherche Meilisearch.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getSearchStats(Request $request): JsonResponse
+    {
+        try {
+            $startTime = microtime(true);
+
+            // Test de connectivité Meilisearch
+            $meilisearchHost = config('scout.meilisearch.host');
+            $meilisearchKey = config('scout.meilisearch.key');
+            $scoutDriver = config('scout.driver');
+
+            // Statistiques de base
+            $stats = [
+                'configuration' => [
+                    'scout_driver' => $scoutDriver,
+                    'meilisearch_host' => $meilisearchHost,
+                    'meilisearch_configured' => !empty($meilisearchHost),
+                ],
+                'models' => [
+                    'professional_profiles' => [
+                        'total_records' => ProfessionalProfile::count(),
+                        'searchable_records' => ProfessionalProfile::where('completion_percentage', '>=', 80)->count(),
+                        'index_name' => (new ProfessionalProfile())->searchableAs(),
+                    ],
+                    'service_offers' => [
+                        'total_records' => ServiceOffer::count(),
+                        'searchable_records' => ServiceOffer::where('is_private', false)->count(),
+                        'index_name' => (new ServiceOffer())->searchableAs(),
+                    ],
+                ],
+                'performance' => [
+                    'stats_generation_time_ms' => 0, // Sera calculé à la fin
+                ],
+            ];
+
+            // Test de recherche rapide pour mesurer les performances
+            if ($scoutDriver === 'meilisearch') {
+                try {
+                    $testSearchStart = microtime(true);
+                    $testResults = ServiceOffer::search('test')->take(1)->get();
+                    $testSearchTime = microtime(true) - $testSearchStart;
+
+                    $stats['performance']['test_search_time_ms'] = round($testSearchTime * 1000, 2);
+                    $stats['performance']['meilisearch_available'] = true;
+                } catch (\Exception $e) {
+                    $stats['performance']['meilisearch_available'] = false;
+                    $stats['performance']['meilisearch_error'] = $e->getMessage();
+                }
+            } else {
+                $stats['performance']['meilisearch_available'] = false;
+                $stats['performance']['reason'] = 'Scout driver is not set to meilisearch';
+            }
+
+            // Calculer le temps total
+            $totalTime = microtime(true) - $startTime;
+            $stats['performance']['stats_generation_time_ms'] = round($totalTime * 1000, 2);
+
+            return response()->json([
+                'success' => true,
+                'stats' => $stats,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des statistiques de recherche: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des statistiques de recherche: ' . $e->getMessage(),
             ], 500);
         }
     }

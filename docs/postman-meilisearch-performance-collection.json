@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "Hi3D - Meilisearch Performance Tests",
+    "description": "Collection pour tester les performances de recherche Meilisearch dans Hi3D",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Configuration & Stats",
+      "item": [
+        {
+          "name": "Get Search Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/search-stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "search-stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Services - Meilisearch Search",
+      "item": [
+        {
+          "name": "Search Services - 'développement'",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/services?search=développement&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "services"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "développement"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Services - 'web design'",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/services?search=web design&per_page=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "services"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "web design"
+                },
+                {
+                  "key": "per_page",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Services with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/services?search=application&min_price=500&max_price=2000&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "services"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "application"
+                },
+                {
+                  "key": "min_price",
+                  "value": "500"
+                },
+                {
+                  "key": "max_price",
+                  "value": "2000"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Services - Eloquent Filtering",
+      "item": [
+        {
+          "name": "Filter by Price Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/services?min_price=100&max_price=1000&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "services"],
+              "query": [
+                {
+                  "key": "min_price",
+                  "value": "100"
+                },
+                {
+                  "key": "max_price",
+                  "value": "1000"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sort by Rating",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/services?sort_by=rating&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "services"],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "rating"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Professionals - Meilisearch Search",
+      "item": [
+        {
+          "name": "Search Professionals - 'designer'",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/professionals?search=designer&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "professionals"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "designer"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Professionals with Location",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/professionals?search=développeur&city=Paris&per_page=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "professionals"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "développeur"
+                },
+                {
+                  "key": "city",
+                  "value": "Paris"
+                },
+                {
+                  "key": "per_page",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Professionals - Eloquent Filtering",
+      "item": [
+        {
+          "name": "Filter by Rate Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/professionals?min_rate=50&max_rate=150&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "professionals"],
+              "query": [
+                {
+                  "key": "min_rate",
+                  "value": "50"
+                },
+                {
+                  "key": "max_rate",
+                  "value": "150"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explorer/professionals?availability=available&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "explorer", "professionals"],
+              "query": [
+                {
+                  "key": "availability",
+                  "value": "available"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}

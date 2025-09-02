@@ -53,6 +53,9 @@ class ServiceOfferResource extends JsonResource
             'status' => $this->status,
             'likes' => $this->likes,
             'views' => $this->views,
+            'likes_count' => $this->getTotalLikesAttribute(),
+            'views_count' => $this->getTotalViewsAttribute(),
+            'popularity_score' => $this->getPopularityScore(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

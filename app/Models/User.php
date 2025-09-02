@@ -229,35 +229,45 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Add a professional profile to favorites.
+     * Get the user's favorite service offers.
      */
-    public function addToFavorites(ProfessionalProfile $profile): UserFavorite
+    public function favoriteServiceOffers()
+    {
+        return $this->favorites()
+            ->where('favoritable_type', ServiceOffer::class)
+            ->with('favoritable');
+    }
+
+    /**
+     * Add a model to favorites (polymorphic).
+     */
+    public function addToFavorites($model): UserFavorite
     {
         return $this->favorites()->firstOrCreate([
-            'favoritable_type' => ProfessionalProfile::class,
-            'favoritable_id' => $profile->id,
+            'favoritable_type' => get_class($model),
+            'favoritable_id' => $model->id,
         ]);
     }
 
     /**
-     * Remove a professional profile from favorites.
+     * Remove a model from favorites (polymorphic).
      */
-    public function removeFromFavorites(ProfessionalProfile $profile): bool
+    public function removeFromFavorites($model): bool
     {
         return $this->favorites()
-            ->where('favoritable_type', ProfessionalProfile::class)
-            ->where('favoritable_id', $profile->id)
+            ->where('favoritable_type', get_class($model))
+            ->where('favoritable_id', $model->id)
             ->delete() > 0;
     }
 
     /**
-     * Check if a professional profile is in favorites.
+     * Check if a model is in favorites (polymorphic).
      */
-    public function hasFavorite(ProfessionalProfile $profile): bool
+    public function hasFavorite($model): bool
     {
         return $this->favorites()
-            ->where('favoritable_type', ProfessionalProfile::class)
-            ->where('favoritable_id', $profile->id)
+            ->where('favoritable_type', get_class($model))
+            ->where('favoritable_id', $model->id)
             ->exists();
     }
 }

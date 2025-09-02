@@ -217,6 +217,21 @@ Route::middleware('auth:sanctum')->prefix('professionals/{professionalProfile}')
     Route::get('/like/status', [ProfessionalProfileLikeController::class, 'status']);
 });
 
+// Routes publiques pour les vues des service offers (pas besoin d'authentification)
+Route::prefix('service-offers/{serviceOffer}')->group(function () {
+    Route::post('/view', [App\Http\Controllers\Api\ServiceOfferViewController::class, 'recordView']);
+    Route::get('/view/stats', [App\Http\Controllers\Api\ServiceOfferViewController::class, 'getStats']);
+    Route::get('/view/status', [App\Http\Controllers\Api\ServiceOfferViewController::class, 'hasViewed']);
+});
+
+// Routes protégées pour les likes des service offers (nécessitent une authentification)
+Route::middleware('auth:sanctum')->prefix('service-offers/{serviceOffer}')->group(function () {
+    Route::post('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'like']);
+    Route::delete('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'unlike']);
+    Route::post('/like/toggle', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'toggle']);
+    Route::get('/like/status', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'status']);
+});
+
 // Routes de recherche globale (publiques avec rate limiting)
 Route::prefix('search')->middleware('search.ratelimit:100,1')->group(function () {
     Route::get('/', [SearchController::class, 'globalSearch']);

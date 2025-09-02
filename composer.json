@@ -56,6 +56,19 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
+        ],
+        "meilisearch:index": [
+            "@php artisan search:index --fresh --show-progress"
+        ],
+        "meilisearch:reindex": [
+            "@php artisan meilisearch:reindex --show-progress"
+        ],
+        "deploy:production": [
+            "@php artisan config:cache",
+            "@php artisan route:cache",
+            "@php artisan view:cache",
+            "@php artisan migrate --force",
+            "@php artisan search:index --fresh"
         ]
     },
     "extra": {

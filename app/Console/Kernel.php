@@ -13,6 +13,18 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('offers:match')->hourly();
+
+        // Indexation Meilisearch quotidienne
+        $schedule->command('forge:index --check-health')
+                 ->dailyAt('02:00')
+                 ->withoutOverlapping()
+                 ->runInBackground();
+
+        // Vérification de santé Meilisearch toutes les 6 heures
+        $schedule->command('forge:index --check-health')
+                 ->everySixHours()
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

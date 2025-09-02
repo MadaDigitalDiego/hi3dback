@@ -43,7 +43,7 @@ class NewMessageNotification extends Notification
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000'); // La valeur par défaut est 'http://localhost:3000' si FRONTEND_URL n'est pas défini
 
         // Construire l'URL complète pour l'offre
-        $url = $frontendUrl . '/discussions/' .  $offer->id;
+        $url = $frontendUrl . '/dashboard/offers/'. $offer->id;
         // $url = 'http://localhost:3000/discussions/' . $offer->id; // Adjust the URL to the chat page
 
         return (new MailMessage)

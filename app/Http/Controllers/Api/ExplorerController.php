@@ -543,10 +543,8 @@ class ExplorerController extends Controller
                     'categories' => $service->categories,
                     'files' => $service->files,
                     'image' => $imageUrl, // ✅ Ajout du champ image avec URL complète
-                    'views' => $service->views, // Ancien champ statique (pour compatibilité)
-                    'likes' => $service->likes, // Ancien champ statique (pour compatibilité)
-                    'views_count' => $service->getTotalViewsAttribute(), // ✅ Nouveau compteur en temps réel
-                    'likes_count' => $service->getTotalLikesAttribute(), // ✅ Nouveau compteur en temps réel
+                    'views' => $service->getTotalViewsAttribute(), // ✅ Compteur en temps réel (renommé)
+                    'likes' => $service->getTotalLikesAttribute(), // ✅ Compteur en temps réel (renommé)
                     'popularity_score' => $service->getPopularityScore(), // ✅ Score de popularité calculé
                     'rating' => $service->rating,
                     'created_at' => $service->created_at,

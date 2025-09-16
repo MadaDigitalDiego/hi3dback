@@ -102,7 +102,7 @@ class OpenOfferController extends Controller
     {
         try {
             $openOffer->increment('views_count');
-            return response()->json(['open_offer' => $openOffer->load('user', 'applications.freelanceProfile.user')]); // Keep the relation name for now as it's defined in the OfferApplication model
+            return response()->json(['open_offer' => $openOffer->load('user.clientProfile', 'applications.freelanceProfile.user')]); // Keep the relation name for now as it's defined in the OfferApplication model
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage de l\'offre ouverte ID ' . $openOffer->id . ': ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération de l\'offre ouverte.'], 500);

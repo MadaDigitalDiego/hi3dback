@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\ProfessionalController;
 use App\Http\Controllers\Api\ServiceOfferController;
 use App\Http\Controllers\Api\ServiceMessageController;
 use App\Http\Controllers\Api\DashboardProjectController;
+use App\Http\Controllers\Api\GmailAuthController;
 use App\Http\Controllers\Api\ExplorerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\NewProfileController;
@@ -39,6 +40,13 @@ Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/password/forgot', [UserController::class, 'forgotPassword']);
 Route::post('/password/reset', [UserController::class, 'resetPassword'])->name('password.reset');
+
+// Routes d'authentification Gmail
+Route::prefix('auth/gmail')->group(function () {
+    Route::get('/redirect', [GmailAuthController::class, 'redirect']);
+    Route::get('/callback', [GmailAuthController::class, 'callback']);
+    Route::get('/status', [GmailAuthController::class, 'status']);
+});
 
 // Routes de vérification d'email
 Route::get('/email/verify/{id}/{hash}', [UserController::class, 'verifyEmail'])

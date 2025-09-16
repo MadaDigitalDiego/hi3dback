@@ -40,6 +40,10 @@ class StoreServiceOfferRequest extends FormRequest
             'files' => 'nullable|array', // Files array
             'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
             'associated_project' => 'nullable|string|max:255',
+            'what_you_get' => 'nullable|string',
+            'who_is_this_for' => 'nullable|string',
+            'delivery_method' => 'nullable|string',
+            'why_choose_me' => 'nullable|string',
         ];
     }
 

@@ -48,6 +48,10 @@ class ServiceOfferFactory extends Factory
             'views' => $this->faker->numberBetween(0, 1000),
             'likes' => $this->faker->numberBetween(0, 100),
             'rating' => $this->faker->optional(0.7)->randomFloat(1, 1, 5), // 70% chance d'avoir une note
+            'what_you_get' => $this->faker->optional(0.8)->paragraphs(2, true),
+            'who_is_this_for' => $this->faker->optional(0.8)->paragraphs(1, true),
+            'delivery_method' => $this->faker->optional(0.8)->sentence(),
+            'why_choose_me' => $this->faker->optional(0.8)->paragraphs(2, true),
         ];
     }
 

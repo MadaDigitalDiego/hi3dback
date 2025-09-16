@@ -50,6 +50,10 @@ class ServiceOfferResource extends JsonResource
             'categories' => $this->categories,
             'files' => $this->files,
             'image' => $imageUrl, // ✅ Ajout du champ image avec URL complète
+            'what_you_get' => $this->what_you_get,
+            'who_is_this_for' => $this->who_is_this_for,
+            'delivery_method' => $this->delivery_method,
+            'why_choose_me' => $this->why_choose_me,
             'status' => $this->status,
             'likes' => $this->likes,
             'views' => $this->views,

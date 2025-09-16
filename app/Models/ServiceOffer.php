@@ -33,6 +33,10 @@ class ServiceOffer extends Model
         'rating',
         'image',
         'associated_project',
+        'what_you_get',
+        'who_is_this_for',
+        'delivery_method',
+        'why_choose_me',
     ];
 
     protected $casts = [
@@ -158,6 +162,10 @@ class ServiceOffer extends Model
             'views' => (int) $this->views,
             'likes' => (int) $this->likes,
             'rating' => (float) $this->rating,
+            'what_you_get' => $this->what_you_get,
+            'who_is_this_for' => $this->who_is_this_for,
+            'delivery_method' => $this->delivery_method,
+            'why_choose_me' => $this->why_choose_me,
             'type' => 'service_offer',
         ];
     }

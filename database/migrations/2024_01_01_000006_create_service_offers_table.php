@@ -30,6 +30,10 @@ return new class extends Migration
             $table->integer('likes')->default(0);
             $table->decimal('rating', 3, 1)->nullable();
             $table->string('image')->nullable();
+            $table->text('what_you_get')->nullable();
+            $table->text('who_is_this_for')->nullable();
+            $table->text('delivery_method')->nullable();
+            $table->text('why_choose_me')->nullable();
             $table->timestamps();
         });
     }

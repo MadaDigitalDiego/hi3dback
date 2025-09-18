@@ -45,6 +45,7 @@ Route::post('/password/reset', [UserController::class, 'resetPassword'])->name('
 Route::prefix('auth/gmail')->group(function () {
     Route::get('/redirect', [GmailAuthController::class, 'redirect']);
     Route::get('/callback', [GmailAuthController::class, 'callback']);
+    Route::get('/frontend-callback', [GmailAuthController::class, 'frontendCallback']);
     Route::get('/status', [GmailAuthController::class, 'status']);
 });
 

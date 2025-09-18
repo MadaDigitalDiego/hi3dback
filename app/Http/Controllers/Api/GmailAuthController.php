@@ -107,6 +107,94 @@ class GmailAuthController extends Controller
     }
 
     /**
+     * Endpoint spécialisé pour l'authentification Google depuis le frontend
+     *
+     * Cette route gère l'authentification Google avec la logique métier requise
+     *
+     * @response 200 {
+     *   "success": true,
+     *   "message": "Connexion réussie via Gmail",
+     *   "token": "1|abc123...",
+     *   "user": {...},
+     *   "redirect_to": "dashboard"
+     * }
+     *
+     * @response 401 {
+     *   "success": false,
+     *   "message": "Aucun compte n'existe avec cette adresse email",
+     *   "error_type": "user_not_found",
+     *   "redirect_to": "login"
+     * }
+     *
+     * @response 403 {
+     *   "success": false,
+     *   "message": "Votre inscription n'est pas complète",
+     *   "error_type": "profile_incomplete",
+     *   "redirect_to": "login"
+     * }
+     */
+    public function frontendCallback(Request $request): JsonResponse
+    {
+        try {
+            Log::info('Callback Gmail frontend reçu', [
+                'query_params' => $request->query()
+            ]);
+
+            $result = $this->gmailAuthService->handleCallback();
+
+            // Adapter la réponse pour le frontend
+            if ($result['success']) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $result['message'],
+                    'token' => $result['token'],
+                    'user' => $result['user'],
+                    'redirect_to' => 'dashboard'
+                ]);
+            } else {
+                // Gestion des erreurs spécifiques
+                $statusCode = 401; // Par défaut
+                $redirectTo = 'login';
+
+                if (isset($result['error_type'])) {
+                    switch ($result['error_type']) {
+                        case 'user_not_found':
+                            $statusCode = 401;
+                            $redirectTo = 'login';
+                            break;
+                        case 'profile_incomplete':
+                            $statusCode = 403;
+                            $redirectTo = 'login';
+                            break;
+                    }
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                    'error_type' => $result['error_type'] ?? 'unknown',
+                    'redirect_to' => $redirectTo,
+                    'user_exists' => $result['user_exists'] ?? false,
+                    'profile_completed' => $result['profile_completed'] ?? false
+                ], $statusCode);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du callback Gmail frontend', [
+                'error' => $e->getMessage(),
+                'query_params' => $request->query()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'authentification Gmail: ' . $e->getMessage(),
+                'error_type' => 'server_error',
+                'redirect_to' => 'login'
+            ], 500);
+        }
+    }
+
+    /**
      * Vérifier le statut de la configuration Gmail
      *
      * @response 200 {

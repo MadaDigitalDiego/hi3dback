@@ -61,11 +61,20 @@ class GmailAuthService
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
-                // Utilisateur existant - connexion
+                // Utilisateur existant - vérifier le profil
                 return $this->loginExistingUser($user);
             } else {
-                // Nouvel utilisateur - création
-                return $this->createNewUser($googleUser);
+                // Nouvel utilisateur - refuser la création automatique
+                Log::warning('Tentative de connexion Gmail avec email inexistant', [
+                    'email' => $googleUser->getEmail()
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'Aucun compte n\'existe avec cette adresse email. Veuillez d\'abord créer un compte sur notre plateforme.',
+                    'error_type' => 'user_not_found',
+                    'user_exists' => false
+                ];
             }
 
         } catch (\Exception $e) {
@@ -94,9 +103,26 @@ class GmailAuthService
      */
     private function loginExistingUser(User $user): array
     {
-        // Marquer l'email comme vérifié si ce n'est pas déjà fait
+        // Vérifier si l'email est vérifié
         if (!$user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
+        }
+
+        // Vérifier si le profil est complètement configuré
+        if (!$this->isUserProfileComplete($user)) {
+            Log::warning('Tentative de connexion Gmail avec profil incomplet', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'profile_completed' => $user->profile_completed
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Votre compte existe mais votre inscription n\'est pas complète. Veuillez vous connecter avec votre mot de passe pour terminer votre profil.',
+                'error_type' => 'profile_incomplete',
+                'user_exists' => true,
+                'profile_completed' => false
+            ];
         }
 
         // Créer un token d'authentification
@@ -109,7 +135,8 @@ class GmailAuthService
             'message' => 'Connexion réussie via Gmail',
             'token' => $token,
             'user' => $user,
-            'is_new_user' => false
+            'is_new_user' => false,
+            'profile_completed' => true
         ];
     }
 
@@ -186,11 +213,20 @@ class GmailAuthService
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
-                // Utilisateur existant - connexion
+                // Utilisateur existant - vérifier le profil
                 return $this->loginExistingUser($user);
             } else {
-                // Nouvel utilisateur - création
-                return $this->createNewUser($googleUser);
+                // Nouvel utilisateur - refuser la création automatique
+                Log::warning('Tentative de connexion Gmail avec email inexistant (processGoogleUser)', [
+                    'email' => $googleUser->getEmail()
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'Aucun compte n\'existe avec cette adresse email. Veuillez d\'abord créer un compte sur notre plateforme.',
+                    'error_type' => 'user_not_found',
+                    'user_exists' => false
+                ];
             }
 
         } catch (\Exception $e) {
@@ -217,7 +253,7 @@ class GmailAuthService
     public static function getConfigurationInfo(): ?array
     {
         $config = GmailConfiguration::getActiveConfiguration();
-        
+
         if (!$config) {
             return null;
         }
@@ -228,5 +264,81 @@ class GmailAuthService
             'scopes' => $config->scopes,
             'redirect_uri' => $config->redirect_uri,
         ];
+    }
+
+    /**
+     * Vérifier si le profil d'un utilisateur est complètement configuré
+     */
+    private function isUserProfileComplete(User $user): bool
+    {
+        // Vérifier d'abord le flag profile_completed sur l'utilisateur
+        if (!$user->profile_completed) {
+            return false;
+        }
+
+        // Vérifier que l'email est vérifié
+        if (!$user->hasVerifiedEmail()) {
+            return false;
+        }
+
+        // Vérifier selon le type d'utilisateur
+        if ($user->is_professional) {
+            return $this->isProfessionalProfileComplete($user);
+        } else {
+            return $this->isClientProfileComplete($user);
+        }
+    }
+
+    /**
+     * Vérifier si le profil professionnel est complet
+     */
+    private function isProfessionalProfileComplete(User $user): bool
+    {
+        $profile = $user->professionalProfile;
+
+        if (!$profile) {
+            return false;
+        }
+
+        // Critères minimum pour un profil professionnel complet
+        $requiredFields = [
+            'first_name', 'last_name', 'email', 'phone',
+            'city', 'country', 'bio', 'title', 'profession'
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (empty($profile->$field)) {
+                return false;
+            }
+        }
+
+        // Vérifier le pourcentage de completion (minimum 80%)
+        return $profile->completion_percentage >= 80;
+    }
+
+    /**
+     * Vérifier si le profil client est complet
+     */
+    private function isClientProfileComplete(User $user): bool
+    {
+        $profile = $user->clientProfile;
+
+        if (!$profile) {
+            return false;
+        }
+
+        // Critères minimum pour un profil client complet
+        $requiredFields = [
+            'first_name', 'last_name', 'email', 'phone'
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (empty($profile->$field)) {
+                return false;
+            }
+        }
+
+        // Vérifier le pourcentage de completion (minimum 60%)
+        return $profile->completion_percentage >= 60;
     }
 }

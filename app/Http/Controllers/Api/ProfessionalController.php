@@ -38,6 +38,7 @@ class ProfessionalController extends Controller
                     }
                 }
 
+
                 $achievements = $profile->achievements;
                 $user =  $profile->user;
                 $services =$user->serviceOffers;
@@ -64,6 +65,7 @@ class ProfessionalController extends Controller
                     'title' => $profile->title,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
+                    'languages' => $profile->languages,
                     // Données de likes et views
                     'likes_count' => $profile->getTotalLikesAttribute(),
                     'views_count' => $profile->getTotalViewsAttribute(),

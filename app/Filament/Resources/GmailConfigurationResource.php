@@ -62,7 +62,6 @@ class GmailConfigurationResource extends Resource
                             ->label('Client Secret Google')
                             ->required()
                             ->password()
-                            ->revealable()
                             ->helperText('Obtenez cette valeur depuis la Google Cloud Console')
                             ->columnSpanFull(),
 

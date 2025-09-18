@@ -16,3 +16,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Route de test pour l'authentification Gmail
+Route::get('/test-gmail', function () {
+    return view('test-gmail');
+});
+
+// Routes web pour l'authentification Gmail (avec sessions)
+Route::prefix('auth/gmail')->group(function () {
+    Route::get('/redirect', [App\Http\Controllers\Api\GmailAuthController::class, 'webRedirect']);
+    Route::get('/callback', [App\Http\Controllers\Api\GmailAuthController::class, 'webCallback']);
+});

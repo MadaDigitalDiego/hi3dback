@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use App\Models\GmailConfiguration;
 
 /**
  * @group Gmail Authentication
@@ -138,6 +139,68 @@ class GmailAuthController extends Controller
                 'configuration' => null,
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Redirection Gmail pour les routes web (avec sessions)
+     */
+    public function webRedirect(): RedirectResponse|JsonResponse
+    {
+        try {
+            Log::info('Demande de redirection Gmail (web)');
+
+            $redirectUrl = $this->gmailAuthService->getRedirectUrl();
+
+            // Pour les routes web, on redirige directement
+            return redirect($redirectUrl);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la redirection Gmail (web)', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Callback Gmail pour les routes web (avec sessions)
+     */
+    public function webCallback(Request $request): RedirectResponse|JsonResponse
+    {
+        try {
+            Log::info('Callback Gmail reçu (web)', [
+                'query_params' => $request->query()
+            ]);
+
+            $result = $this->gmailAuthService->handleCallback();
+
+            // Pour les routes web, on redirige vers la page de test avec les résultats
+            $queryParams = http_build_query([
+                'success' => $result['success'] ? '1' : '0',
+                'message' => $result['message'],
+                'is_new_user' => $result['is_new_user'] ? '1' : '0',
+                'user_email' => $result['user']->email ?? '',
+                'token' => substr($result['token'] ?? '', 0, 20) . '...' // Tronquer le token pour la sécurité
+            ]);
+
+            return redirect('/test-gmail?' . $queryParams);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du callback Gmail (web)', [
+                'error' => $e->getMessage()
+            ]);
+
+            $queryParams = http_build_query([
+                'success' => '0',
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect('/test-gmail?' . $queryParams);
         }
     }
 }

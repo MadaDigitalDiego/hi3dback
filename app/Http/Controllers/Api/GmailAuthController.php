@@ -346,7 +346,7 @@ class GmailAuthController extends Controller
             config([
                 'services.google.client_id' => $config->client_id,
                 'services.google.client_secret' => $config->client_secret,
-                'services.google.redirect' => url('/auth/gmail/frontend-callback'), // URL web avec sessions
+                'services.google.redirect' => $config->redirect_uri, // Utiliser l'URI configurée dans Google Console
             ]);
 
             // Utiliser Socialite directement dans le contrôleur pour avoir accès aux sessions
@@ -386,7 +386,7 @@ class GmailAuthController extends Controller
             config([
                 'services.google.client_id' => $config->client_id,
                 'services.google.client_secret' => $config->client_secret,
-                'services.google.redirect' => url('/auth/gmail/frontend-callback'),
+                'services.google.redirect' => $config->redirect_uri, // Utiliser l'URI configurée dans Google Console
             ]);
 
             // Utiliser Socialite directement pour récupérer l'utilisateur

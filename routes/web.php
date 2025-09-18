@@ -27,5 +27,7 @@ Route::prefix('auth/gmail')->middleware('web')->group(function () {
     Route::get('/redirect', [App\Http\Controllers\Api\GmailAuthController::class, 'webRedirect']);
     Route::get('/callback', [App\Http\Controllers\Api\GmailAuthController::class, 'webCallback']);
     Route::get('/frontend-redirect', [App\Http\Controllers\Api\GmailAuthController::class, 'frontendRedirect']);
-    Route::get('/frontend-callback', [App\Http\Controllers\Api\GmailAuthController::class, 'frontendWebCallback']);
 });
+
+// Route web qui correspond à l'URI configurée dans Google Console
+Route::middleware('web')->get('/api/auth/gmail/callback', [App\Http\Controllers\Api\GmailAuthController::class, 'frontendWebCallback']);

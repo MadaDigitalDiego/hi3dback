@@ -44,7 +44,7 @@ Route::post('/password/reset', [UserController::class, 'resetPassword'])->name('
 // Routes d'authentification Gmail
 Route::prefix('auth/gmail')->group(function () {
     Route::get('/redirect', [GmailAuthController::class, 'redirect']);
-    Route::get('/callback', [GmailAuthController::class, 'callback']);
+    // Route::get('/callback', [GmailAuthController::class, 'callback']); // Désactivée - utilise la route web
     Route::get('/frontend-callback', [GmailAuthController::class, 'frontendCallback']);
     Route::get('/status', [GmailAuthController::class, 'status']);
 });

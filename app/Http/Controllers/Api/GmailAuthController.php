@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use App\Models\GmailConfiguration;
+use Laravel\Socialite\Facades\Socialite;
 
 /**
  * @group Gmail Authentication
@@ -150,10 +151,23 @@ class GmailAuthController extends Controller
         try {
             Log::info('Demande de redirection Gmail (web)');
 
-            $redirectUrl = $this->gmailAuthService->getRedirectUrl();
+            $config = GmailConfiguration::getActiveConfiguration();
 
-            // Pour les routes web, on redirige directement
-            return redirect($redirectUrl);
+            if (!$config || !$config->isComplete()) {
+                throw new \Exception('Configuration Gmail non trouvée ou incomplète. Veuillez configurer Gmail OAuth dans l\'administration.');
+            }
+
+            // Configurer dynamiquement Socialite avec notre configuration
+            config([
+                'services.google.client_id' => $config->client_id,
+                'services.google.client_secret' => $config->client_secret,
+                'services.google.redirect' => $config->redirect_uri,
+            ]);
+
+            // Utiliser Socialite directement dans le contrôleur pour avoir accès aux sessions
+            return Socialite::driver('google')
+                ->scopes($config->scopes)
+                ->redirect();
 
         } catch (\Exception $e) {
             Log::error('Erreur lors de la redirection Gmail (web)', [
@@ -177,7 +191,29 @@ class GmailAuthController extends Controller
                 'query_params' => $request->query()
             ]);
 
-            $result = $this->gmailAuthService->handleCallback();
+            $config = GmailConfiguration::getActiveConfiguration();
+
+            if (!$config || !$config->isComplete()) {
+                throw new \Exception('Configuration Gmail non trouvée ou incomplète.');
+            }
+
+            // Configurer dynamiquement Socialite avec notre configuration
+            config([
+                'services.google.client_id' => $config->client_id,
+                'services.google.client_secret' => $config->client_secret,
+                'services.google.redirect' => $config->redirect_uri,
+            ]);
+
+            // Utiliser Socialite directement pour récupérer l'utilisateur
+            $googleUser = Socialite::driver('google')->user();
+
+            Log::info('Utilisateur Google récupéré', [
+                'email' => $googleUser->getEmail(),
+                'name' => $googleUser->getName(),
+                'id' => $googleUser->getId()
+            ]);
+
+            $result = $this->gmailAuthService->processGoogleUser($googleUser);
 
             // Pour les routes web, on redirige vers la page de test avec les résultats
             $queryParams = http_build_query([

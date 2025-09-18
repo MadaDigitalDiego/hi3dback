@@ -23,7 +23,7 @@ Route::get('/test-gmail', function () {
 });
 
 // Routes web pour l'authentification Gmail (avec sessions)
-Route::prefix('auth/gmail')->group(function () {
+Route::prefix('auth/gmail')->middleware('web')->group(function () {
     Route::get('/redirect', [App\Http\Controllers\Api\GmailAuthController::class, 'webRedirect']);
     Route::get('/callback', [App\Http\Controllers\Api\GmailAuthController::class, 'webCallback']);
 });

@@ -171,6 +171,38 @@ class GmailAuthService
     }
 
     /**
+     * Traiter un utilisateur Google (pour les routes web)
+     */
+    public function processGoogleUser($googleUser): array
+    {
+        try {
+            Log::info('Traitement utilisateur Google', [
+                'email' => $googleUser->getEmail(),
+                'name' => $googleUser->getName(),
+                'id' => $googleUser->getId()
+            ]);
+
+            // Chercher un utilisateur existant
+            $user = User::where('email', $googleUser->getEmail())->first();
+
+            if ($user) {
+                // Utilisateur existant - connexion
+                return $this->loginExistingUser($user);
+            } else {
+                // Nouvel utilisateur - création
+                return $this->createNewUser($googleUser);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du traitement de l\'utilisateur Google', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new \Exception('Erreur lors de l\'authentification Gmail: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Vérifier si la configuration Gmail est disponible
      */
     public static function isConfigured(): bool

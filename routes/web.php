@@ -26,4 +26,6 @@ Route::get('/test-gmail', function () {
 Route::prefix('auth/gmail')->middleware('web')->group(function () {
     Route::get('/redirect', [App\Http\Controllers\Api\GmailAuthController::class, 'webRedirect']);
     Route::get('/callback', [App\Http\Controllers\Api\GmailAuthController::class, 'webCallback']);
+    Route::get('/frontend-redirect', [App\Http\Controllers\Api\GmailAuthController::class, 'frontendRedirect']);
+    Route::get('/frontend-callback', [App\Http\Controllers\Api\GmailAuthController::class, 'frontendWebCallback']);
 });

@@ -327,4 +327,118 @@ class GmailAuthController extends Controller
             return redirect('/test-gmail?' . $queryParams);
         }
     }
+
+    /**
+     * Redirection Gmail pour le frontend (avec sessions)
+     */
+    public function frontendRedirect(): RedirectResponse|JsonResponse
+    {
+        try {
+            Log::info('Demande de redirection Gmail frontend (web)');
+
+            $config = GmailConfiguration::getActiveConfiguration();
+
+            if (!$config || !$config->isComplete()) {
+                throw new \Exception('Configuration Gmail non trouvée ou incomplète. Veuillez configurer Gmail OAuth dans l\'administration.');
+            }
+
+            // Configurer dynamiquement Socialite avec notre configuration
+            config([
+                'services.google.client_id' => $config->client_id,
+                'services.google.client_secret' => $config->client_secret,
+                'services.google.redirect' => url('/auth/gmail/frontend-callback'), // URL web avec sessions
+            ]);
+
+            // Utiliser Socialite directement dans le contrôleur pour avoir accès aux sessions
+            return Socialite::driver('google')
+                ->scopes($config->scopes)
+                ->redirect();
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la redirection Gmail frontend (web)', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Callback Gmail pour le frontend (avec sessions)
+     */
+    public function frontendWebCallback(Request $request): RedirectResponse
+    {
+        try {
+            Log::info('Callback Gmail frontend reçu (web)', [
+                'query_params' => $request->query()
+            ]);
+
+            $config = GmailConfiguration::getActiveConfiguration();
+
+            if (!$config || !$config->isComplete()) {
+                throw new \Exception('Configuration Gmail non trouvée ou incomplète.');
+            }
+
+            // Configurer dynamiquement Socialite avec notre configuration
+            config([
+                'services.google.client_id' => $config->client_id,
+                'services.google.client_secret' => $config->client_secret,
+                'services.google.redirect' => url('/auth/gmail/frontend-callback'),
+            ]);
+
+            // Utiliser Socialite directement pour récupérer l'utilisateur
+            $googleUser = Socialite::driver('google')->user();
+
+            Log::info('Utilisateur Google récupéré (frontend)', [
+                'email' => $googleUser->getEmail(),
+                'name' => $googleUser->getName(),
+                'id' => $googleUser->getId()
+            ]);
+
+            $result = $this->gmailAuthService->processGoogleUser($googleUser);
+
+            // Construire l'URL de redirection vers le frontend
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+
+            if ($result['success']) {
+                // Succès - rediriger vers le frontend avec les données
+                $queryParams = http_build_query([
+                    'google_auth' => 'success',
+                    'token' => $result['token'],
+                    'user' => base64_encode(json_encode($result['user'])),
+                    'message' => $result['message']
+                ]);
+
+                return redirect($frontendUrl . '/login?' . $queryParams);
+            } else {
+                // Erreur - rediriger vers le frontend avec l'erreur
+                $queryParams = http_build_query([
+                    'google_auth' => 'error',
+                    'error_type' => $result['error_type'] ?? 'unknown',
+                    'message' => $result['message'],
+                    'user_exists' => $result['user_exists'] ?? false,
+                    'profile_completed' => $result['profile_completed'] ?? false
+                ]);
+
+                return redirect($frontendUrl . '/login?' . $queryParams);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du callback Gmail frontend (web)', [
+                'error' => $e->getMessage()
+            ]);
+
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $queryParams = http_build_query([
+                'google_auth' => 'error',
+                'error_type' => 'server_error',
+                'message' => 'Erreur lors de l\'authentification Gmail: ' . $e->getMessage()
+            ]);
+
+            return redirect($frontendUrl . '/login?' . $queryParams);
+        }
+    }
 }

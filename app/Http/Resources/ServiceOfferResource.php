@@ -62,6 +62,8 @@ class ServiceOfferResource extends JsonResource
             'popularity_score' => $this->getPopularityScore(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'price_unit' => $this->price_unit,
+            'associated_project' => $this->associated_project,
         ];
     }
 }

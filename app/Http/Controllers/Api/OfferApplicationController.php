@@ -54,6 +54,7 @@ class OfferApplicationController extends Controller
                     'created_at' => $application->created_at,
                     'is_invited' => $application->status === 'invited',
                     'status' => $application->status,
+                    'status_offer' => $offer->status,
                     'client' => [
                         'id' => $client->id,
                         'name' => $client->first_name . ' ' . $client->last_name,

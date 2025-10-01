@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\OpenOffer;
 use App\Models\Message;
-use App\Models\User; // Importez le modèle User
+use App\Models\User; 
+use App\Models\NotifMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -146,8 +147,19 @@ class MessageController extends Controller
 
             $message->load('sender', 'receiver'); // Charger aussi le receiver
 
+            // ✅ Enregistrement dans notif_messages avant l'envoi du mail
+            $notif = NotifMessage::create([
+                'message_id'     => $message->id,
+                'sender_id'  => $message->sender_id,
+                'receiver_id'=> $message->receiver_id,
+                'offer_id'       => $openOffer->id,
+                'title'          => 'Nouveau message concernant l\'offre: ' . $openOffer->title,
+                'is_read'   => false,
+            ]);
+
             // Envoi de la notification au receiver
             $receiverUser = User::find($receiverId);
+
             if ($receiverUser) {
                 Notification::send($receiverUser, new NewMessageNotification($message));
             }

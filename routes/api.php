@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\ProfessionalProfileViewController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\HeroImageController;
+use App\Http\Controllers\Api\NotifMessageController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -209,6 +210,12 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Routes pour les abonnements
     Route::post('/subscriptions', [SubscriptionController::class, 'createSubscription']);
     Route::post('/subscriptions/confirm', [SubscriptionController::class, 'confirmPayment']);
+
+    // Routes pour les notifications messages
+    Route::get('/notif-messages', [NotifMessageController::class, 'index']);
+    Route::put('/notif-messages/{id}/read', [NotifMessageController::class, 'markAsRead']);
+    Route::get('/notif-messages/count', [NotifMessageController::class, 'unreadCount']);
+    Route::delete('/notif-messages/{id}', [NotifMessageController::class, 'destroy']);
 });
 
 // Routes publiques pour les vues (pas besoin d'authentification)

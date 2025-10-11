@@ -38,7 +38,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'is_private' => 'sometimes|boolean',
             'status' => 'sometimes|string|in:published,draft,pending',
             'files' => 'sometimes|array', // Files array
-            'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
+            'files.*' => 'file|max:20480|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
             'associated_project' => 'sometimes|string|max:255',
             'what_you_get' => 'sometimes|string',
             'who_is_this_for' => 'sometimes|string',

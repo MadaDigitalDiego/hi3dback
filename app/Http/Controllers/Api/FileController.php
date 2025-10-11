@@ -31,7 +31,7 @@ class FileController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'files' => 'required|array|min:1',
-                'files.*' => 'required|file|max:' . (config('filesystems.file_management.max_upload_size', 500) * 1024),
+                'files.*' => 'required|file|max:' . (config('filesystems.file_management.max_upload_size', 500) * 10240),
                 'fileable_type' => 'nullable|string',
                 'fileable_id' => 'nullable|integer',
                 'options' => 'nullable|array',

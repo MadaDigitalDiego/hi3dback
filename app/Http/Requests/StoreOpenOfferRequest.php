@@ -37,7 +37,7 @@ class StoreOpenOfferRequest extends FormRequest
 
             // Fichiers joints
             'files' => 'nullable|array',
-            'files.*' => 'file|max:2048', // 2MB max par fichier
+            'files.*' => 'file|max:10240', // 2MB max par fichier
 
             // Paramètres de recrutement
             'recruitment_type' => 'required|in:company,personal',

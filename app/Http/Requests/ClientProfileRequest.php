@@ -42,7 +42,7 @@ class ClientProfileRequest extends FormRequest
             'company_size' => 'nullable|string|max:50',
             'website' => 'nullable|string|max:255',
             'social_links' => 'nullable|array',
-            'avatar' => 'nullable|file|image|max:2048',
+            'avatar' => 'nullable|file|image|max:10240',
         ];
     }
 

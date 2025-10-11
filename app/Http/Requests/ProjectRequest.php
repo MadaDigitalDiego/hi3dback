@@ -25,7 +25,7 @@ class ProjectRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validation pour l'upload d'image
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240', // Validation pour l'upload d'image
             'project_url' => 'nullable|url|max:255',
         ];
     }

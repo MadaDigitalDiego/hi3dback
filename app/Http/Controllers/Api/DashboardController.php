@@ -93,7 +93,7 @@ class DashboardController extends Controller
             return [
                 'stats' => [
                     'activeProjects' => 0,
-                    'earnings' => '0 €',
+                    'earnings' => '0',
                     'rating' => 0,
                     'completionRate' => 0,
                 ],
@@ -138,7 +138,7 @@ class DashboardController extends Controller
                 'id' => $offer->id,
                 'title' => $offer->title,
                 'description' => $offer->description,
-                'budget' => $offer->budget . ' €',
+                'budget' => $offer->budget,
                 'deadline' => $offer->deadline,
                 'status' => $offer->status,
                 'client' => [
@@ -203,7 +203,7 @@ class DashboardController extends Controller
         return [
             'stats' => [
                 'activeProjects' => $activeProjects,
-                'earnings' => $earnings . ' €',
+                'earnings' => $earnings,
                 'rating' => $rating,
                 'completionRate' => $completionRate,
             ],
@@ -228,7 +228,7 @@ class DashboardController extends Controller
             return [
                 'stats' => [
                     'activeProjects' => 0,
-                    'totalSpent' => '0 €',
+                    'totalSpent' => '0',
                     'connectedProfessionals' => 0,
                     'projectsCompleted' => 0,
                 ],
@@ -285,7 +285,7 @@ class DashboardController extends Controller
                 'id' => $offer->id,
                 'title' => $offer->title,
                 'description' => $offer->description,
-                'budget' => $offer->budget . ' €',
+                'budget' => $offer->budget,
                 'deadline' => $offer->deadline,
                 'status' => $offer->status,
                 'professional' => $professional,
@@ -328,7 +328,7 @@ class DashboardController extends Controller
             $activities[] = [
                 'id' => $completion->id,
                 'title' => 'Projet terminé: ' . $completion->title,
-                'description' => 'Budget: ' . $completion->budget . ' €',
+                'description' => 'Budget: ' . $completion->budget,
                 'timestamp' => $completion->updated_at->toISOString(),
                 'icon' => 'CheckCircle',
                 'iconBackground' => 'bg-green-100',
@@ -353,7 +353,7 @@ class DashboardController extends Controller
                     'title' => $profile->title ?? 'Artiste 3D',
                     'avatar' => $this->getUserAvatar($profile->user),
                     'rating' => $profile->rating ?? 0,
-                    'hourlyRate' => ($profile->hourly_rate ?? 0) . ' €/h',
+                    'hourlyRate' => ($profile->hourly_rate ?? 0),
                 ];
             });
 
@@ -363,7 +363,7 @@ class DashboardController extends Controller
         return [
             'stats' => [
                 'activeProjects' => $activeProjects,
-                'totalSpent' => $totalSpent . ' €',
+                'totalSpent' => $totalSpent,
                 'connectedProfessionals' => $connectedProfessionals,
                 'projectsCompleted' => $projectsCompleted,
             ],
@@ -502,7 +502,7 @@ class DashboardController extends Controller
             $activities[] = [
                 'id' => $completion->id,
                 'title' => 'Projet terminé: ' . $completion->title,
-                'description' => 'Budget: ' . $completion->budget . ' €',
+                'description' => 'Budget: ' . $completion->budget,
                 'timestamp' => $completion->updated_at->toISOString(),
                 'icon' => 'CheckCircle',
                 'iconBackground' => 'bg-green-100',

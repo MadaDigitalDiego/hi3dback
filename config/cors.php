@@ -53,9 +53,20 @@ return [
         'Origin',
         'Cache-Control',
         'Pragma',
+        'Content-Length',
+        'X-Content-Length',
+        'X-File-Size',
+        'X-File-Name',
+        'X-File-Type',
     ],
 
-    'exposed_headers' => [],
+    'exposed_headers' => [
+        'Content-Length',
+        'X-Content-Length',
+        'X-File-Size',
+        'X-File-Name',
+        'X-File-Type',
+    ],
 
     'max_age' => 0,
 

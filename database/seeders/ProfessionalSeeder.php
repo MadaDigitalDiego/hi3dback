@@ -120,6 +120,13 @@ class ProfessionalSeeder extends Seeder
         foreach ($professionals as $index => $professionalData) {
             $this->command->info("👤 Création du professionnel: {$professionalData['first_name']} {$professionalData['last_name']}");
 
+            // Vérifier si l'utilisateur existe déjà
+            $existingUser = User::where('email', $professionalData['email'])->first();
+            if ($existingUser) {
+                $this->command->info("⚠️  Utilisateur {$professionalData['email']} existe déjà, passage au suivant...");
+                continue;
+            }
+
             // Créer l'utilisateur
             $user = User::create([
                 'first_name' => $professionalData['first_name'],
@@ -132,8 +139,9 @@ class ProfessionalSeeder extends Seeder
                 'role' => 'user',
             ]);
 
-            // Créer le profil professionnel
-            $profile = ProfessionalProfile::create([
+            // Créer le profil professionnel (skip Meilisearch sync during seeding)
+            $profile = ProfessionalProfile::withoutSyncingToSearch(function () use ($professionalData, $user) {
+                return ProfessionalProfile::create([
                 'user_id' => $user->id,
                 'first_name' => $professionalData['first_name'],
                 'last_name' => $professionalData['last_name'],
@@ -162,7 +170,8 @@ class ProfessionalSeeder extends Seeder
                     'website' => "https://{$professionalData['first_name']}-{$professionalData['last_name']}.com",
                 ],
                 'completion_percentage' => 100
-            ]);
+                ]);
+            });
 
             // Créer 4 services pour chaque professionnel
             $this->createServicesForProfessional($user, $profile, $categories);
@@ -183,29 +192,31 @@ class ProfessionalSeeder extends Seeder
     private function createServicesForProfessional(User $user, ProfessionalProfile $profile, $categories)
     {
         $serviceTemplates = $this->getServiceTemplatesForProfession($profile->profession);
-        
+
         foreach ($serviceTemplates as $serviceData) {
             $this->command->info("   📋 Création du service: {$serviceData['title']}");
 
-            // Créer le service
-            $service = ServiceOffer::create([
-                'user_id' => $user->id,
-                'title' => $serviceData['title'],
-                'description' => $serviceData['description'],
-                'price' => $serviceData['price'],
-                'price_unit' => 'fixed',
-                'execution_time' => $serviceData['execution_time'],
-                'concepts' => $serviceData['concepts'],
-                'revisions' => $serviceData['revisions'],
-                'is_private' => false,
-                'status' => 'active',
-                'categories' => $serviceData['categories'],
-                'files' => null,
-                'views' => $this->faker->numberBetween(50, 500),
-                'likes' => $this->faker->numberBetween(5, 50),
-                'rating' => $this->faker->randomFloat(1, 4.0, 5.0),
-                'image' => $serviceData['image'],
-            ]);
+            // Créer le service (skip Meilisearch sync during seeding)
+            $service = ServiceOffer::withoutSyncingToSearch(function () use ($serviceData, $user) {
+                return ServiceOffer::create([
+                    'user_id' => $user->id,
+                    'title' => $serviceData['title'],
+                    'description' => $serviceData['description'],
+                    'price' => $serviceData['price'],
+                    'price_unit' => 'fixed',
+                    'execution_time' => $serviceData['execution_time'],
+                    'concepts' => $serviceData['concepts'],
+                    'revisions' => $serviceData['revisions'],
+                    'is_private' => false,
+                    'status' => 'active',
+                    'categories' => $serviceData['categories'],
+                    'files' => null,
+                    'views' => $this->faker->numberBetween(50, 500),
+                    'likes' => $this->faker->numberBetween(5, 50),
+                    'rating' => $this->faker->randomFloat(1, 4.0, 5.0),
+                    'image' => $serviceData['image'],
+                ]);
+            });
 
             // Créer 4 réalisations pour chaque service
             $this->createAchievementsForService($profile, $service, $serviceData);
@@ -222,17 +233,20 @@ class ProfessionalSeeder extends Seeder
         foreach ($achievementTemplates as $achievementData) {
             $this->command->info("      🏆 Création de la réalisation: {$achievementData['title']}");
 
-            Achievement::create([
-                'professional_profile_id' => $profile->id,
-                'title' => $achievementData['title'],
-                'description' => $achievementData['description'],
-                'category' => $serviceData['categories'][0] ?? 'Architecture',
-                'cover_photo' => $achievementData['cover_photo'],
-                'gallery_photos' => $achievementData['gallery_photos'],
-                'youtube_link' => $achievementData['youtube_link'] ?? null,
-                'status' => 'active',
-                'date_obtained' => $this->faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
-            ]);
+            // Créer la réalisation (skip Meilisearch sync during seeding)
+            Achievement::withoutSyncingToSearch(function () use ($achievementData, $profile, $serviceData) {
+                return Achievement::create([
+                    'professional_profile_id' => $profile->id,
+                    'title' => $achievementData['title'],
+                    'description' => $achievementData['description'],
+                    'category' => $serviceData['categories'][0] ?? 'Architecture',
+                    'cover_photo' => $achievementData['cover_photo'],
+                    'gallery_photos' => $achievementData['gallery_photos'],
+                    'youtube_link' => $achievementData['youtube_link'] ?? null,
+                    'status' => 'active',
+                    'date_obtained' => $this->faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
+                ]);
+            });
         }
     }
 

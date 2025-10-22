@@ -12,10 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('service_offers', function (Blueprint $table) {
-            $table->text('what_you_get')->nullable()->after('image');
-            $table->text('who_is_this_for')->nullable()->after('what_you_get');
-            $table->text('delivery_method')->nullable()->after('who_is_this_for');
-            $table->text('why_choose_me')->nullable()->after('delivery_method');
+            // These columns already exist in the original migration
+            // No additional columns need to be added
         });
     }
 
@@ -25,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('service_offers', function (Blueprint $table) {
-            $table->dropColumn(['what_you_get', 'who_is_this_for', 'delivery_method', 'why_choose_me']);
+            // These columns were part of the original migration
+            // No columns need to be dropped
         });
     }
 };

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ProfessionalProfile;
 // use App\Models\FreelanceProfile;
 use App\Models\ServiceOffer;
+use App\Models\Achievement;
 use App\Models\User;
 use App\Services\GlobalSearchService;
 use Illuminate\Http\Request;
@@ -684,6 +685,158 @@ class ExplorerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des statistiques de recherche: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Liste toutes les données actuellement indexées sur MeiliSearch.
+     * Retourne les documents de tous les index avec pagination.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function listIndexedData(Request $request): JsonResponse
+    {
+        try {
+            $startTime = microtime(true);
+
+            // Paramètres de pagination
+            $perPage = $request->input('per_page', 20);
+            $page = $request->input('page', 1);
+            $indexFilter = $request->input('index'); // Filtrer par index spécifique
+
+            // Vérifier que Meilisearch est configuré
+            $scoutDriver = config('scout.driver');
+            if ($scoutDriver !== 'meilisearch') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'MeiliSearch is not configured as the search driver',
+                ], 400);
+            }
+
+            $allIndexedData = collect();
+            $indexStats = [];
+
+            // Récupérer les données des profils professionnels
+            if (!$indexFilter || $indexFilter === 'professional_profiles_index') {
+                try {
+                    $professionals = ProfessionalProfile::where('completion_percentage', '>=', 80)
+                        ->get()
+                        ->map(function ($prof) {
+                            return [
+                                'id' => $prof->id,
+                                'type' => 'professional_profile',
+                                'index' => 'professional_profiles_index',
+                                'data' => $prof->toSearchableArray(),
+                                'created_at' => $prof->created_at,
+                                'updated_at' => $prof->updated_at,
+                            ];
+                        });
+
+                    $allIndexedData = $allIndexedData->concat($professionals);
+                    $indexStats['professional_profiles_index'] = [
+                        'count' => $professionals->count(),
+                        'index_name' => 'professional_profiles_index',
+                    ];
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de la récupération des profils professionnels: ' . $e->getMessage());
+                }
+            }
+
+            // Récupérer les données des offres de service
+            if (!$indexFilter || $indexFilter === 'service_offers_index') {
+                try {
+                    $services = ServiceOffer::where('is_private', false)
+                        ->get()
+                        ->map(function ($service) {
+                            return [
+                                'id' => $service->id,
+                                'type' => 'service_offer',
+                                'index' => 'service_offers_index',
+                                'data' => [
+                                    'id' => $service->id,
+                                    'title' => $service->title,
+                                    'description' => $service->description,
+                                    'price' => $service->price,
+                                    'status' => $service->status,
+                                    'is_private' => $service->is_private,
+                                    'categories' => $service->categories ?? [],
+                                    'rating' => $service->rating,
+                                    'views' => $service->getTotalViewsAttribute(),
+                                    'likes' => $service->getTotalLikesAttribute(),
+                                    'user_id' => $service->user_id,
+                                    'type' => 'service_offer',
+                                ],
+                                'created_at' => $service->created_at,
+                                'updated_at' => $service->updated_at,
+                            ];
+                        });
+
+                    $allIndexedData = $allIndexedData->concat($services);
+                    $indexStats['service_offers_index'] = [
+                        'count' => $services->count(),
+                        'index_name' => 'service_offers_index',
+                    ];
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de la récupération des offres de service: ' . $e->getMessage());
+                }
+            }
+
+            // Récupérer les données des réalisations
+            if (!$indexFilter || $indexFilter === 'achievements_index') {
+                try {
+                    $achievements = Achievement::where('status', '!=', 'draft')
+                        ->get()
+                        ->map(function ($achievement) {
+                            return [
+                                'id' => $achievement->id,
+                                'type' => 'achievement',
+                                'index' => 'achievements_index',
+                                'data' => $achievement->toSearchableArray(),
+                                'created_at' => $achievement->created_at,
+                                'updated_at' => $achievement->updated_at,
+                            ];
+                        });
+
+                    $allIndexedData = $allIndexedData->concat($achievements);
+                    $indexStats['achievements_index'] = [
+                        'count' => $achievements->count(),
+                        'index_name' => 'achievements_index',
+                    ];
+                } catch (\Exception $e) {
+                    Log::error('Erreur lors de la récupération des réalisations: ' . $e->getMessage());
+                }
+            }
+
+            // Appliquer la pagination
+            $total = $allIndexedData->count();
+            $offset = ($page - 1) * $perPage;
+            $paginatedData = $allIndexedData->slice($offset, $perPage)->values();
+
+            // Calculer le temps total d'exécution
+            $totalExecutionTime = microtime(true) - $startTime;
+
+            return response()->json([
+                'success' => true,
+                'data' => $paginatedData,
+                'pagination' => [
+                    'total' => $total,
+                    'per_page' => $perPage,
+                    'current_page' => $page,
+                    'last_page' => ceil($total / $perPage),
+                ],
+                'index_stats' => $indexStats,
+                'performance' => [
+                    'total_execution_time_ms' => round($totalExecutionTime * 1000, 2),
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des données indexées: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des données indexées: ' . $e->getMessage(),
             ], 500);
         }
     }

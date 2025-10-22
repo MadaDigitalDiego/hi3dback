@@ -33,9 +33,13 @@ class File extends Model
         'error_message',
         'metadata',
         'user_id',
+        'receiver_id',
         'fileable_type',
         'fileable_id',
         'message_id',
+        'is_shared',
+        'shared_at',
+        'accessed_at',
     ];
 
     /**
@@ -46,7 +50,10 @@ class File extends Model
     protected $casts = [
         'size' => 'integer',
         'metadata' => 'array',
+        'is_shared' => 'boolean',
         'swisstransfer_expires_at' => 'datetime',
+        'shared_at' => 'datetime',
+        'accessed_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -71,6 +78,14 @@ class File extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the user that received the file.
+     */
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
     }
 
     /**
@@ -158,5 +173,105 @@ class File extends Model
     public function scopeByStorageType($query, string $type)
     {
         return $query->where('storage_type', $type);
+    }
+
+    /**
+     * Check if user can access this file.
+     *
+     * @param User $user
+     * @return bool
+     */
+    public function canBeAccessedBy(User $user): bool
+    {
+        // Owner can always access
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        // Receiver can access
+        if ($this->receiver_id === $user->id) {
+            return true;
+        }
+
+        // Admin can access
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user can download this file.
+     *
+     * @param User $user
+     * @return bool
+     */
+    public function canBeDownloadedBy(User $user): bool
+    {
+        return $this->canBeAccessedBy($user);
+    }
+
+    /**
+     * Check if user can delete this file.
+     *
+     * @param User $user
+     * @return bool
+     */
+    public function canBeDeletedBy(User $user): bool
+    {
+        // Only owner can delete
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        // Admin can delete
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Mark file as accessed by user.
+     *
+     * @param User $user
+     * @return void
+     */
+    public function markAsAccessedBy(User $user): void
+    {
+        if ($this->canBeAccessedBy($user)) {
+            $this->update(['accessed_at' => now()]);
+        }
+    }
+
+    /**
+     * Share file with a receiver.
+     *
+     * @param User $receiver
+     * @return void
+     */
+    public function shareWith(User $receiver): void
+    {
+        $this->update([
+            'receiver_id' => $receiver->id,
+            'is_shared' => true,
+            'shared_at' => now(),
+        ]);
+    }
+
+    /**
+     * Unshare file from receiver.
+     *
+     * @return void
+     */
+    public function unshare(): void
+    {
+        $this->update([
+            'receiver_id' => null,
+            'is_shared' => false,
+            'shared_at' => null,
+        ]);
     }
 }

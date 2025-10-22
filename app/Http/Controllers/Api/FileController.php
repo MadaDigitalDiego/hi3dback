@@ -31,7 +31,7 @@ class FileController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'files' => 'required|array|min:1',
-                'files.*' => 'required|file|max:' . (config('filesystems.file_management.max_upload_size', 500) * 1024),
+                'files.*' => 'required|file|max:' . (config('filesystems.file_management.max_upload_size', 500) * 10240),
                 'fileable_type' => 'nullable|string',
                 'fileable_id' => 'nullable|integer',
                 'options' => 'nullable|array',
@@ -128,12 +128,46 @@ class FileController extends Controller
     {
         try {
             $user = $request->user();
-            
-            // Récupérer les fichiers associés au message
+
+            // Get the message to verify access
+            $message = \App\Models\Message::find($messageId);
+
+            if (!$message) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Message not found'
+                ], 404);
+            }
+
+            // Check if user is sender or receiver of the message
+            $isParticipant = $message->sender_id === $user->id || $message->receiver_id === $user->id;
+
+            if (!$isParticipant && !$user->isAdmin() && !$user->isSuperAdmin()) {
+                Log::warning('Unauthorized message access attempt', [
+                    'message_id' => $messageId,
+                    'user_id' => $user->id,
+                    'sender_id' => $message->sender_id,
+                    'receiver_id' => $message->receiver_id,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied'
+                ], 403);
+            }
+
+            // Get files associated with the message
+            // Files can be accessed by:
+            // 1. The file owner (user_id)
+            // 2. The file receiver (receiver_id)
+            // 3. The message sender
+            // 4. The message receiver
             $files = File::where('message_id', $messageId)
-                        ->where('user_id', $user->id)
                         ->where('status', File::STATUS_COMPLETED)
-                        ->get();
+                        ->get()
+                        ->filter(function ($file) use ($user) {
+                            return $file->canBeAccessedBy($user);
+                        });
 
             return response()->json([
                 'success' => true,
@@ -380,18 +414,7 @@ class FileController extends Controller
             return false;
         }
 
-        // Owner can always access
-        if ($file->user_id === $user->id) {
-            return true;
-        }
-
-        // Admin can access all files
-        if ($user->role === 'admin' || $user->role === 'super-admin') {
-            return true;
-        }
-
-        // Add more access rules as needed
-        return false;
+        return $file->canBeAccessedBy($user);
     }
 
     /**
@@ -403,16 +426,6 @@ class FileController extends Controller
             return false;
         }
 
-        // Owner can delete
-        if ($file->user_id === $user->id) {
-            return true;
-        }
-
-        // Admin can delete
-        if ($user->role === 'admin' || $user->role === 'super-admin') {
-            return true;
-        }
-
-        return false;
+        return $file->canBeDeletedBy($user);
     }
 }

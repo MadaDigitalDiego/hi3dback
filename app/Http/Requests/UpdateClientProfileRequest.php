@@ -34,7 +34,7 @@ class UpdateClientProfileRequest extends FormRequest
             'city' => 'sometimes|nullable|string|max:100',
             'country' => 'sometimes|nullable|string|max:100',
             'bio' => 'sometimes|nullable|string',
-            'avatar' => 'sometimes|nullable|file|image|max:2048', // Max 2MB
+            'avatar' => 'sometimes|nullable|file|image|max:10240', // Max 2MB
             'birth_date' => 'sometimes|nullable|date',
             'position' => 'sometimes|nullable|string|max:255',
             'company_size' => 'sometimes|nullable|string|max:50',

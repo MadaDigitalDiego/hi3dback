@@ -101,7 +101,7 @@ return [
 
     'file_management' => [
         'local_storage_limit' => env('FILE_LOCAL_STORAGE_LIMIT', 10), // MB
-        'max_upload_size' => env('FILE_MAX_UPLOAD_SIZE', 500), // MB
+        'max_upload_size' => env('FILE_MAX_UPLOAD_SIZE', 10240), // MB
         'allowed_mime_types' => explode(',', env('FILE_ALLOWED_MIME_TYPES', 'image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-rar-compressed,text/plain')),
     ],
 

@@ -743,7 +743,7 @@ class ProfileController extends Controller
 
         // Validation des données
         $request->validate([
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
             'profile_data' => 'nullable|string'
         ]);
 
@@ -879,7 +879,7 @@ class ProfileController extends Controller
 
             // Validate the request
             $request->validate([
-                'avatar' => 'required|file|mimes:jpeg,png,jpg,gif|max:2048',
+                'avatar' => 'required|file|mimes:jpeg,png,jpg,gif|max:10240',
             ]);
 
             $user = auth()->user();
@@ -938,7 +938,7 @@ class ProfileController extends Controller
 
             // Validate the request
             $request->validate([
-                'cover_photo' => 'required|file|mimes:jpeg,png,jpg,gif|max:5120',
+                'cover_photo' => 'required|file|mimes:jpeg,png,jpg,gif|max:10240',
             ]);
 
             $user = auth()->user();

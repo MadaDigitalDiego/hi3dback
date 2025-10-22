@@ -69,6 +69,7 @@ Route::get('/explorer/professionals', [ExplorerController::class, 'getProfession
 Route::get('/explorer/professionals/{id}', [ExplorerController::class, 'getProfessionalDetails']);
 Route::get('/explorer/services', [ExplorerController::class, 'getServices']);
 Route::get('/explorer/search-stats', [ExplorerController::class, 'getSearchStats']);
+Route::get('/explorer/indexed-data', [ExplorerController::class, 'listIndexedData']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/hierarchy', [CategoryController::class, 'getHierarchy']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);

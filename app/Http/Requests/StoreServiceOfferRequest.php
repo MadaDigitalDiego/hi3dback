@@ -38,7 +38,7 @@ class StoreServiceOfferRequest extends FormRequest
             'is_private' => 'boolean', // Expecting boolean for is_private
             'status' => 'required|string|in:published,draft,pending', // Status rule
             'files' => 'nullable|array', // Files array
-            'files.*' => 'file|max:10240|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
+            'files.*' => 'file|max:20480|mimes:jpeg,png,jpg,gif,svg,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar', // Each file validation (added webp)
             'associated_project' => 'nullable|string|max:255',
             'what_you_get' => 'nullable|string',
             'who_is_this_for' => 'nullable|string',

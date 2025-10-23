@@ -28,7 +28,7 @@ class FileController extends Controller
      */
     public function upload(Request $request): JsonResponse
     {
-        try {
+        // try {
             $validator = Validator::make($request->all(), [
                 'files' => 'required|array|min:1',
                 'files.*' => 'required|file|max:' . (config('filesystems.file_management.max_upload_size', 500) * 10240),
@@ -103,18 +103,18 @@ class FileController extends Controller
                 ], 201);
             }
 
-        } catch (Exception $e) {
-            Log::error('File upload error', [
-                'error' => $e->getMessage(),
-                'user_id' => $request->user()?->id,
-                'trace' => $e->getTraceAsString()
-            ]);
+        // } catch (Exception $e) {
+        //     Log::error('File upload error', [
+        //         'error' => $e->getMessage(),
+        //         'user_id' => $request->user()?->id,
+        //         'trace' => $e->getTraceAsString()
+        //     ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload failed: ' . $e->getMessage()
-            ], 500);
-        }
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Upload failed: ' . $e->getMessage()
+        //     ], 500);
+        // }
     }
 
     /**

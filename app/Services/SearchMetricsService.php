@@ -19,27 +19,27 @@ class SearchMetricsService
         try {
             $date = now()->format('Y-m-d');
             $hour = now()->format('H');
-            
+
             // Métriques générales
             $this->incrementMetric("searches:total:{$date}");
             $this->incrementMetric("searches:hourly:{$date}:{$hour}");
-            
+
             // Métriques par type de recherche
             $types = $options['types'] ?? ['professional_profiles', 'service_offers', 'achievements'];
             foreach ($types as $type) {
                 $this->incrementMetric("searches:type:{$type}:{$date}");
             }
-            
+
             // Métriques de performance
             $this->recordPerformanceMetric($executionTime, $date);
-            
+
             // Métriques de résultats
             $totalResults = $results['total_count'] ?? 0;
             $this->recordResultsMetric($totalResults, $date);
-            
+
             // Métriques de requêtes
             $this->recordQueryMetrics($query, $date);
-            
+
         } catch (\Exception $e) {
             Log::warning('Failed to record search metrics', [
                 'query' => $query,
@@ -55,14 +55,14 @@ class SearchMetricsService
     {
         try {
             $date = now()->format('Y-m-d');
-            
+
             $this->incrementMetric("suggestions:total:{$date}");
             $this->recordPerformanceMetric($executionTime, $date, 'suggestions');
-            
+
             // Enregistrer le nombre de suggestions retournées
             $count = count($suggestions);
             $this->addToAverageMetric("suggestions:count:{$date}", $count);
-            
+
         } catch (\Exception $e) {
             Log::warning('Failed to record suggestion metrics', [
                 'query' => $query,
@@ -79,10 +79,10 @@ class SearchMetricsService
         try {
             $date = now()->format('Y-m-d');
             $status = $hit ? 'hit' : 'miss';
-            
+
             $this->incrementMetric("cache:{$type}:{$status}:{$date}");
             $this->incrementMetric("cache:total:{$status}:{$date}");
-            
+
         } catch (\Exception $e) {
             Log::warning('Failed to record cache metrics', [
                 'type' => $type,
@@ -95,11 +95,11 @@ class SearchMetricsService
     /**
      * Get search metrics for a date range.
      */
-    public function getMetrics(string $startDate = null, string $endDate = null): array
+    public function getMetrics(?string $startDate = null, ?string $endDate = null): array
     {
         $startDate = $startDate ?? now()->subDays(7)->format('Y-m-d');
         $endDate = $endDate ?? now()->format('Y-m-d');
-        
+
         try {
             $metrics = [
                 'period' => [
@@ -111,7 +111,7 @@ class SearchMetricsService
                 'cache' => $this->getCacheMetrics($startDate, $endDate),
                 'popular_queries' => $this->getPopularQueries($startDate, $endDate),
             ];
-            
+
             return $metrics;
         } catch (\Exception $e) {
             Log::warning('Failed to get search metrics', [
@@ -132,7 +132,7 @@ class SearchMetricsService
             $now = now();
             $today = $now->format('Y-m-d');
             $currentHour = $now->format('H');
-            
+
             return [
                 'current_time' => $now->toISOString(),
                 'today_total' => $this->getMetricValue("searches:total:{$today}"),
@@ -158,7 +158,7 @@ class SearchMetricsService
             $cutoffDate = now()->subDays($this->retentionDays)->format('Y-m-d');
             $pattern = $this->prefix . '*';
             $keys = Cache::getRedis()->keys($pattern);
-            
+
             $deletedCount = 0;
             foreach ($keys as $key) {
                 // Extraire la date de la clé si possible
@@ -170,12 +170,12 @@ class SearchMetricsService
                     }
                 }
             }
-            
+
             Log::info('Cleaned old search metrics', [
                 'deleted_count' => $deletedCount,
                 'cutoff_date' => $cutoffDate
             ]);
-            
+
             return $deletedCount;
         } catch (\Exception $e) {
             Log::warning('Failed to clean old metrics', [
@@ -192,7 +192,7 @@ class SearchMetricsService
     {
         $fullKey = $this->prefix . $key;
         Cache::increment($fullKey, 1);
-        
+
         // Définir l'expiration pour éviter l'accumulation
         if (!Cache::has($fullKey . ':ttl')) {
             Cache::put($fullKey . ':ttl', true, now()->addDays($this->retentionDays));
@@ -215,7 +215,7 @@ class SearchMetricsService
     {
         $key = "results:count:{$date}";
         $this->addToAverageMetric($key, $totalResults);
-        
+
         // Catégoriser les résultats
         if ($totalResults === 0) {
             $this->incrementMetric("results:empty:{$date}");
@@ -233,10 +233,10 @@ class SearchMetricsService
     {
         $length = strlen($query);
         $words = str_word_count($query);
-        
+
         $this->addToAverageMetric("queries:length:{$date}", $length);
         $this->addToAverageMetric("queries:words:{$date}", $words);
-        
+
         // Catégoriser par longueur
         if ($length < 5) {
             $this->incrementMetric("queries:short:{$date}");
@@ -255,7 +255,7 @@ class SearchMetricsService
         $fullKey = $this->prefix . $key;
         $countKey = $fullKey . ':count';
         $sumKey = $fullKey . ':sum';
-        
+
         Cache::increment($countKey, 1);
         Cache::increment($sumKey, $value);
     }
@@ -276,7 +276,7 @@ class SearchMetricsService
         $fullKey = $this->prefix . $key;
         $count = Cache::get($fullKey . ':count', 0);
         $sum = Cache::get($fullKey . ':sum', 0);
-        
+
         return $count > 0 ? $sum / $count : 0;
     }
 
@@ -288,7 +288,7 @@ class SearchMetricsService
         $metrics = [];
         $current = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         while ($current <= $end) {
             $date = $current->format('Y-m-d');
             $metrics[$date] = [
@@ -301,7 +301,7 @@ class SearchMetricsService
             ];
             $current->addDay();
         }
-        
+
         return $metrics;
     }
 
@@ -313,7 +313,7 @@ class SearchMetricsService
         $metrics = [];
         $current = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         while ($current <= $end) {
             $date = $current->format('Y-m-d');
             $metrics[$date] = [
@@ -322,7 +322,7 @@ class SearchMetricsService
             ];
             $current->addDay();
         }
-        
+
         return $metrics;
     }
 
@@ -334,13 +334,13 @@ class SearchMetricsService
         $metrics = [];
         $current = Carbon::parse($startDate);
         $end = Carbon::parse($endDate);
-        
+
         while ($current <= $end) {
             $date = $current->format('Y-m-d');
             $hits = $this->getMetricValue("cache:total:hit:{$date}");
             $misses = $this->getMetricValue("cache:total:miss:{$date}");
             $total = $hits + $misses;
-            
+
             $metrics[$date] = [
                 'hits' => $hits,
                 'misses' => $misses,
@@ -348,7 +348,7 @@ class SearchMetricsService
             ];
             $current->addDay();
         }
-        
+
         return $metrics;
     }
 
@@ -370,7 +370,7 @@ class SearchMetricsService
         $hits = $this->getMetricValue("cache:total:hit:{$date}");
         $misses = $this->getMetricValue("cache:total:miss:{$date}");
         $total = $hits + $misses;
-        
+
         return $total > 0 ? ($hits / $total) * 100 : 0;
     }
 

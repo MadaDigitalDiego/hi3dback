@@ -33,6 +33,7 @@ return [
         'https://backhi3d.mada-digital.xyz',
         'https://dev-backend.hi-3d.com',
         'https://dev2.mada-digital.xyz',
+        'https://dev2.hi-3d.com',
         'http://localhost:3000',
         'http://localhost:3001',
     ],

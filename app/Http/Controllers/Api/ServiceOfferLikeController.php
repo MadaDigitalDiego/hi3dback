@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ServiceOfferResource;
 use App\Models\ServiceOffer;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ServiceOfferLikeController extends Controller
 {
@@ -135,5 +136,44 @@ class ServiceOfferLikeController extends Controller
                 'is_favorite' => $isFavorite
             ]
         ]);
+    }
+
+    /**
+     * List services liked by the authenticated user.
+     */
+    public function liked(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vous devez être connecté pour consulter vos services likés.'
+            ], 401);
+        }
+
+        try {
+            $serviceOffers = ServiceOffer::with(['user.freelanceProfile'])
+                ->whereHas('likers', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->latest()
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Services likés récupérés avec succès.',
+                'data' => [
+                    'total' => $serviceOffers->count(),
+                    'services' => ServiceOfferResource::collection($serviceOffers)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des services likés.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

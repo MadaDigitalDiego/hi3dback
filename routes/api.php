@@ -242,11 +242,15 @@ Route::prefix('service-offers/{serviceOffer}')->group(function () {
 });
 
 // Routes protégées pour les likes des service offers (nécessitent une authentification)
-Route::middleware('auth:sanctum')->prefix('service-offers/{serviceOffer}')->group(function () {
-    Route::post('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'like']);
-    Route::delete('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'unlike']);
-    Route::post('/like/toggle', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'toggle']);
-    Route::get('/like/status', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'status']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('service-offers/{serviceOffer}')->group(function () {
+        Route::post('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'like']);
+        Route::delete('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'unlike']);
+        Route::post('/like/toggle', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'toggle']);
+        Route::get('/like/status', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'status']);
+    });
+
+    Route::get('/service-offers/likes/me', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'liked']);
 });
 
 // Routes de recherche globale (publiques avec rate limiting)

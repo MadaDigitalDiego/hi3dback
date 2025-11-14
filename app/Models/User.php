@@ -32,6 +32,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'stripe_customer_id',
+        'stripe_payment_method_id',
+        'billing_address',
+        'trial_ends_at',
         'is_professional', // Ajout pour distinguer le type d'utilisateur
         'email_verified_at', // Pour la vérification d'email
         'profile_completed', // Pour indiquer si le profil a été complété
@@ -63,6 +66,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_completed' => 'boolean',
         'google2fa_enabled' => 'boolean',
         'google2fa_enabled_at' => 'datetime',
+        'billing_address' => 'array',
+        'trial_ends_at' => 'datetime',
     ];
 
     /**
@@ -269,5 +274,100 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('favoritable_type', get_class($model))
             ->where('favoritable_id', $model->id)
             ->exists();
+    }
+
+    /**
+     * Get the user's subscriptions.
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Get the user's active subscription.
+     */
+    public function currentSubscription()
+    {
+        return $this->subscriptions()
+            ->where('stripe_status', 'active')
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * Get the user's invoices.
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get the coupons used by this user.
+     */
+    public function coupons(): BelongsToMany
+    {
+        return $this->belongsToMany(Coupon::class, 'coupon_user')
+            ->withPivot('subscription_id', 'discount_amount', 'used_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the user's payment methods.
+     */
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(PaymentMethod::class);
+    }
+
+    /**
+     * Check if the user is premium (has active subscription).
+     */
+    public function isPremium(): bool
+    {
+        $subscription = $this->currentSubscription();
+        return $subscription && $subscription->isActive();
+    }
+
+    /**
+     * Check if the user is on trial.
+     */
+    public function isOnTrial(): bool
+    {
+        return $this->trial_ends_at && $this->trial_ends_at->isFuture();
+    }
+
+    /**
+     * Get the user's plan limits.
+     */
+    public function getPlanLimits(): array
+    {
+        $subscription = $this->currentSubscription();
+        if (!$subscription) {
+            // Return free plan limits
+            return config('subscription.plans.free.limits', []);
+        }
+        return $subscription->plan->limits ?? [];
+    }
+
+    /**
+     * Check if the user can perform an action based on plan limits.
+     */
+    public function canPerformAction(string $action): bool
+    {
+        $limits = $this->getPlanLimits();
+        if (!isset($limits[$action])) {
+            return true; // No limit set
+        }
+
+        // Get the current count for this action
+        $count = match($action) {
+            'service_offers' => $this->serviceOffers()->count(),
+            'open_offers' => $this->attributedOpenOffers()->count(),
+            default => 0,
+        };
+
+        return $count < $limits[$action];
     }
 }

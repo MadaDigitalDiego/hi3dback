@@ -26,6 +26,11 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\HeroImageController;
 use App\Http\Controllers\Api\NotifMessageController;
+use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\PaymentMethodController;
+use App\Http\Controllers\Api\UsageController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -35,6 +40,9 @@ Route::get('/ping', function (Request $request) {
 Route::get('/health-check', function () {
     return response()->json(['message' => 'API is working', 'status' => 'success'], 200);
 });
+
+// Route pour les webhooks Stripe (sans authentification)
+Route::post('/webhooks/stripe', [WebhookController::class, 'handleWebhook']);
 
 // Routes d'authentification
 Route::post('/register', [UserController::class, 'register']);
@@ -209,8 +217,45 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::put('/profile/new/availability', [NewProfileController::class, 'updateAvailability']);
 
     // Routes pour les abonnements
-    Route::post('/subscriptions', [SubscriptionController::class, 'createSubscription']);
-    Route::post('/subscriptions/confirm', [SubscriptionController::class, 'confirmPayment']);
+    Route::prefix('subscriptions')->group(function () {
+        Route::get('/plans', [SubscriptionController::class, 'getPlans']);
+        Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
+        Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+        Route::post('/', [SubscriptionController::class, 'createSubscription']);
+        Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription']);
+        Route::post('/resume', [SubscriptionController::class, 'resumeSubscription']);
+    });
+
+    // Routes pour les coupons
+    Route::prefix('coupons')->group(function () {
+        Route::get('/available', [CouponController::class, 'getAvailableCoupons']);
+        Route::get('/{code}', [CouponController::class, 'getCoupon']);
+        Route::post('/apply', [CouponController::class, 'applyCoupon']);
+        Route::post('/remove', [CouponController::class, 'removeCoupon']);
+    });
+
+    // Routes pour les factures
+    Route::prefix('invoices')->group(function () {
+        Route::get('/', [InvoiceController::class, 'getInvoices']);
+        Route::get('/stats', [InvoiceController::class, 'getStatistics']);
+        Route::get('/{id}', [InvoiceController::class, 'getInvoice']);
+        Route::get('/{id}/download', [InvoiceController::class, 'downloadInvoice']);
+    });
+
+    // Routes pour les méthodes de paiement
+    Route::prefix('payment-methods')->group(function () {
+        Route::get('/', [PaymentMethodController::class, 'getPaymentMethods']);
+        Route::post('/', [PaymentMethodController::class, 'addPaymentMethod']);
+        Route::put('/{id}', [PaymentMethodController::class, 'updatePaymentMethod']);
+        Route::delete('/{id}', [PaymentMethodController::class, 'deletePaymentMethod']);
+    });
+
+    // Routes pour le suivi d'utilisation
+    Route::prefix('usage')->group(function () {
+        Route::get('/stats', [UsageController::class, 'getUsageStats']);
+        Route::get('/can-perform/{feature}', [UsageController::class, 'canPerformAction']);
+        Route::get('/percentage/{feature}', [UsageController::class, 'getUsagePercentage']);
+    });
 
     // Routes pour les notifications messages
     Route::get('/notif-messages', [NotifMessageController::class, 'index']);

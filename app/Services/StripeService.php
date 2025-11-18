@@ -14,7 +14,7 @@ class StripeService
 
     public function __construct()
     {
-        $this->stripe = new StripeClient(config('stripe.secret'));
+        $this->stripe = new StripeClient(config('services.stripe.secret'));
     }
 
     /**

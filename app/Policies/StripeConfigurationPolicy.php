@@ -8,6 +8,14 @@ use App\Models\StripeConfiguration;
 class StripeConfigurationPolicy
 {
     /**
+     * Détermine si l'utilisateur peut voir la liste des configurations Stripe
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->is_admin ?? false;
+    }
+
+    /**
      * Détermine si l'utilisateur peut voir la configuration Stripe
      */
     public function view(User $user): bool

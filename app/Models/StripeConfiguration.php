@@ -29,10 +29,9 @@ class StripeConfiguration extends Model
         'deleted_at' => 'datetime',
     ];
 
-    protected $hidden = [
-        'secret_key',
-        'webhook_secret',
-    ];
+    // Note: Les champs sensibles ne sont pas cachés ici car Filament en a besoin pour l'édition
+    // Ils sont cachés dans les réponses API via le contrôleur
+    protected $hidden = [];
 
     /**
      * Récupère la configuration Stripe active

@@ -62,16 +62,20 @@ class StripeConfigurationResource extends Resource
 
                         Forms\Components\TextInput::make('secret_key')
                             ->label('Clé secrète (sk_...)')
-                            ->required()
+                            ->required(fn (string $operation) => $operation === 'create')
                             ->password()
                             ->placeholder('sk_test_...')
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->helperText(fn (string $operation) => $operation === 'edit' ? 'Laissez vide pour conserver la clé existante' : null)
                             ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('webhook_secret')
                             ->label('Secret Webhook (whsec_...)')
-                            ->required()
+                            ->required(fn (string $operation) => $operation === 'create')
                             ->password()
                             ->placeholder('whsec_...')
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->helperText(fn (string $operation) => $operation === 'edit' ? 'Laissez vide pour conserver le secret existant' : null)
                             ->columnSpanFull(),
                     ]),
             ]);

@@ -16,5 +16,7 @@ class EditStripeConfiguration extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+
 }
 

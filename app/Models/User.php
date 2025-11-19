@@ -42,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google2fa_secret',
         'google2fa_enabled',
         'google2fa_enabled_at',
+        'is_admin', // Pour les permissions Filament
     ];
 
     /**

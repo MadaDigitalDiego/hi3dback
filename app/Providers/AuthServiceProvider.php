@@ -4,7 +4,9 @@ namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
 use App\Models\File;
+use App\Models\StripeConfiguration;
 use App\Policies\FilePolicy;
+use App\Policies\StripeConfigurationPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -16,6 +18,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         File::class => FilePolicy::class,
+        StripeConfiguration::class => StripeConfigurationPolicy::class,
     ];
 
     /**

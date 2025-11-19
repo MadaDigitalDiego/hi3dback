@@ -23,7 +23,7 @@ class StripeConfigurationResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Configurations Stripe';
 
-    protected static ?string $navigationGroup = 'Paiements';
+    protected static ?string $navigationGroup = 'Outils d\'administration';
 
     public static function form(Form $form): Form
     {

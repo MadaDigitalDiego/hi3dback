@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Subscription;
 use App\Models\Invoice;
+use App\Models\StripeConfiguration;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,8 @@ class WebhookController extends Controller
 
     public function __construct()
     {
-        $this->stripe = new StripeClient(config('services.stripe.secret'));
+        $secretKey = StripeConfiguration::getSecretKey() ?? config('services.stripe.secret');
+        $this->stripe = new StripeClient($secretKey);
     }
 
     /**
@@ -27,7 +29,7 @@ class WebhookController extends Controller
     {
         $payload = $request->getContent();
         $sig_header = $request->header('Stripe-Signature');
-        $endpoint_secret = config('services.stripe.webhook_secret');
+        $endpoint_secret = StripeConfiguration::getWebhookSecret() ?? config('services.stripe.webhook_secret');
 
         try {
             $event = Event::constructFrom(

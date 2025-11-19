@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\Subscription;
+use App\Models\StripeConfiguration;
 use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
 
@@ -14,7 +15,9 @@ class StripeService
 
     public function __construct()
     {
-        $this->stripe = new StripeClient(config('services.stripe.secret'));
+        // Récupère la clé secrète depuis la base de données ou la config
+        $secretKey = StripeConfiguration::getSecretKey() ?? config('services.stripe.secret');
+        $this->stripe = new StripeClient($secretKey);
     }
 
     /**

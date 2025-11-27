@@ -62,10 +62,29 @@ class StripeService
         try {
             $customerId = $this->getOrCreateCustomer($user);
 
+            // Determine the correct Stripe price ID to use for this plan
+            $priceId = null;
+
+            // Legacy field
+            if (!empty($plan->stripe_price_id)) {
+                $priceId = $plan->stripe_price_id;
+            }
+
+            // Prefer explicit monthly/yearly IDs when available
+            if ($plan->interval === 'month' && !empty($plan->stripe_price_id_monthly)) {
+                $priceId = $plan->stripe_price_id_monthly;
+            } elseif ($plan->interval === 'year' && !empty($plan->stripe_price_id_yearly)) {
+                $priceId = $plan->stripe_price_id_yearly;
+            }
+
+            if (!$priceId) {
+                throw new \Exception('Plan is not configured with a Stripe price ID.');
+            }
+
             $params = [
                 'customer' => $customerId,
                 'items' => [
-                    ['price' => $plan->stripe_price_id],
+                    ['price' => $priceId],
                 ],
                 'payment_behavior' => 'default_incomplete',
                 'expand' => ['latest_invoice.payment_intent'],

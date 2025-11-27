@@ -5,8 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PlanResource\Pages;
 use App\Filament\Resources\PlanResource\RelationManagers;
 use App\Models\Plan;
+use App\Services\StripeService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -80,7 +82,12 @@ class PlanResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('stripe_product_id')
                             ->maxLength(255)
-                            ->label('Stripe Product ID'),
+                            ->label('Stripe Product ID')
+                            ->helperText('Laisser vide et utiliser le bouton "Créer sur Stripe" pour créer automatiquement le produit.'),
+                        Forms\Components\TextInput::make('stripe_price_id')
+                            ->maxLength(255)
+                            ->label('Stripe Price ID (par défaut)')
+                            ->helperText('ID du prix utilisé pour les abonnements. Peut être rempli automatiquement via le back-office.'),
                         Forms\Components\TextInput::make('stripe_price_id_monthly')
                             ->maxLength(255)
                             ->label('Stripe Price ID (Monthly)'),
@@ -163,6 +170,27 @@ class PlanResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('syncStripe')
+                    ->label('Créer sur Stripe')
+                    ->icon('heroicon-o-credit-card')
+                    ->requiresConfirmation()
+                    ->action(function (Plan $record) {
+                        try {
+                            app(StripeService::class)->syncPlanWithStripe($record);
+
+                            Notification::make()
+                                ->title('Plan synchronisé avec Stripe')
+                                ->body('Le produit et le prix Stripe ont été créés ou mis à jour.')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Erreur lors de la synchronisation Stripe')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

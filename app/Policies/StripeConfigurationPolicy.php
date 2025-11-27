@@ -12,7 +12,9 @@ class StripeConfigurationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->is_admin ?? false;
+        // Autoriser les utilisateurs ayant un rôle d'admin (admin / super_admin)
+        // ainsi que l'ancien flag booléen is_admin pour compatibilité.
+        return $user->isAdmin() || ($user->is_admin ?? false);
     }
 
     /**
@@ -20,7 +22,7 @@ class StripeConfigurationPolicy
      */
     public function view(User $user): bool
     {
-        return $user->is_admin ?? false;
+        return $user->isAdmin() || ($user->is_admin ?? false);
     }
 
     /**
@@ -28,7 +30,7 @@ class StripeConfigurationPolicy
      */
     public function update(User $user): bool
     {
-        return $user->is_admin ?? false;
+        return $user->isAdmin() || ($user->is_admin ?? false);
     }
 
     /**
@@ -36,7 +38,7 @@ class StripeConfigurationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin ?? false;
+        return $user->isAdmin() || ($user->is_admin ?? false);
     }
 
     /**
@@ -44,7 +46,7 @@ class StripeConfigurationPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->is_admin ?? false;
+        return $user->isAdmin() || ($user->is_admin ?? false);
     }
 }
 

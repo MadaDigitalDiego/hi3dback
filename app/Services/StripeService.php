@@ -144,5 +144,60 @@ class StripeService
             throw new \Exception('Failed to retrieve subscription: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Create Stripe product & price for a plan if missing, and sync IDs.
+     *
+     * This allows creating the corresponding Product and Price directly
+     * depuis le back-office sans passer par le dashboard Stripe.
+     *
+     * @throws \Exception
+     */
+    public function syncPlanWithStripe(Plan $plan): Plan
+    {
+        try {
+            // 1) Créer le produit Stripe si manquant
+            if (! $plan->stripe_product_id) {
+                $product = $this->stripe->products->create([
+                    'name' => $plan->title ?? $plan->name,
+                    'description' => $plan->description,
+                    'metadata' => [
+                        'plan_id' => $plan->id,
+                        'user_type' => $plan->user_type,
+                    ],
+                ]);
+
+                $plan->stripe_product_id = $product->id;
+            }
+
+            // 2) Créer le prix Stripe si manquant
+            if (! $plan->stripe_price_id) {
+                // Stripe attend un montant en centimes et une devise ISO en minuscule
+                $unitAmount = (int) round(((float) $plan->price) * 100);
+
+                $price = $this->stripe->prices->create([
+                    'unit_amount' => $unitAmount,
+                    'currency' => 'eur', // à adapter si multi-devise
+                    'recurring' => [
+                        'interval' => $plan->interval,
+                        'interval_count' => $plan->interval_count,
+                    ],
+                    'product' => $plan->stripe_product_id,
+                    'metadata' => [
+                        'plan_id' => $plan->id,
+                        'user_type' => $plan->user_type,
+                    ],
+                ]);
+
+                $plan->stripe_price_id = $price->id;
+            }
+
+            $plan->save();
+
+            return $plan;
+        } catch (ApiErrorException $e) {
+            throw new \Exception('Failed to sync plan with Stripe: ' . $e->getMessage(), 0, $e);
+        }
+    }
 }
 

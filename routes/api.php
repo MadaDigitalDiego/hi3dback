@@ -45,6 +45,9 @@ Route::get('/health-check', function () {
 // Route pour les webhooks Stripe (sans authentification)
 Route::post('/webhooks/stripe', [WebhookController::class, 'handleWebhook']);
 
+// Routes publiques pour les plans (sans authentification)
+Route::get('/subscriptions/plans/public', [SubscriptionController::class, 'getPublicPlans']);
+
 // Routes d'authentification
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);

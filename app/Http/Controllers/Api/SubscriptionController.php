@@ -17,11 +17,28 @@ class SubscriptionController extends Controller
     public function __construct(StripeService $stripeService)
     {
         $this->stripeService = $stripeService;
-        $this->middleware('auth:sanctum');
+        $this->middleware('auth:sanctum')->except(['getPublicPlans']);
     }
 
     /**
-     * Get all available plans filtered by user type.
+     * Get all available plans (public - no authentication required).
+     * Returns all active plans for both user types.
+     */
+    public function getPublicPlans(): JsonResponse
+    {
+        $plans = Plan::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $plans,
+            'message' => 'All available plans',
+        ]);
+    }
+
+    /**
+     * Get all available plans filtered by user type (authenticated users).
      */
     public function getPlans(): JsonResponse
     {

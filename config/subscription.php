@@ -14,6 +14,10 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // Devise par défaut utilisée pour les prix Stripe (ex: EUR, USD)
+    // Utilisée par le StripeService pour créer les prix (en minuscule côté Stripe)
+    'currency' => env('SUBSCRIPTION_CURRENCY', 'EUR'),
+
     'plans' => [
         'free' => [
             'name' => 'Free',

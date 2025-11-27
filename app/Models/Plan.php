@@ -20,6 +20,7 @@ class Plan extends Model
         'stripe_price_id_monthly',
         'stripe_price_id_yearly',
         'price',
+        'yearly_price',
         'interval',
         'interval_count',
         'is_active',
@@ -34,6 +35,7 @@ class Plan extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'yearly_price' => 'decimal:2',
         'is_active' => 'boolean',
         'features' => 'array',
         'limits' => 'array',

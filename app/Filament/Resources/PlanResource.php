@@ -24,76 +24,104 @@ class PlanResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\Section::make('Plan Information')
-                    ->schema([
+	            ->schema([
+	                // Informations générales du plan
+		                Forms\Components\Section::make('Informations générales')
+	                    ->schema([
                         Forms\Components\TextInput::make('title')
                             ->required()
                             ->maxLength(255)
-                            ->label('Plan Title')
-                            ->helperText('Display title for the plan (e.g., "Professional Plan")'),
+                            ->label('Titre du plan')
+	                            ->helperText('Titre affiché pour ce plan (ex. "Offre Professionnelle").'),
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255)
-                            ->label('Plan Name')
-                            ->helperText('Internal name/slug (e.g., "pro", "enterprise")'),
+                            ->label('Nom technique')
+                            ->helperText('Identifiant interne/slug (ex. \"pro\", \"enterprise\").'),
                         Forms\Components\Select::make('user_type')
                             ->required()
                             ->options([
-                                'professional' => 'Professional',
+                                'professional' => 'Professionnel',
                                 'client' => 'Client',
                             ])
-                            ->label('User Type')
-                            ->helperText('Select the type of user this plan is for'),
-                        Forms\Components\Textarea::make('description')
+	                            ->label('Type d\'utilisateur')
+	                            ->helperText('Type d\'utilisateur ciblé par ce plan.'),
+	                        Forms\Components\Textarea::make('description')
+	                            ->label('Description')
+	                            ->helperText('Description marketing ou fonctionnelle du plan.')
                             ->columnSpanFull(),
-                        Forms\Components\TextInput::make('price')
+                        Forms\Components\Toggle::make('is_active')
                             ->required()
-                            ->numeric()
-                            ->prefix('€')
-                            ->label('Monthly Price'),
-                        Forms\Components\Select::make('interval')
-                            ->required()
-                            ->options([
-                                'month' => 'Monthly',
-                                'year' => 'Yearly',
-                                'week' => 'Weekly',
-                                'day' => 'Daily',
-                            ])
-                            ->default('month')
-                            ->label('Billing Interval'),
-                        Forms\Components\TextInput::make('interval_count')
-                            ->required()
-                            ->numeric()
-                            ->default(1)
-                            ->minValue(1)
-                            ->label('Interval Count')
-                            ->helperText('Number of intervals between billings (e.g., 1 for monthly, 3 for quarterly)'),
+                            ->label('Plan actif'),
                         Forms\Components\TextInput::make('sort_order')
                             ->numeric()
                             ->default(0)
-                            ->label('Display Order'),
-                        Forms\Components\Toggle::make('is_active')
-                            ->required()
-                            ->label('Active'),
+                            ->label('Ordre d\'affichage')
+                            ->helperText('Permet de trier les plans dans l\'interface.'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Stripe Configuration')
+	                // Tarification & facturation (référence pour Stripe)
+	                Forms\Components\Section::make('Tarification & facturation')
                     ->schema([
-                        Forms\Components\TextInput::make('stripe_product_id')
-                            ->maxLength(255)
-                            ->label('Stripe Product ID')
-                            ->helperText('Laisser vide et utiliser le bouton "Créer sur Stripe" pour créer automatiquement le produit.'),
-                        Forms\Components\TextInput::make('stripe_price_id')
-                            ->maxLength(255)
-                            ->label('Stripe Price ID (par défaut)')
-                            ->helperText('ID du prix utilisé pour les abonnements. Peut être rempli automatiquement via le back-office.'),
+                        Forms\Components\TextInput::make('price')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0.01)
+                            ->step(0.01)
+	                            ->prefix(config('subscription.currency', 'EUR') . ' ')
+		                            ->label('Prix mensuel de référence')
+		                            ->helperText('Montant mensuel (> 0) utilisé pour générer les prix Stripe mensuels et annuels.'),
+	                        Forms\Components\TextInput::make('yearly_price')
+	                            ->numeric()
+	                            ->minValue(0.01)
+	                            ->step(0.01)
+	                            ->prefix(config('subscription.currency', 'EUR') . ' ')
+		                            ->label('Prix annuel (optionnel)')
+		                            ->helperText('Si vide, le prix annuel Stripe sera calculé automatiquement (12 x prix mensuel).'),
+	                        Forms\Components\Select::make('interval')
+	                            ->required()
+	                            ->options([
+	                                'month' => 'Mensuel',
+	                                'year' => 'Annuel',
+	                            ])
+		                            ->default('month')
+		                            ->label('Période de facturation')
+		                            ->helperText('Actuellement seuls les plans mensuels et annuels sont supportés pour Stripe.'),
+	                        Forms\Components\TextInput::make('interval_count')
+	                            ->required()
+	                            ->numeric()
+		                            ->default(1)
+		                            ->minValue(1)
+		                            ->label('Nombre d\'intervalles')
+		                            ->helperText('Pour l\'instant, Stripe utilise toujours 1 (mensuel ou annuel). Laissez la valeur par défaut.'),
+                    ])->columns(2),
+
+		                // Configuration Stripe (avancée / générée automatiquement)
+		                Forms\Components\Section::make('Stripe (avancé)')
+	                    ->description('Ces champs sont remplis automatiquement lors de la synchronisation avec Stripe.')
+                    ->schema([
+	                        Forms\Components\TextInput::make('stripe_product_id')
+	                            ->maxLength(255)
+	                            ->label('Stripe Product ID')
+	                            ->readOnly()
+	                            ->helperText('Créé automatiquement via le bouton "Créer sur Stripe" ou la synchronisation automatique.'),
+	                        Forms\Components\TextInput::make('stripe_price_id')
+	                            ->maxLength(255)
+	                            ->label('Stripe Price ID (par défaut)')
+	                            ->readOnly()
+	                            ->helperText('Pointe en général vers le prix mensuel ou annuel selon la configuration du plan.'),
                         Forms\Components\TextInput::make('stripe_price_id_monthly')
                             ->maxLength(255)
-                            ->label('Stripe Price ID (Monthly)'),
+                            ->label('Stripe Price ID (mensuel)')
+                            ->readOnly(),
                         Forms\Components\TextInput::make('stripe_price_id_yearly')
                             ->maxLength(255)
-                            ->label('Stripe Price ID (Yearly)'),
+                            ->label('Stripe Price ID (annuel)')
+                            ->readOnly(),
+		                        Forms\Components\Toggle::make('auto_sync_to_stripe')
+	                            ->label('Créer / mettre à jour sur Stripe après sauvegarde')
+	                            ->helperText('Si activé, le produit et les prix Stripe seront créés ou mis à jour automatiquement après l\'enregistrement du plan.')
+	                            ->default(false),
                     ])->columns(1),
 
                 Forms\Components\Section::make('Plan Limits')

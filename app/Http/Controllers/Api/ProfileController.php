@@ -610,6 +610,11 @@ class ProfileController extends Controller
             $user = auth()->user();
 
             if ($user->is_professional) {
+                Log::info('updateProfile (pro) - données reçues', [
+                    'user_id' => $user->id,
+                    'payload' => $request->all(),
+                ]);
+
                 $profile = $user->professionalProfile ?? new ProfessionalProfile();
 
                 // Remplir les champs simples
@@ -620,6 +625,13 @@ class ProfileController extends Controller
 
                 // Gérer les champs de type tableau
                 $arrayFields = ['skills', 'languages', 'services_offered', 'social_links'];
+
+                Log::info('updateProfile (pro) - champs tableau bruts', [
+                    'skills' => $request->input('skills'),
+                    'languages' => $request->input('languages'),
+                    'services_offered' => $request->input('services_offered'),
+                    'social_links' => $request->input('social_links'),
+                ]);
 
                 foreach ($arrayFields as $field) {
                     if ($request->has($field)) {
@@ -664,8 +676,19 @@ class ProfileController extends Controller
             }
 
         } catch (\Exception $e) {
-            Log::error('Erreur mise à jour profil: '.$e->getMessage());
-            return response()->json(['message' => 'Erreur serveur'], 500);
+            Log::error('Erreur mise à jour profil', [
+                'message' => $e->getMessage(),
+                'user_id' => optional(auth()->user())->id,
+                'payload' => $request->all(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Erreur serveur',
+                'error' => $e->getMessage(),
+                'exception' => get_class($e),
+                'trace' => $e->getTrace(),
+            ], 500);
         }
     }
 

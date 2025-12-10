@@ -282,6 +282,24 @@ class UserController extends Controller
         }
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        try {
+            $user = $request->user();
+            $user->password = Hash::make($validated['password']);
+            $user->save();
+
+            return response()->json(['message' => 'Mot de passe mis à jour avec succès.'], 200);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la mise à jour du mot de passe pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la mise à jour du mot de passe.'], 500);
+        }
+    }
+
     public function user(Request $request): JsonResponse
     {
         try {

@@ -106,10 +106,12 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Routes utilisateur
     Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/user', [UserController::class, 'user']);
+    Route::put('/user/password', [UserController::class, 'changePassword']);
 
     // Routes de profil standardisées
     Route::get('/profile', [ProfileController::class, 'getProfile']);
     Route::put('/profile', [ProfileController::class, 'updateProfile']);
+    Route::delete('/profile', [ProfileController::class, 'deleteProfile']);
     Route::post('/profile/complete', [ProfileController::class, 'completeClientProfile']);
     Route::post('/profile/complete-profile', [ProfileController::class, 'completeProfile']);
     Route::get('/profile/completion', [ProfileController::class, 'getCompletionStatus']);

@@ -21,7 +21,7 @@ class OfferClosedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -30,9 +30,9 @@ class OfferClosedNotification extends Notification
         $url = $frontendUrl . '/dashboard/offers/' . $this->offer->id;
 
         return (new MailMessage)
-            ->subject('Votre offre a été clôturée')
+            ->subject('Une offre à laquelle vous participez a été clôturée')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('Votre offre "' . $this->offer->title . '" a été mise en statut "clôturée".')
+            ->line('L\'offre "' . $this->offer->title . '" à laquelle vous participez a été mise en statut "clôturée".')
             ->line('Les professionnels ne peuvent plus y postuler.')
             ->action('Voir l\'offre', $url)
             ->salutation('Cordialement,')
@@ -44,7 +44,7 @@ class OfferClosedNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'status' => $this->offer->status,
-            'message' => 'Votre offre a été clôturée.',
+            'message' => 'Une offre à laquelle vous participez a été clôturée.',
             'type' => 'offer_closed',
         ];
     }

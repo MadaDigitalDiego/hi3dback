@@ -5,10 +5,9 @@ namespace App\Notifications;
 use App\Models\OfferApplication;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class NewApplicationNotification extends Notification
+class InvitationDeclinedNotification extends Notification
 {
     use Queueable;
 
@@ -40,26 +39,17 @@ class NewApplicationNotification extends Notification
             ? $frontendUrl . '/dashboard/offers/' . $offer->id
             : $frontendUrl . '/dashboard/offers';
 
-        $applicantName = $profile
+        $professionalName = $profile
             ? trim(($profile->first_name ?? '') . ' ' . ($profile->last_name ?? ''))
             : 'Un professionnel';
 
-        $mail = (new MailMessage)
-            ->subject('Nouvelle candidature reçue pour votre offre')
+        return (new MailMessage)
+            ->subject('Invitation refusée par un professionnel')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line($applicantName . ' a soumis une nouvelle candidature pour votre offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.');
-
-        if (!empty($this->application->proposal)) {
-            $mail->line('Extrait de sa proposition :')
-                ->line(substr($this->application->proposal, 0, 200) . '...');
-        }
-
-        $mail->action('Voir la candidature', $url)
-            ->line('Vous pouvez consulter les détails de la candidature depuis votre tableau de bord.')
+            ->line($professionalName . ' a refusé votre invitation pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
+            ->action('Voir l\'offre', $url)
             ->salutation('Cordialement,')
             ->line(config('app.name'));
-
-        return $mail;
     }
 
     /**
@@ -70,8 +60,9 @@ class NewApplicationNotification extends Notification
         return [
             'application_id' => $this->application->id,
             'open_offer_id' => $this->application->open_offer_id,
-            'message' => 'Nouvelle candidature reçue pour votre offre.',
-            'type' => 'application_received',
+            'status' => $this->application->status,
+            'message' => 'Un professionnel a refusé votre invitation pour cette offre.',
+            'type' => 'invitation_declined',
         ];
     }
 }

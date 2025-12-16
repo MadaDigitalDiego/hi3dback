@@ -20,6 +20,7 @@ use App\Notifications\ApplicationStatusChangedNotification;
 use App\Notifications\OfferAssignedNotification;
 use App\Notifications\OfferClosedNotification;
 use App\Notifications\OfferCompletedNotification;
+use App\Notifications\InvitationDeclinedNotification;
 use App\Services\OfferMatchingService;
 
 
@@ -451,9 +452,18 @@ class OpenOfferController extends Controller
             $openOffer->status = 'closed';
             $openOffer->save();
 
-            // Notify the client that their offer has been closed
-            if ($openOffer->user) {
-                Notification::send($openOffer->user, new OfferClosedNotification($openOffer));
+            // Notify all professionals related to this offer that it has been closed
+            $applications = $openOffer->applications()->with('freelanceProfile.user')->get();
+
+            $professionalUsers = $applications
+                ->map(function ($application) {
+                    return $application->freelanceProfile ? $application->freelanceProfile->user : null;
+                })
+                ->filter()
+                ->unique('id');
+
+            foreach ($professionalUsers as $professionalUser) {
+                Notification::send($professionalUser, new OfferClosedNotification($openOffer));
             }
 
             return response()->json(['open_offer' => $openOffer, 'message' => 'Offre ouverte clôturée avec succès.']);
@@ -480,9 +490,11 @@ class OpenOfferController extends Controller
             $openOffer->status = 'completed';
             $openOffer->save();
 
-            // Notify the client that their offer has been marked as completed
-            if ($openOffer->user) {
-                Notification::send($openOffer->user, new OfferCompletedNotification($openOffer));
+            // Notify assigned professionals that the offer has been marked as completed
+            $assignedProfessionals = $openOffer->professionals()->get();
+
+            foreach ($assignedProfessionals as $professionalUser) {
+                Notification::send($professionalUser, new OfferCompletedNotification($openOffer));
             }
 
             return response()->json(['open_offer' => $openOffer, 'message' => 'Offre ouverte marquée comme complétée avec succès.']);
@@ -619,6 +631,11 @@ class OpenOfferController extends Controller
 
             $application->status = 'rejected';
             $application->save();
+
+            // Notify the client that the invited professional has declined the offer
+            if ($openOffer->user) {
+                Notification::send($openOffer->user, new InvitationDeclinedNotification($application));
+            }
 
             return response()->json(['application' => $application, 'message' => 'Offre refusée avec succès.'], 200);
         } catch (\Exception $e) {

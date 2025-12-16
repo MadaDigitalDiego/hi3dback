@@ -39,6 +39,10 @@ class StoreOpenOfferRequest extends FormRequest
             'files' => 'nullable|array',
             'files.*' => 'file|max:10240', // 2MB max par fichier
 
+                // Liens d'attachements externes (ex: Google Drive, Dropbox)
+                'attachment_links' => 'nullable|array',
+                'attachment_links.*' => 'url|max:2048',
+
             // Paramètres de recrutement
             'recruitment_type' => 'required|in:company,personal',
             'open_to_applications' => 'sometimes|boolean',

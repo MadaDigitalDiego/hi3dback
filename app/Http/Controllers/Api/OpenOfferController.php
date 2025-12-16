@@ -84,6 +84,11 @@ class OpenOfferController extends Controller
             $openOffer->files = json_encode($filePaths);
         }
 
+        // Liens d'attachements externes (interface "Brief")
+        if (isset($validatedData['attachment_links']) && is_array($validatedData['attachment_links'])) {
+            $openOffer->attachment_links = json_encode($validatedData['attachment_links']);
+        }
+
         $openOffer->save();
 
         // Appel du service de matching après la création de l'offre
@@ -137,6 +142,8 @@ class OpenOfferController extends Controller
             'description' => 'string',
             'files' => 'nullable|array',
             'files.*' => 'file|max:2048',
+            'attachment_links' => 'nullable|array',
+            'attachment_links.*' => 'url|max:2048',
             'recruitment_type' => 'in:company,personal',
             'open_to_applications' => 'boolean',
             'auto_invite' => 'boolean',
@@ -166,6 +173,13 @@ class OpenOfferController extends Controller
                     }
                 }
                 $validatedData['files'] = json_encode($filePaths);
+            }
+
+            // Normaliser les liens d'attachements en JSON
+            if (array_key_exists('attachment_links', $validatedData)) {
+                $validatedData['attachment_links'] = $validatedData['attachment_links'] !== null
+                    ? json_encode($validatedData['attachment_links'])
+                    : null;
             }
 
             // Stocker les compétences dans la colonne categories au lieu des catégories

@@ -23,6 +23,7 @@ class OpenOffer extends Model
         'website',
         'description',
         'files',
+        'attachment_links',
         'recruitment_type',
         'open_to_applications',
         'auto_invite',
@@ -33,6 +34,7 @@ class OpenOffer extends Model
     protected $casts = [
         'categories' => 'array', // Cast 'categories' to array
         'files' => 'array',      // Cast 'files' to array
+        'attachment_links' => 'array', // Cast attachment links to array
         'deadline' => 'date',
         'open_to_applications' => 'boolean',
         'auto_invite' => 'boolean',

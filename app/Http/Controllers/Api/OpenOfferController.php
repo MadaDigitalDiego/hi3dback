@@ -15,6 +15,11 @@ use App\Http\Requests\StoreOpenOfferRequest;
 use Illuminate\Support\Facades\Notification; // Import the notification class
 use App\Notifications\NewOpenOfferNotification;
 use App\Notifications\DirectOfferInvitationNotification;
+use App\Notifications\NewApplicationNotification;
+use App\Notifications\ApplicationStatusChangedNotification;
+use App\Notifications\OfferAssignedNotification;
+use App\Notifications\OfferClosedNotification;
+use App\Notifications\OfferCompletedNotification;
 use App\Services\OfferMatchingService;
 
 
@@ -228,6 +233,11 @@ class OpenOfferController extends Controller
                     $existingInvitedApplication->proposal = $validator->validated()['proposal'] ?? $existingInvitedApplication->proposal; // Keep existing proposal or update if provided
                     $existingInvitedApplication->save();
 
+                    // Notify the client that an invited professional has submitted an application
+                    if ($openOffer->user) {
+                        Notification::send($openOffer->user, new NewApplicationNotification($existingInvitedApplication));
+                    }
+
                     return response()->json(['application' => $existingInvitedApplication, 'message' => 'Invitation acceptée et candidature soumise avec succès.'], 200);
                 } catch (\Exception $e) {
                     Log::error('Erreur lors de la mise à jour de la candidature invitée: ' . $e->getMessage());
@@ -252,6 +262,11 @@ class OpenOfferController extends Controller
                         'proposal' => $validator->validated()['proposal'] ?? null,
                         'status' => 'pending',
                     ]);
+
+                    // Notify the client that a new application has been received
+                    if ($openOffer->user) {
+                        Notification::send($openOffer->user, new NewApplicationNotification($application));
+                    }
 
                     return response()->json(['application' => $application, 'message' => 'Candidature soumise avec succès.'], 201);
                 } catch (\Exception $e) {
@@ -330,6 +345,12 @@ class OpenOfferController extends Controller
             $validatedData = $validator->validated();
             $application->update($validatedData);
 
+            // Notify the professional about the change of status of their application
+            $professionalUser = $application->freelanceProfile ? $application->freelanceProfile->user : null;
+            if ($professionalUser) {
+                Notification::send($professionalUser, new ApplicationStatusChangedNotification($application));
+            }
+
             // if ($validatedData['status'] === 'accepted') {
             //     $openOffer->status = 'in_progress';
             //     $openOffer->save();
@@ -386,6 +407,12 @@ class OpenOfferController extends Controller
             $professionalUserId = $chosenApplication->freelanceProfile->user_id;
             $openOffer->professionals()->syncWithoutDetaching([$professionalUserId]);
 
+            // Notify the chosen professional that the offer has been assigned to them
+            $professionalUser = $chosenApplication->freelanceProfile ? $chosenApplication->freelanceProfile->user : null;
+            if ($professionalUser) {
+                Notification::send($professionalUser, new OfferAssignedNotification($openOffer, $chosenApplication));
+            }
+
 
             // Rejeter automatiquement toutes les autres candidatures acceptées
             OfferApplication::where('open_offer_id', $openOffer->id)
@@ -424,6 +451,11 @@ class OpenOfferController extends Controller
             $openOffer->status = 'closed';
             $openOffer->save();
 
+            // Notify the client that their offer has been closed
+            if ($openOffer->user) {
+                Notification::send($openOffer->user, new OfferClosedNotification($openOffer));
+            }
+
             return response()->json(['open_offer' => $openOffer, 'message' => 'Offre ouverte clôturée avec succès.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la clôture de l\'offre ouverte ID ' . $openOffer->id . ': ' . $e->getMessage());
@@ -447,6 +479,11 @@ class OpenOfferController extends Controller
         try {
             $openOffer->status = 'completed';
             $openOffer->save();
+
+            // Notify the client that their offer has been marked as completed
+            if ($openOffer->user) {
+                Notification::send($openOffer->user, new OfferCompletedNotification($openOffer));
+            }
 
             return response()->json(['open_offer' => $openOffer, 'message' => 'Offre ouverte marquée comme complétée avec succès.']);
         } catch (\Exception $e) {

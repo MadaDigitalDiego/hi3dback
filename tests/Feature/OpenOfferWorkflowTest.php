@@ -353,4 +353,161 @@ class OpenOfferWorkflowTest extends TestCase
             'status' => 'open',
         ]);
     }
+
+    /** @test */
+    public function client_can_reactivate_completed_offer_with_assigned_professional()
+    {
+        // Créer une candidature acceptée pour le premier professionnel
+        $application = OfferApplication::create([
+            'open_offer_id' => $this->openOffer->id,
+            'professional_profile_id' => $this->professional1->professionalProfile->id,
+            'proposal' => 'Proposition pour ce projet',
+            'status' => 'accepted',
+        ]);
+
+        // Attribuer l'offre au professionnel
+        $this->actingAs($this->client)
+            ->postJson("/api/open-offers/{$this->openOffer->id}/assign", [
+                'application_id' => $application->id,
+            ])
+            ->assertStatus(200);
+
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'in_progress',
+        ]);
+
+        // Marquer l'offre comme complétée
+        $this->actingAs($this->client)
+            ->putJson("/api/open-offers/{$this->openOffer->id}/complete")
+            ->assertStatus(200);
+
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'completed',
+        ]);
+
+        // Réactiver l'offre en continuant avec le professionnel attribué
+        $response = $this->actingAs($this->client)
+            ->putJson("/api/open-offers/{$this->openOffer->id}/reactivate", [
+                'mode' => 'continue_with_professional',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('mode', 'continue_with_professional')
+            ->assertJsonPath('open_offer.status', 'in_progress');
+
+        // L'offre doit être de nouveau en cours avec le même professionnel attribué
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'in_progress',
+        ]);
+
+        $this->assertDatabaseHas('offer_applications', [
+            'id' => $application->id,
+            'status' => 'accepted',
+        ]);
+
+        $this->assertDatabaseHas('open_offer_user', [
+            'open_offer_id' => $this->openOffer->id,
+            'user_id' => $this->professional1->id,
+        ]);
+    }
+
+    /** @test */
+    public function client_can_reopen_offer_to_all_and_reject_previous_applications()
+    {
+        // Créer deux candidatures acceptées
+        $application1 = OfferApplication::create([
+            'open_offer_id' => $this->openOffer->id,
+            'professional_profile_id' => $this->professional1->professionalProfile->id,
+            'proposal' => 'Proposition 1',
+            'status' => 'accepted',
+        ]);
+
+        $application2 = OfferApplication::create([
+            'open_offer_id' => $this->openOffer->id,
+            'professional_profile_id' => $this->professional2->professionalProfile->id,
+            'proposal' => 'Proposition 2',
+            'status' => 'accepted',
+        ]);
+
+        // Attribuer l'offre au premier professionnel
+        $this->actingAs($this->client)
+            ->postJson("/api/open-offers/{$this->openOffer->id}/assign", [
+                'application_id' => $application1->id,
+            ])
+            ->assertStatus(200);
+
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'in_progress',
+        ]);
+
+        // Clôturer l'offre
+        $this->actingAs($this->client)
+            ->putJson("/api/open-offers/{$this->openOffer->id}/close")
+            ->assertStatus(200);
+
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'closed',
+        ]);
+
+        // Réactiver l'offre en la rouvrant à tous
+        $response = $this->actingAs($this->client)
+            ->putJson("/api/open-offers/{$this->openOffer->id}/reactivate", [
+                'mode' => 'reopen_to_all',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('mode', 'reopen_to_all')
+            ->assertJsonPath('open_offer.status', 'open');
+
+        // L'offre doit être de nouveau ouverte aux candidatures
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'open',
+            'open_to_applications' => 1,
+        ]);
+
+        // Aucun professionnel ne doit rester attribué
+        $this->assertDatabaseMissing('open_offer_user', [
+            'open_offer_id' => $this->openOffer->id,
+        ]);
+
+        // Toutes les candidatures doivent être en statut "rejected"
+        $this->assertDatabaseHas('offer_applications', [
+            'id' => $application1->id,
+            'status' => 'rejected',
+        ]);
+
+        $this->assertDatabaseHas('offer_applications', [
+            'id' => $application2->id,
+            'status' => 'rejected',
+        ]);
+    }
+
+    /** @test */
+    public function reactivation_with_continue_mode_without_assigned_professional_falls_back_to_reopen_to_all()
+    {
+        // Placer l'offre en statut "closed" sans professionnel attribué
+        $this->openOffer->status = 'closed';
+        $this->openOffer->save();
+
+        $response = $this->actingAs($this->client)
+            ->putJson("/api/open-offers/{$this->openOffer->id}/reactivate", [
+                'mode' => 'continue_with_professional',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('mode', 'reopen_to_all')
+            ->assertJsonPath('open_offer.status', 'open');
+
+        $this->assertDatabaseHas('open_offers', [
+            'id' => $this->openOffer->id,
+            'status' => 'open',
+            'open_to_applications' => 1,
+        ]);
+    }
 }

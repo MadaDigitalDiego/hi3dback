@@ -161,6 +161,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/open-offers/{openOffer}/assign', [OpenOfferController::class, 'assignOfferToProfessional']);
     Route::put('/open-offers/{openOffer}/close', [OpenOfferController::class, 'close']);
     Route::put('/open-offers/{openOffer}/complete', [OpenOfferController::class, 'complete']);
+    Route::put('/open-offers/{openOffer}/reactivate', [OpenOfferController::class, 'reactivate']);
     Route::post('/open-offers/{openOffer}/reject', [OpenOfferController::class, 'rejectOffer']);
     Route::post('/open-offers/{openOffer}/invite', [OpenOfferController::class, 'inviteProfessional']);
 

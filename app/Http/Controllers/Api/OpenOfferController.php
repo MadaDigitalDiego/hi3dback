@@ -20,6 +20,8 @@ use App\Notifications\ApplicationStatusChangedNotification;
 use App\Notifications\OfferAssignedNotification;
 use App\Notifications\OfferClosedNotification;
 use App\Notifications\OfferCompletedNotification;
+use App\Notifications\OfferReactivatedWithProfessionalNotification;
+use App\Notifications\OfferReopenedToAllNotification;
 use App\Notifications\InvitationDeclinedNotification;
 use App\Services\OfferMatchingService;
 
@@ -501,6 +503,98 @@ class OpenOfferController extends Controller
         } catch (\Exception $e) {
             Log::error('Erreur lors du marquage comme complété de l\'offre ouverte ID ' . $openOffer->id . ': ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors du marquage comme complété de l\'offre ouverte.'], 500);
+        }
+    }
+
+    /**
+     * Reactivate a completed or closed open offer.
+     *
+     * Modes supportés :
+     * - continue_with_professional : l'offre revient en "in_progress" avec les professionnels déjà attribués,
+     *   les nouvelles candidatures sont désactivées.
+     * - reopen_to_all : l'offre revient en "open", toutes les candidatures deviennent "rejected"
+     *   et les professionnels attribués sont détachés.
+     *
+     * Si le mode continue_with_professional est demandé mais qu'aucun professionnel n'est attribué,
+     * alors l'offre est automatiquement rouverte à tous (reopen_to_all).
+     */
+    public function reactivate(Request $request, OpenOffer $openOffer): JsonResponse
+    {
+        if ($openOffer->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Non autorisé à réactiver cette offre.'], 403);
+        }
+
+        if (!in_array($openOffer->status, ['completed', 'closed'])) {
+            return response()->json([
+                'message' => 'Seules les offres complétées ou fermées peuvent être réactivées.'
+            ], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'mode' => 'required|in:continue_with_professional,reopen_to_all',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $mode = $validator->validated()['mode'];
+
+        try {
+            // Récupérer les professionnels actuellement attribués (s'il y en a)
+            $assignedProfessionals = $openOffer->professionals()->get();
+            $hasAssignedProfessionals = $assignedProfessionals->isNotEmpty();
+
+            // Cas 1 : continuer avec le ou les professionnels déjà attribués
+            if ($mode === 'continue_with_professional' && $hasAssignedProfessionals) {
+                $openOffer->status = 'in_progress';
+                $openOffer->open_to_applications = false;
+                $openOffer->save();
+
+                // Notifier les professionnels que la mission est réactivée avec eux
+                foreach ($assignedProfessionals as $professionalUser) {
+                    Notification::send($professionalUser, new OfferReactivatedWithProfessionalNotification($openOffer));
+                }
+
+                $openOffer->refresh();
+
+                return response()->json([
+                    'open_offer' => $openOffer,
+                    'mode' => 'continue_with_professional',
+                    'message' => 'Offre réactivée avec les professionnels attribués.',
+                ]);
+            }
+
+            // Cas 2 : réouverture à tous (mode explicite ou fallback si aucun pro attribué)
+            $openOffer->status = 'open';
+            $openOffer->open_to_applications = true;
+
+            // Détacher les professionnels attribués (s'il y en a)
+            if ($hasAssignedProfessionals) {
+                $openOffer->professionals()->detach();
+            }
+
+            // Toutes les candidatures de cette offre repassent en "rejected"
+            OfferApplication::where('open_offer_id', $openOffer->id)
+                ->update(['status' => 'rejected']);
+
+            $openOffer->save();
+
+            // Notifier les anciens professionnels attribués que l'offre est rouverte à tous
+            foreach ($assignedProfessionals as $professionalUser) {
+                Notification::send($professionalUser, new OfferReopenedToAllNotification($openOffer));
+            }
+
+            $openOffer->refresh();
+
+            return response()->json([
+                'open_offer' => $openOffer,
+                'mode' => 'reopen_to_all',
+                'message' => 'Offre réactivée et rouverte à tous les professionnels.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la réactivation de l\'offre ouverte ID ' . $openOffer->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la réactivation de l\'offre ouverte.'], 500);
         }
     }
 

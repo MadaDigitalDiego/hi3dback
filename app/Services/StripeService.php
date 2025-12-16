@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\StripeConfiguration;
 use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
+use Illuminate\Support\Facades\Log;
 
 class StripeService
 {
@@ -79,7 +80,7 @@ class StripeService
     /**
      * Create a subscription for a user.
      */
-    public function createSubscription(User $user, Plan $plan, ?string $couponCode = null): Subscription
+    public function createSubscription(User $user, Plan $plan, ?string $couponCode = null, ?string $billingPeriod = null, ?string $paymentMethodId = null): Subscription
     {
         try {
             $customerId = $this->getOrCreateCustomer($user);
@@ -87,20 +88,45 @@ class StripeService
             // Determine the correct Stripe price ID to use for this plan
             $priceId = null;
 
-            // Legacy field
-            if (!empty($plan->stripe_price_id)) {
-                $priceId = $plan->stripe_price_id;
-            }
+            // Use billing_period from request if provided, otherwise fall back to plan's interval
+            $interval = $billingPeriod === 'yearly' ? 'year' : ($billingPeriod === 'monthly' ? 'month' : $plan->interval);
 
-            // Prefer explicit monthly/yearly IDs when available
-            if ($plan->interval === 'month' && !empty($plan->stripe_price_id_monthly)) {
+            // Prefer explicit monthly/yearly IDs when available based on the determined interval
+            if ($interval === 'month' && !empty($plan->stripe_price_id_monthly)) {
                 $priceId = $plan->stripe_price_id_monthly;
-            } elseif ($plan->interval === 'year' && !empty($plan->stripe_price_id_yearly)) {
+            } elseif ($interval === 'year' && !empty($plan->stripe_price_id_yearly)) {
                 $priceId = $plan->stripe_price_id_yearly;
             }
 
+            // Fallback to legacy field if specific interval price not found
+            if (!$priceId && !empty($plan->stripe_price_id)) {
+                $priceId = $plan->stripe_price_id;
+            }
+
             if (!$priceId) {
-                throw new \Exception('Plan is not configured with a Stripe price ID.');
+                throw new \Exception('Plan is not configured with a Stripe price ID for the requested billing period.');
+            }
+
+            // Attach payment method to customer if provided
+            if ($paymentMethodId) {
+                try {
+                    // Attach the payment method to the customer
+                    $this->stripe->paymentMethods->attach($paymentMethodId, [
+                        'customer' => $customerId,
+                    ]);
+
+                    // Set as default payment method for the customer
+                    $this->stripe->customers->update($customerId, [
+                        'invoice_settings' => [
+                            'default_payment_method' => $paymentMethodId,
+                        ],
+                    ]);
+                } catch (ApiErrorException $e) {
+                    // If payment method is already attached, that's fine
+                    if (strpos($e->getMessage(), 'already been attached') === false) {
+                        throw new \Exception('Failed to attach payment method: ' . $e->getMessage());
+                    }
+                }
             }
 
             $params = [
@@ -108,15 +134,57 @@ class StripeService
                 'items' => [
                     ['price' => $priceId],
                 ],
-                'payment_behavior' => 'default_incomplete',
                 'expand' => ['latest_invoice.payment_intent'],
             ];
+
+            // If payment method is provided, use it and confirm immediately
+            if ($paymentMethodId) {
+                $params['default_payment_method'] = $paymentMethodId;
+                $params['payment_behavior'] = 'default_incomplete';
+            } else {
+                $params['payment_behavior'] = 'default_incomplete';
+            }
 
             if ($couponCode) {
                 $params['coupon'] = $couponCode;
             }
 
             $stripeSubscription = $this->stripe->subscriptions->create($params);
+
+            // If payment method is provided, try to confirm the payment intent
+            if ($paymentMethodId && isset($stripeSubscription->latest_invoice->payment_intent)) {
+                $paymentIntent = $stripeSubscription->latest_invoice->payment_intent;
+
+                // Handle different payment intent statuses
+                if ($paymentIntent && is_object($paymentIntent)) {
+                    $paymentIntentId = is_string($paymentIntent) ? $paymentIntent : $paymentIntent->id;
+                    $paymentIntentObj = $this->stripe->paymentIntents->retrieve($paymentIntentId, [
+                        'expand' => ['payment_method'],
+                    ]);
+
+                    // If payment intent needs payment method or confirmation
+                    if (in_array($paymentIntentObj->status, ['requires_payment_method', 'requires_confirmation'])) {
+                        try {
+                            // Update and confirm the payment intent
+                            $this->stripe->paymentIntents->update($paymentIntentId, [
+                                'payment_method' => $paymentMethodId,
+                            ]);
+
+                            // Confirm the payment intent
+                            $confirmedIntent = $this->stripe->paymentIntents->confirm($paymentIntentId);
+
+                            // Refresh the subscription to get updated status
+                            $stripeSubscription = $this->stripe->subscriptions->retrieve($stripeSubscription->id, [
+                                'expand' => ['latest_invoice.payment_intent'],
+                            ]);
+                        } catch (ApiErrorException $e) {
+                            // If confirmation fails (e.g., 3D Secure required), subscription remains incomplete
+                            // This is expected behavior - the frontend should handle 3D Secure
+                            Log::warning('Payment intent confirmation failed: ' . $e->getMessage());
+                        }
+                    }
+                }
+            }
 
             return Subscription::create([
                 'user_id' => $user->id,

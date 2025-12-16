@@ -101,14 +101,19 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'plan_id' => 'required|exists:plans,id',
             'coupon_code' => 'nullable|string',
+            'billing_period' => 'nullable|string|in:monthly,yearly',
+            'payment_method_id' => 'nullable|string',
         ]);
 
         try {
             $plan = Plan::findOrFail($validated['plan_id']);
+            $billingPeriod = $validated['billing_period'] ?? null;
             $subscription = $this->stripeService->createSubscription(
                 auth()->user(),
                 $plan,
-                $validated['coupon_code'] ?? null
+                $validated['coupon_code'] ?? null,
+                $billingPeriod,
+                $validated['payment_method_id'] ?? null
             );
 
             return response()->json([

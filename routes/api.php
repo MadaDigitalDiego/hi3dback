@@ -107,6 +107,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/user', [UserController::class, 'user']);
     Route::put('/user/password', [UserController::class, 'changePassword']);
+    Route::put('/user/account-type', [UserController::class, 'switchAccountType']);
 
     // Routes de profil standardisées
     Route::get('/profile', [ProfileController::class, 'getProfile']);

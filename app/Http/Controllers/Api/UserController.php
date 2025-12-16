@@ -300,6 +300,77 @@ class UserController extends Controller
         }
     }
 
+	    public function switchAccountType(Request $request): JsonResponse
+	    {
+	        $data = $request->validate([
+	            'is_professional' => 'required|boolean',
+	        ]);
+
+	        try {
+	            /** @var User|null $user */
+	            $user = $request->user();
+
+	            if (!$user) {
+	                return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+	            }
+
+	            $targetIsProfessional = (bool) $data['is_professional'];
+
+	            // Si l'utilisateur devient professionnel, s'assurer qu'un profil professionnel existe
+	            if ($targetIsProfessional) {
+	                if (!$user->professionalProfile) {
+	                    ProfessionalProfile::create([
+	                        'user_id' => $user->id,
+	                        'first_name' => $user->first_name,
+	                        'last_name' => $user->last_name,
+	                        'email' => $user->email,
+	                        'profession' => 'Non spécifié',
+	                        'years_of_experience' => 0,
+	                        'hourly_rate' => 0.00,
+	                        'availability_status' => 'available',
+	                        'rating' => 0.0,
+	                        'completion_percentage' => 20,
+	                        'skills' => json_encode([]),
+	                        'languages' => json_encode([]),
+	                        'services_offered' => json_encode([]),
+	                        'social_links' => json_encode([]),
+	                    ]);
+	                }
+	            } else {
+	                // Si l'utilisateur devient client, s'assurer qu'un profil client existe
+	                if (!$user->clientProfile) {
+	                    ClientProfile::create([
+	                        'user_id' => $user->id,
+	                        'first_name' => $user->first_name,
+	                        'last_name' => $user->last_name,
+	                        'email' => $user->email,
+	                        'completion_percentage' => 20,
+	                    ]);
+	                }
+	            }
+
+	            // Mettre à jour le type de compte sur l'utilisateur
+	            $user->is_professional = $targetIsProfessional;
+	            $user->save();
+
+	            // Rafraîchir les relations
+	            $user->refresh();
+
+	            $profileType = $user->is_professional ? 'professional' : 'client';
+	            $profileData = $user->is_professional ? $user->professionalProfile : $user->clientProfile;
+
+	            return response()->json([
+	                'message' => 'Type de compte mis à jour avec succès.',
+	                'user' => $user,
+	                'profile_type' => $profileType,
+	                'profile_data' => $profileData,
+	            ], 200);
+	        } catch (\Exception $e) {
+	            Log::error("Erreur lors du changement de type de compte pour l'utilisateur ID " . optional($request->user())->id . ': ' . $e->getMessage());
+	            return response()->json(['message' => 'Erreur lors du changement de type de compte.'], 500);
+	        }
+	    }
+
     public function user(Request $request): JsonResponse
     {
         try {

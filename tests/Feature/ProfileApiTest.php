@@ -336,4 +336,49 @@ class ProfileApiTest extends TestCase
                 'is_completed' => false
             ]);
     }
+
+	    /** @test */
+	    public function authenticated_user_can_delete_their_account()
+	    {
+	        // Cr e9er un utilisateur professionnel avec un profil associ e9
+	        $user = User::factory()->create([
+	            'is_professional' => true,
+	        ]);
+
+	        $profile = ProfessionalProfile::create([
+	            'user_id' => $user->id,
+	            'first_name' => 'John',
+	            'last_name' => 'Doe',
+	            'email' => 'john.doe@example.com',
+	        ]);
+
+	        // Authentifier l'utilisateur
+	        Sanctum::actingAs($user);
+
+	        // Supprimer le compte via l'API
+	        $response = $this->deleteJson('/api/profile');
+
+	        // V e9rifier la r e9ponse
+	        $response->assertStatus(200)
+	            ->assertJson([
+	                'message' => 'Compte supprim e9 avec succ e8s.',
+	            ]);
+
+	        // V e9rifier que l'utilisateur et son profil ont bien  e9t e9 supprim e9s (cascade)
+	        $this->assertDatabaseMissing('users', [
+	            'id' => $user->id,
+	        ]);
+
+	        $this->assertDatabaseMissing('professional_profiles', [
+	            'user_id' => $user->id,
+	        ]);
+	    }
+
+	    /** @test */
+	    public function unauthenticated_users_cannot_delete_their_account()
+	    {
+	        $response = $this->deleteJson('/api/profile');
+
+	        $response->assertStatus(401);
+	    }
 }

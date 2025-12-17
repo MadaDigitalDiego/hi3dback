@@ -137,11 +137,16 @@ class StripeService
                 'expand' => ['latest_invoice.payment_intent'],
             ];
 
-            // If payment method is provided, use it and confirm immediately
+            // Si une méthode de paiement est fournie, on demande à Stripe d'échouer
+            // immédiatement si le paiement ne peut pas être complété.
+            // Cela évite de créer des abonnements "incomplete" tout en renvoyant
+            // un succès côté API.
             if ($paymentMethodId) {
                 $params['default_payment_method'] = $paymentMethodId;
-                $params['payment_behavior'] = 'default_incomplete';
+                $params['payment_behavior'] = 'error_if_incomplete';
             } else {
+                // Cas sans méthode de paiement explicite : on garde le comportement
+                // historique pour ne pas casser d'autres flux éventuels.
                 $params['payment_behavior'] = 'default_incomplete';
             }
 
@@ -184,6 +189,31 @@ class StripeService
                         }
                     }
                 }
+            }
+
+            // Vérifier que la souscription Stripe est bien active (ou en période d'essai)
+            // avant de persister côté base de données. Cela évite de marquer en succès
+            // des paiements qui sont en réalité "incomplete" chez Stripe.
+            $finalStatus = $stripeSubscription->status;
+
+            $paymentIntentStatus = null;
+            if (isset($stripeSubscription->latest_invoice) && isset($stripeSubscription->latest_invoice->payment_intent)) {
+                $pi = $stripeSubscription->latest_invoice->payment_intent;
+                if (is_object($pi) && isset($pi->status)) {
+                    $paymentIntentStatus = $pi->status;
+                }
+            }
+
+            if (!in_array($finalStatus, ['active', 'trialing'], true)) {
+                Log::warning('Stripe subscription created but not active', [
+                    'subscription_id' => $stripeSubscription->id,
+                    'status' => $finalStatus,
+                    'payment_intent_status' => $paymentIntentStatus,
+                ]);
+
+                throw new \Exception(
+                    "Le paiement n'a pas pu être finalisé. Votre carte n'a pas été débitée. Veuillez réessayer ou utiliser un autre moyen de paiement."
+                );
             }
 
             return Subscription::create([

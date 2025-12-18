@@ -140,8 +140,8 @@ class PlanResource extends Resource
                         Forms\Components\TextInput::make('max_applications')
                             ->numeric()
                             ->nullable()
-                            ->label('Max Applications')
-                            ->helperText('Maximum number of applications (leave empty for unlimited)'),
+	                            ->label('Max candidates')
+	                            ->helperText('Maximum number of candidates (leave empty for unlimited)'),
                         Forms\Components\TextInput::make('max_messages')
                             ->numeric()
                             ->nullable()
@@ -180,7 +180,7 @@ class PlanResource extends Resource
                     ->label('Max Offers'),
                 Tables\Columns\TextColumn::make('max_applications')
                     ->numeric()
-                    ->label('Max Apps'),
+	                    ->label('Max candidates'),
                 Tables\Columns\TextColumn::make('max_messages')
                     ->numeric()
                     ->label('Max Messages'),

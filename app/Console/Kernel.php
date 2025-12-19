@@ -25,6 +25,9 @@ class Kernel extends ConsoleKernel
                  ->everySixHours()
                  ->withoutOverlapping()
                  ->runInBackground();
+
+        // Vérification quotidienne des abonnements (rappels et expiration)
+        $schedule->command('subscriptions:check-expired')->daily();
     }
 
     /**

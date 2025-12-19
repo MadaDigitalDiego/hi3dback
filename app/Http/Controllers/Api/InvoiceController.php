@@ -4,16 +4,20 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Services\InvoicePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
+	    protected InvoicePdfService $invoicePdfService;
+
+	    public function __construct(InvoicePdfService $invoicePdfService)
+	    {
+	        $this->middleware('auth:sanctum');
+	        $this->invoicePdfService = $invoicePdfService;
+	    }
 
     /**
      * Get user's invoices with pagination and filtering.
@@ -76,43 +80,54 @@ class InvoiceController extends Controller
      * Download invoice as PDF.
      */
     public function downloadInvoice(int $id): JsonResponse
-    {
-        $invoice = Invoice::findOrFail($id);
+	    {
+	        $invoice = Invoice::findOrFail($id);
 
-        // Check authorization
-        if ($invoice->user_id !== auth()->id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
-        }
+	        // Check authorization
+	        if ($invoice->user_id !== auth()->id()) {
+	            return response()->json([
+	                'success' => false,
+	                'message' => 'Unauthorized',
+	            ], 403);
+	        }
 
-        try {
-            // Generate PDF from Stripe
-            $pdfUrl = $invoice->pdf_url;
+	        try {
+	            $pdfUrl = $invoice->pdf_url;
 
-            if (!$pdfUrl) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'PDF not available',
-                ], 404);
-            }
+	            // Generate internal PDF if not already available
+	            if (!$pdfUrl) {
+	                $pdfUrl = $this->invoicePdfService->generateAndStore($invoice);
+	            }
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'pdf_url' => $pdfUrl,
-                    'invoice_number' => $invoice->invoice_number,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error downloading invoice: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to download invoice',
-            ], 500);
-        }
-    }
+	            if (!$pdfUrl) {
+	                // As a last resort, fall back to Stripe-hosted PDF stored in metadata
+	                $stripePdf = $invoice->metadata['stripe_invoice_pdf_url'] ?? null;
+	                if (!$stripePdf) {
+	                    return response()->json([
+	                        'success' => false,
+	                        'message' => 'PDF not available',
+	                    ], 404);
+	                }
+
+	                $pdfUrl = $stripePdf;
+	            }
+
+	            return response()->json([
+	                'success' => true,
+	                'data' => [
+	                    'url' => $pdfUrl,
+	                    'pdf_url' => $pdfUrl,
+	                    'invoice_number' => $invoice->invoice_number,
+	                ],
+	            ]);
+	        } catch (\Exception $e) {
+	            Log::error('Error downloading invoice: ' . $e->getMessage());
+	            return response()->json([
+	                'success' => false,
+	                'message' => 'Failed to download invoice',
+	            ], 500);
+	        }
+	    }
 
     /**
      * Get invoice statistics.

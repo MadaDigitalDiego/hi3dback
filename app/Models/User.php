@@ -5,6 +5,10 @@ namespace App\Models;
 use App\Models\ServiceOffer;
 use App\Models\ClientProfile;
 use App\Models\OfferEmailLog;
+use App\Models\OpenOffer;
+use App\Models\OfferApplication;
+use App\Models\Message;
+use App\Models\File;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\ProfessionalProfile;
 use Overtrue\LaravelLike\Traits\Liker;
@@ -12,6 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -200,15 +205,65 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->profile ? $this->profile->clientDetails : null;
     }
 
-    // Define the many-to-many relationship with OpenOffer
-    public function attributedOpenOffers(): BelongsToMany // You can name this relationship as you like
+    // Define the many-to-many relationship with OpenOffer (offers attributed to a professional)
+    public function attributedOpenOffers(): BelongsToMany
     {
-        return $this->belongsToMany(OpenOffer::class, 'open_offer_user'); // Second argument is the pivot table name
+        return $this->belongsToMany(OpenOffer::class, 'open_offer_user');
     }
 
+    /**
+     * Open offers created by the user (as a client).
+     */
+    public function openOffers(): HasMany
+    {
+        return $this->hasMany(OpenOffer::class);
+    }
+
+    /**
+     * Service offers created by the user (as a professional).
+     */
     public function serviceOffers(): HasMany
     {
         return $this->hasMany(ServiceOffer::class);
+    }
+
+    /**
+     * Applications submitted by the user through their professional profile.
+     */
+    public function offerApplications(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            OfferApplication::class,
+            ProfessionalProfile::class,
+            'user_id',                 // Foreign key on ProfessionalProfile
+            'professional_profile_id', // Foreign key on OfferApplication
+            'id',                      // Local key on User
+            'id'                       // Local key on ProfessionalProfile
+        );
+    }
+
+    /**
+     * Messages sent by the user.
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * All files owned by the user (used for portfolio/file limits).
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class);
+    }
+
+    /**
+     * Alias for files() used by legacy "portfolio_files" limits.
+     */
+    public function portfolioFiles(): HasMany
+    {
+        return $this->files();
     }
 
     public function offerEmailLogs()
@@ -340,35 +395,102 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the user's plan limits.
+     * Get the user's plan limits as an associative array.
+     *
+     * This is mainly a convenience helper for APIs; the canonical
+     * source of truth for a single feature is Plan::getLimit().
      */
     public function getPlanLimits(): array
     {
         $subscription = $this->currentSubscription();
-        if (!$subscription) {
-            // Return free plan limits
+
+        // Fallback to config-based "free" plan when there is no subscription
+        if (!$subscription || !$subscription->plan) {
             return config('subscription.plans.free.limits', []);
         }
-        return $subscription->plan->limits ?? [];
+
+        $plan = $subscription->plan;
+
+        $features = [
+            'service_offers',
+            'open_offers',
+            'applications',
+            'messages',
+            'portfolio_files', // legacy key, still exposed in some configs
+        ];
+
+        $limits = [];
+        foreach ($features as $feature) {
+            // Map public feature key to Plan::getLimit key
+            $planKey = match ($feature) {
+                'service_offers' => 'service_offers',
+                default => $feature,
+            };
+
+            $value = $plan->getLimit($planKey);
+            if ($value !== null) {
+                $limits[$feature] = $value;
+            }
+        }
+
+        // Also merge any raw JSON limits defined on the plan for backward compatibility
+        if (is_array($plan->limits)) {
+            $limits = array_merge($plan->limits, $limits);
+        }
+
+        return $limits;
     }
 
     /**
      * Check if the user can perform an action based on plan limits.
+     *
+     * Supported feature keys (aliases are accepted):
+     *  - service_offers / services
+     *  - open_offers
+     *  - applications
+     *  - messages
      */
     public function canPerformAction(string $action): bool
     {
-        $limits = $this->getPlanLimits();
-        if (!isset($limits[$action])) {
-            return true; // No limit set
+        // Normalise external aliases used by the API/frontend into internal keys
+        $normalized = match ($action) {
+            'services' => 'service_offers',
+            default => $action,
+        };
+
+        // Determine the limit for this feature
+        $subscription = $this->currentSubscription();
+        $limit = null;
+
+        if ($subscription && $subscription->plan) {
+            $planKey = match ($normalized) {
+                'service_offers' => 'service_offers',
+                default => $normalized,
+            };
+
+            $limit = $subscription->plan->getLimit($planKey);
+        } else {
+            // No active subscription: use configured free plan limits
+            $freeLimits = config('subscription.plans.free.limits', []);
+            if (isset($freeLimits[$normalized])) {
+                $limit = $freeLimits[$normalized];
+            }
         }
 
-        // Get the current count for this action
-        $count = match($action) {
+        // If there is no limit configured, consider the feature unlimited
+        if ($limit === null) {
+            return true;
+        }
+
+        // Compute current usage for this feature
+        $used = match ($normalized) {
             'service_offers' => $this->serviceOffers()->count(),
-            'open_offers' => $this->attributedOpenOffers()->count(),
+            'open_offers' => $this->openOffers()->count(),
+            'applications' => $this->offerApplications()->count(),
+            'messages' => $this->sentMessages()->count(),
             default => 0,
         };
 
-        return $count < $limits[$action];
+        return $used < $limit;
     }
 }

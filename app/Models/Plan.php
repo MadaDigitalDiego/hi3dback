@@ -60,10 +60,22 @@ class Plan extends Model
 
     /**
      * Get the limit for a specific feature.
+     *
+     * Supported feature keys (aliases are accepted):
+     *  - services / service_offers  -> max_services
+     *  - open_offers                -> max_open_offers
+     *  - applications               -> max_applications
+     *  - messages                   -> max_messages
      */
     public function getLimit(string $feature): ?int
     {
-        // Vérifier d'abord les colonnes spécifiques
+        // Normalise some common aliases so calling code can use either
+        $normalized = match ($feature) {
+            'service_offers' => 'services',
+            default => $feature,
+        };
+
+        // 1) Check strongly-typed max_* columns first
         $columnMap = [
             'services' => 'max_services',
             'open_offers' => 'max_open_offers',
@@ -71,13 +83,17 @@ class Plan extends Model
             'messages' => 'max_messages',
         ];
 
-        if (isset($columnMap[$feature]) && $this->{$columnMap[$feature]} !== null) {
-            return $this->{$columnMap[$feature]};
+        if (isset($columnMap[$normalized]) && $this->{$columnMap[$normalized]} !== null) {
+            return $this->{$columnMap[$normalized]};
         }
 
-        // Sinon, chercher dans le JSON limits
+        // 2) Fallback to legacy JSON limits structure for backward compatibility
         if ($this->limits && isset($this->limits[$feature])) {
             return $this->limits[$feature];
+        }
+
+        if ($this->limits && isset($this->limits[$normalized])) {
+            return $this->limits[$normalized];
         }
 
         return null;

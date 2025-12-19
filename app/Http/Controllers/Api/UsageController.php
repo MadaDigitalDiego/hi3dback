@@ -28,28 +28,30 @@ class UsageController extends Controller
         }
 
         $plan = $subscription->plan;
-        $limits = $plan->limits;
+        // Use centralized helper on the User model so limits come from both
+        // JSON `limits` and the typed `max_*` columns on Plan.
+        $limits = $user->getPlanLimits();
 
         // Get current usage
         $usage = [
             'service_offers' => [
                 'used' => $user->serviceOffers()->count(),
                 'limit' => $limits['service_offers'] ?? 0,
-                'percentage' => $limits['service_offers'] > 0 
+                'percentage' => ($limits['service_offers'] ?? 0) > 0
                     ? round(($user->serviceOffers()->count() / $limits['service_offers']) * 100, 2)
                     : 0,
             ],
             'open_offers' => [
                 'used' => $user->openOffers()->count(),
                 'limit' => $limits['open_offers'] ?? 0,
-                'percentage' => $limits['open_offers'] > 0 
+                'percentage' => ($limits['open_offers'] ?? 0) > 0
                     ? round(($user->openOffers()->count() / $limits['open_offers']) * 100, 2)
                     : 0,
             ],
             'portfolio_files' => [
                 'used' => $user->portfolioFiles()->count(),
                 'limit' => $limits['portfolio_files'] ?? 0,
-                'percentage' => $limits['portfolio_files'] > 0 
+                'percentage' => ($limits['portfolio_files'] ?? 0) > 0
                     ? round(($user->portfolioFiles()->count() / $limits['portfolio_files']) * 100, 2)
                     : 0,
             ],
@@ -104,8 +106,8 @@ class UsageController extends Controller
             ], 404);
         }
 
-        $plan = $subscription->plan;
-        $limits = $plan->limits;
+        // Use unified helper so limits are consistent with canPerformAction()
+        $limits = $user->getPlanLimits();
 
         $canPerform = $user->canPerformAction($feature);
 
@@ -137,8 +139,8 @@ class UsageController extends Controller
             ], 404);
         }
 
-        $plan = $subscription->plan;
-        $limits = $plan->limits;
+        // Centralised limits helper (JSON + max_* columns)
+        $limits = $user->getPlanLimits();
 
         $used = match ($feature) {
             'service_offers' => $user->serviceOffers()->count(),

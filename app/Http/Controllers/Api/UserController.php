@@ -196,8 +196,19 @@ class UserController extends Controller
             // Création du token
             try {
                 $token = $user->createToken('api-token')->plainTextToken;
+
+                // Récupération des informations d'abonnement de l'utilisateur
+                $subscription = $user->currentSubscription();
+                $subscriptionData = $subscription ? $subscription->load('plan', 'coupon') : null;
+
                 Log::info('Connexion réussie pour l\'utilisateur: ' . $request->email);
-                return response()->json(['token' => $token, 'user' => $user]);
+
+                return response()->json([
+                    'token' => $token,
+                    'user' => $user,
+                    // Informations d'abonnement de l'utilisateur (null si aucun abonnement actif)
+                    'subscription' => $subscriptionData,
+                ]);
             } catch (\Exception $tokenException) {
                 Log::error('Erreur lors de la création du token pour l\'utilisateur ' . $request->email . ': ' . $tokenException->getMessage());
                 throw $tokenException;

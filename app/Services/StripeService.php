@@ -259,6 +259,90 @@ class StripeService
     }
 
     /**
+     * Change subscription to a different plan.
+     */
+    public function changeSubscription(Subscription $subscription, Plan $newPlan, ?string $billingPeriod = null, ?string $paymentMethodId = null): Subscription
+    {
+        try {
+            // Determine the correct Stripe price ID to use for the new plan
+            $priceId = null;
+            $interval = $billingPeriod === 'yearly' ? 'year' : ($billingPeriod === 'monthly' ? 'month' : $newPlan->interval);
+
+            // Prefer explicit monthly/yearly IDs when available based on the determined interval
+            if ($interval === 'month' && !empty($newPlan->stripe_price_id_monthly)) {
+                $priceId = $newPlan->stripe_price_id_monthly;
+            } elseif ($interval === 'year' && !empty($newPlan->stripe_price_id_yearly)) {
+                $priceId = $newPlan->stripe_price_id_yearly;
+            }
+
+            // Fallback to legacy field if specific interval price not found
+            if (!$priceId && !empty($newPlan->stripe_price_id)) {
+                $priceId = $newPlan->stripe_price_id;
+            }
+
+            if (!$priceId) {
+                throw new \Exception('New plan is not configured with a Stripe price ID for the requested billing period.');
+            }
+
+            // Retrieve current subscription from Stripe
+            $stripeSubscription = $this->stripe->subscriptions->retrieve($subscription->stripe_subscription_id);
+
+            // Prepare update parameters
+            $updateParams = [
+                'items' => [
+                    [
+                        'id' => $stripeSubscription->items->data[0]->id,
+                        'price' => $priceId,
+                    ],
+                ],
+                'proration_behavior' => 'always_invoice', // Prorate the change
+            ];
+
+            // Update payment method if provided
+            if ($paymentMethodId) {
+                try {
+                    // Attach the payment method to the customer
+                    $this->stripe->paymentMethods->attach($paymentMethodId, [
+                        'customer' => $stripeSubscription->customer,
+                    ]);
+
+                    // Set as default payment method
+                    $this->stripe->customers->update($stripeSubscription->customer, [
+                        'invoice_settings' => [
+                            'default_payment_method' => $paymentMethodId,
+                        ],
+                    ]);
+
+                    $updateParams['default_payment_method'] = $paymentMethodId;
+                } catch (ApiErrorException $e) {
+                    // If payment method is already attached, that's fine
+                    if (strpos($e->getMessage(), 'already been attached') === false) {
+                        throw new \Exception('Failed to attach payment method: ' . $e->getMessage());
+                    }
+                }
+            }
+
+            // Update the subscription in Stripe
+            $updatedSubscription = $this->stripe->subscriptions->update(
+                $subscription->stripe_subscription_id,
+                $updateParams
+            );
+
+            // Update the subscription in the database
+            $subscription->update([
+                'plan_id' => $newPlan->id,
+                'stripe_status' => $updatedSubscription->status,
+                'current_period_start' => $updatedSubscription->current_period_start,
+                'current_period_end' => $updatedSubscription->current_period_end,
+            ]);
+
+            return $subscription->fresh();
+        } catch (ApiErrorException $e) {
+            throw new \Exception('Failed to change subscription: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Update subscription with a coupon.
      */
     public function applyDiscountToSubscription(Subscription $subscription, string $couponCode): void
@@ -472,6 +556,91 @@ class StripeService
             return $plan;
         } catch (ApiErrorException $e) {
             throw new \Exception('Failed to sync plan with Stripe: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * Attach a payment method to a customer.
+     */
+    public function attachPaymentMethod(string $customerId, string $paymentMethodId): void
+    {
+        try {
+            $this->stripe->paymentMethods->attach($paymentMethodId, [
+                'customer' => $customerId,
+            ]);
+        } catch (ApiErrorException $e) {
+            // If payment method is already attached, that's fine
+            if (strpos($e->getMessage(), 'already been attached') === false) {
+                throw new \Exception('Failed to attach payment method: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Set default payment method for a customer.
+     */
+    public function setDefaultPaymentMethod(string $customerId, string $paymentMethodId): void
+    {
+        try {
+            $this->stripe->customers->update($customerId, [
+                'invoice_settings' => [
+                    'default_payment_method' => $paymentMethodId,
+                ],
+            ]);
+        } catch (ApiErrorException $e) {
+            throw new \Exception('Failed to set default payment method: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retrieve payment method details from Stripe.
+     */
+    public function getPaymentMethod(string $paymentMethodId)
+    {
+        try {
+            return $this->stripe->paymentMethods->retrieve($paymentMethodId);
+        } catch (ApiErrorException $e) {
+            throw new \Exception('Failed to retrieve payment method: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Detach a payment method from a customer.
+     */
+    public function detachPaymentMethod(string $paymentMethodId): void
+    {
+        try {
+            $this->stripe->paymentMethods->detach($paymentMethodId);
+        } catch (ApiErrorException $e) {
+            throw new \Exception('Failed to detach payment method: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update subscription payment method.
+     */
+    public function updateSubscriptionPaymentMethod(Subscription $subscription, string $paymentMethodId): void
+    {
+        try {
+            // Attach payment method to customer
+            $stripeSubscription = $this->stripe->subscriptions->retrieve($subscription->stripe_subscription_id);
+            $customerId = $stripeSubscription->customer;
+
+            $this->attachPaymentMethod($customerId, $paymentMethodId);
+
+            // Set as default payment method for customer
+            $this->stripe->customers->update($customerId, [
+                'invoice_settings' => [
+                    'default_payment_method' => $paymentMethodId,
+                ],
+            ]);
+
+            // Update subscription to use new payment method
+            $this->stripe->subscriptions->update($subscription->stripe_subscription_id, [
+                'default_payment_method' => $paymentMethodId,
+            ]);
+        } catch (ApiErrorException $e) {
+            throw new \Exception('Failed to update subscription payment method: ' . $e->getMessage());
         }
     }
 }

@@ -193,4 +193,95 @@ class SubscriptionController extends Controller
             ], 400);
         }
     }
+
+    /**
+     * Change subscription to a different plan.
+     */
+    public function changeSubscription(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+            'billing_period' => 'nullable|string|in:monthly,yearly',
+            'payment_method_id' => 'nullable|string',
+        ]);
+
+        try {
+            $currentSubscription = auth()->user()->currentSubscription();
+
+            if (!$currentSubscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active subscription to change',
+                ], 404);
+            }
+
+            $newPlan = Plan::findOrFail($validated['plan_id']);
+            $billingPeriod = $validated['billing_period'] ?? null;
+
+            // Check if trying to change to the same plan
+            if ($currentSubscription->plan_id == $newPlan->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are already subscribed to this plan',
+                ], 400);
+            }
+
+            $subscription = $this->stripeService->changeSubscription(
+                $currentSubscription,
+                $newPlan,
+                $billingPeriod,
+                $validated['payment_method_id'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Subscription changed successfully',
+                'data' => $subscription->load('plan'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error changing subscription: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Update subscription payment method.
+     */
+    public function updateSubscriptionPaymentMethod(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'payment_method_id' => 'required|string',
+        ]);
+
+        try {
+            $subscription = auth()->user()->currentSubscription();
+
+            if (!$subscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active subscription found',
+                ], 404);
+            }
+
+            $this->stripeService->updateSubscriptionPaymentMethod(
+                $subscription,
+                $validated['payment_method_id']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method updated successfully',
+                'data' => $subscription->fresh()->load('plan'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating subscription payment method: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }

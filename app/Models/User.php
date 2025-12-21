@@ -493,4 +493,5 @@ class User extends Authenticatable implements MustVerifyEmail
 
         return $used < $limit;
     }
+
 }

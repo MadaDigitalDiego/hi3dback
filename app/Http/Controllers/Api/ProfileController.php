@@ -624,14 +624,15 @@ class ProfileController extends Controller
                 ]));
 
                 // Gérer les champs de type tableau
-                $arrayFields = ['skills', 'languages', 'services_offered', 'social_links'];
+	                $arrayFields = ['skills', 'softwares', 'languages', 'services_offered', 'social_links'];
 
-                Log::info('updateProfile (pro) - champs tableau bruts', [
-                    'skills' => $request->input('skills'),
-                    'languages' => $request->input('languages'),
-                    'services_offered' => $request->input('services_offered'),
-                    'social_links' => $request->input('social_links'),
-                ]);
+	                Log::info('updateProfile (pro) - champs tableau bruts', [
+	                    'skills' => $request->input('skills'),
+	                    'softwares' => $request->input('softwares'),
+	                    'languages' => $request->input('languages'),
+	                    'services_offered' => $request->input('services_offered'),
+	                    'social_links' => $request->input('social_links'),
+	                ]);
 
                 foreach ($arrayFields as $field) {
                     if ($request->has($field)) {
@@ -1117,21 +1118,35 @@ class ProfileController extends Controller
                 Log::info('Avatar enregistré: ' . $avatarPath);
             }
 
-            // Traiter les compétences si présentes
-            if ($request->has('skills')) {
-                $skills = $request->input('skills');
-                if (is_string($skills)) {
-                    try {
-                        $skills = json_decode($skills, true);
-                        $request->merge(['skills' => $skills]);
-                        Log::info('Compétences décodées depuis JSON:', $skills ?: []);
-                    } catch (\Exception $e) {
-                        Log::warning('Erreur lors du décodage des compétences: ' . $e->getMessage());
-                    }
-                }
-            }
+	            // Traiter les compétences si présentes
+	            if ($request->has('skills')) {
+	                $skills = $request->input('skills');
+	                if (is_string($skills)) {
+	                    try {
+	                        $skills = json_decode($skills, true);
+	                        $request->merge(['skills' => $skills]);
+	                        Log::info('Compétences décodées depuis JSON:', $skills ?: []);
+	                    } catch (\Exception $e) {
+	                        Log::warning('Erreur lors du décodage des compétences: ' . $e->getMessage());
+	                    }
+	                }
+	            }
 
-            // Traiter les liens sociaux si présents
+	            // Traiter les logiciels si présents
+	            if ($request->has('softwares')) {
+	                $softwares = $request->input('softwares');
+	                if (is_string($softwares)) {
+	                    try {
+	                        $softwares = json_decode($softwares, true);
+	                        $request->merge(['softwares' => $softwares]);
+	                        Log::info('Logiciels décodés depuis JSON:', $softwares ?: []);
+	                    } catch (\Exception $e) {
+	                        Log::warning('Erreur lors du décodage des logiciels: ' . $e->getMessage());
+	                    }
+	                }
+	            }
+
+	            // Traiter les liens sociaux si présents
             if ($request->has('social_links')) {
                 $socialLinks = $request->input('social_links');
                 if (is_string($socialLinks)) {

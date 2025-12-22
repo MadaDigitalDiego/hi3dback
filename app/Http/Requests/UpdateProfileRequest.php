@@ -24,7 +24,7 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+	        return [
             // Champs communs
             'first_name' => 'string|max:255',
             'last_name' => 'string|max:255',
@@ -43,7 +43,8 @@ class UpdateProfileRequest extends FormRequest
             'years_of_experience' => 'nullable|integer|min:0',
             'hourly_rate' => 'nullable|numeric|min:0',
             'title' => 'nullable|string|max:255',
-            'skills' => 'nullable',
+	            'skills' => 'nullable',
+	            'softwares' => 'nullable',
             'languages' => 'nullable',
             'services_offered' => 'nullable',
             'social_links' => 'nullable',

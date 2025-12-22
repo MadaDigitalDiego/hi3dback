@@ -44,6 +44,7 @@ class ProfessionalProfile extends Model
         'hourly_rate',
         'description',
         'skills',
+        'softwares',
         'portfolio',
         'availability_status',
         'languages',
@@ -58,6 +59,7 @@ class ProfessionalProfile extends Model
         'years_of_experience' => 'integer',
         'hourly_rate' => 'decimal:2',
         'skills' => 'array',
+        'softwares' => 'array',
         'portfolio' => 'array',
         'languages' => 'array',
         'services_offered' => 'array',
@@ -71,6 +73,18 @@ class ProfessionalProfile extends Model
      */
     public function getSkillsAttribute($value)
     {
+        return $value ? json_decode($value, true) : [];
+    }
+
+    /**
+     * Accesseur pour s'assurer que softwares est toujours un tableau
+     */
+    public function getSoftwaresAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
         return $value ? json_decode($value, true) : [];
     }
 
@@ -158,6 +172,35 @@ class ProfessionalProfile extends Model
         } else {
             Log::warning('Skills n\'est ni une chaîne ni un tableau, utilisation d\'un tableau vide');
             $this->attributes['skills'] = json_encode([]);
+        }
+    }
+
+    /**
+     * Mutator pour s'assurer que softwares est toujours un tableau
+     */
+    public function setSoftwaresAttribute($value)
+    {
+        Log::info('setSoftwaresAttribute appelé avec: ' . json_encode($value) . ' (type: ' . gettype($value) . ')');
+
+        if (is_string($value)) {
+            try {
+                $decoded = json_decode($value, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    Log::warning('Erreur JSON lors du décodage de softwares: ' . json_last_error_msg());
+                    $decoded = [];
+                }
+                $this->attributes['softwares'] = json_encode($decoded);
+                Log::info('Softwares encodé après décodage: ' . $this->attributes['softwares']);
+            } catch (\Exception $e) {
+                Log::error('Exception lors du traitement de softwares: ' . $e->getMessage());
+                $this->attributes['softwares'] = json_encode([]);
+            }
+        } else if (is_array($value)) {
+            $this->attributes['softwares'] = json_encode($value);
+            Log::info('Softwares encodé directement: ' . $this->attributes['softwares']);
+        } else {
+            Log::warning('Softwares n\'est ni une chaîne ni un tableau, utilisation d\'un tableau vide');
+            $this->attributes['softwares'] = json_encode([]);
         }
     }
 
@@ -455,7 +498,12 @@ class ProfessionalProfile extends Model
             'description' => $this->description,
             'city' => $this->city,
             'country' => $this->country,
-            'skills' => $this->skills ?? [],
+            // Pour la recherche, on fusionne skills et softwares afin de garder la compatibilité
+            // avec l'ancien comportement tout en exposant softwares séparément via l'API.
+            'skills' => array_values(array_unique(array_merge(
+                $this->skills ?? [],
+                $this->softwares ?? []
+            ))),
             'languages' => $this->languages ?? [],
             'services_offered' => $this->services_offered ?? [],
             'expertise' => $this->expertise ?? [],

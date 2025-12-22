@@ -42,7 +42,8 @@ class ProfileApiTest extends TestCase
             'expertise' => ['PHP', 'Laravel', 'Vue.js'],
             'years_of_experience' => 5,
             'hourly_rate' => 50.00,
-            'skills' => ['PHP', 'Laravel', 'Vue.js', 'JavaScript'],
+            'skills' => ['Backend', 'Frontend'],
+            'softwares' => ['Figma', 'Blender'],
             'availability_status' => ProfessionalProfile::AVAILABILITY_AVAILABLE,
         ]);
 
@@ -62,11 +63,12 @@ class ProfileApiTest extends TestCase
                     'last_name',
                     'email',
                     'profession',
-                    'expertise',
-                    'years_of_experience',
-                    'hourly_rate',
-                    'skills',
-                    'availability_status',
+                        'expertise',
+                        'years_of_experience',
+                        'hourly_rate',
+                        'skills',
+                        'softwares',
+                        'availability_status',
                     'user' => [
                         'id',
                         'first_name',
@@ -84,6 +86,8 @@ class ProfileApiTest extends TestCase
                     'profession' => 'Developer',
                     'years_of_experience' => 5,
                     'hourly_rate' => '50.00',
+                    'skills' => ['Backend', 'Frontend'],
+                    'softwares' => ['Figma', 'Blender'],
                     'availability_status' => ProfessionalProfile::AVAILABILITY_AVAILABLE,
                 ]
             ]);

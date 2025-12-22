@@ -31,7 +31,8 @@ class ProfessionalProfileTest extends TestCase
             'expertise' => ['PHP', 'Laravel', 'Vue.js'],
             'years_of_experience' => 5,
             'hourly_rate' => 50.00,
-            'skills' => ['PHP', 'Laravel', 'Vue.js', 'JavaScript'],
+            'skills' => ['Backend', 'Frontend'],
+            'softwares' => ['PHPStorm', 'Figma'],
             'availability_status' => ProfessionalProfile::AVAILABILITY_AVAILABLE,
         ]);
 
@@ -141,7 +142,8 @@ class ProfessionalProfileTest extends TestCase
             'expertise' => ['PHP', 'Laravel', 'Vue.js'],
             'years_of_experience' => '5', // Devrait être casté en integer
             'hourly_rate' => '50.00', // Devrait être casté en decimal
-            'skills' => ['PHP', 'Laravel', 'Vue.js', 'JavaScript'],
+            'skills' => ['Backend', 'Frontend'],
+            'softwares' => ['PHPStorm', 'Figma'],
             'portfolio' => [
                 [
                     'id' => '1',
@@ -167,6 +169,7 @@ class ProfessionalProfileTest extends TestCase
         $this->assertIsInt($profile->years_of_experience);
         $this->assertIsFloat($profile->hourly_rate);
         $this->assertIsArray($profile->skills);
+        $this->assertIsArray($profile->softwares);
         $this->assertIsArray($profile->portfolio);
         $this->assertIsArray($profile->languages);
         $this->assertIsArray($profile->services_offered);

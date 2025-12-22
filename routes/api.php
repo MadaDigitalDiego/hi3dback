@@ -230,6 +230,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
         Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
         Route::post('/', [SubscriptionController::class, 'createSubscription']);
+        Route::post('/change', [SubscriptionController::class, 'changeSubscription']);
+        Route::put('/payment-method', [SubscriptionController::class, 'updateSubscriptionPaymentMethod']);
         Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription']);
         Route::post('/resume', [SubscriptionController::class, 'resumeSubscription']);
     });

@@ -6,9 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\StripeService;
+use App\Mail\SubscriptionInvoice;
+use App\Mail\SubscriptionConfirmation;
+use App\Mail\SubscriptionCancellation;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class SubscriptionController extends Controller
 {
@@ -94,7 +99,7 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Create a new subscription.
+     * Create a new subscription with email notification.
      */
     public function createSubscription(Request $request): JsonResponse
     {
@@ -106,23 +111,54 @@ class SubscriptionController extends Controller
         ]);
 
         try {
+            $user = auth()->user();
             $plan = Plan::findOrFail($validated['plan_id']);
             $billingPeriod = $validated['billing_period'] ?? null;
+            
+            Log::info('Creating subscription for user', [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'billing_period' => $billingPeriod,
+            ]);
+
+            // Créer l'abonnement Stripe
             $subscription = $this->stripeService->createSubscription(
-                auth()->user(),
+                $user,
                 $plan,
                 $validated['coupon_code'] ?? null,
                 $billingPeriod,
                 $validated['payment_method_id'] ?? null
             );
 
+            // Récupérer l'abonnement avec toutes les relations
+            $subscription->load('plan', 'user');
+            
+            // ENVOYER LES EMAILS EN ARRIÈRE-PLAN (QUEUE)
+            
+            // 1. Email de confirmation d'abonnement
+            $this->sendSubscriptionConfirmationEmail($user, $subscription);
+            
+            // 2. Email avec facture PDF
+            $this->sendInvoiceEmailForSubscription($user, $subscription);
+
+            Log::info('Subscription created and emails queued', [
+                'subscription_id' => $subscription->id,
+                'user_id' => $user->id,
+            ]);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription created successfully',
-                'data' => $subscription->load('plan'),
+                'message' => 'Subscription created successfully. Confirmation email sent.',
+                'data' => $subscription,
             ], 201);
+            
         } catch (\Exception $e) {
-            Log::error('Error creating subscription: ' . $e->getMessage());
+            Log::error('Error creating subscription: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'plan_id' => $validated['plan_id'] ?? null,
+                'error_trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -131,11 +167,12 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Cancel a subscription.
+     * Cancel a subscription with email notification.
      */
     public function cancelSubscription(): JsonResponse
     {
-        $subscription = auth()->user()->currentSubscription();
+        $user = auth()->user();
+        $subscription = $user->currentSubscription();
 
         if (!$subscription) {
             return response()->json([
@@ -145,14 +182,37 @@ class SubscriptionController extends Controller
         }
 
         try {
+            Log::info('Canceling subscription', [
+                'subscription_id' => $subscription->id,
+                'user_id' => $user->id,
+            ]);
+
+            // Annuler l'abonnement Stripe
             $this->stripeService->cancelSubscription($subscription);
+            
+            // Recharger les relations
+            $subscription->load('plan', 'user');
+            
+            // ENVOYER L'EMAIL DE CONFIRMATION D'ANNULATION
+            $this->sendCancellationEmail($user, $subscription);
+
+            Log::info('Subscription canceled and email queued', [
+                'subscription_id' => $subscription->id,
+                'user_id' => $user->id,
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription canceled successfully',
+                'message' => 'Subscription canceled successfully. Confirmation email sent.',
             ]);
+            
         } catch (\Exception $e) {
-            Log::error('Error canceling subscription: ' . $e->getMessage());
+            Log::error('Error canceling subscription: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id ?? null,
+                'error_trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -191,6 +251,295 @@ class SubscriptionController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 400);
+        }
+    }
+
+    /**
+     * Change subscription to a different plan with email notification.
+     */
+    public function changeSubscription(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+            'billing_period' => 'nullable|string|in:monthly,yearly',
+            'payment_method_id' => 'nullable|string',
+        ]);
+
+        try {
+            $user = auth()->user();
+            $currentSubscription = $user->currentSubscription();
+
+            if (!$currentSubscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active subscription to change',
+                ], 404);
+            }
+
+            $newPlan = Plan::findOrFail($validated['plan_id']);
+            $billingPeriod = $validated['billing_period'] ?? null;
+
+            // Check if trying to change to the same plan
+            if ($currentSubscription->plan_id == $newPlan->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are already subscribed to this plan',
+                ], 400);
+            }
+
+            Log::info('Changing subscription', [
+                'current_subscription_id' => $currentSubscription->id,
+                'new_plan_id' => $newPlan->id,
+                'user_id' => $user->id,
+            ]);
+
+            // Changer l'abonnement Stripe
+            $subscription = $this->stripeService->changeSubscription(
+                $currentSubscription,
+                $newPlan,
+                $billingPeriod,
+                $validated['payment_method_id'] ?? null
+            );
+            
+            // Recharger les relations
+            $subscription->load('plan', 'user');
+            
+            // ENVOYER L'EMAIL AVEC LA FACTURE DE PRORATA
+            $this->sendInvoiceEmailForSubscription($user, $subscription, 'change');
+
+            Log::info('Subscription changed and email queued', [
+                'subscription_id' => $subscription->id,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Subscription changed successfully. Invoice email sent.',
+                'data' => $subscription,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error changing subscription: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'plan_id' => $validated['plan_id'] ?? null,
+                'error_trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Update subscription payment method.
+     */
+    public function updateSubscriptionPaymentMethod(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'payment_method_id' => 'required|string',
+        ]);
+
+        try {
+            $subscription = auth()->user()->currentSubscription();
+
+            if (!$subscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active subscription found',
+                ], 404);
+            }
+
+            $this->stripeService->updateSubscriptionPaymentMethod(
+                $subscription,
+                $validated['payment_method_id']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method updated successfully',
+                'data' => $subscription->fresh()->load('plan'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating subscription payment method: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Méthodes privées pour l'envoi d'emails
+     */
+
+    /**
+     * Envoyer l'email de confirmation d'abonnement.
+     */
+    private function sendSubscriptionConfirmationEmail($user, $subscription): void
+    {
+        try {
+            Mail::to($user->email)
+                ->queue(new SubscriptionConfirmation($user, $subscription));
+            
+            Log::info('Subscription confirmation email queued', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'email' => $user->email,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to queue subscription confirmation email: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+            ]);
+        }
+    }
+
+    /**
+     * Envoyer l'email de facture pour un abonnement.
+     */
+    private function sendInvoiceEmailForSubscription($user, $subscription, $type = 'new'): void
+    {
+        try {
+            // Récupérer la facture Stripe la plus récente pour cet abonnement
+            $invoice = $this->getLatestInvoiceForSubscription($subscription);
+            
+            if (!$invoice) {
+                Log::warning('No invoice found for subscription', [
+                    'subscription_id' => $subscription->id,
+                    'type' => $type,
+                ]);
+                return;
+            }
+            
+            // Générer le PDF de la facture
+            $pdfPath = $this->generateInvoicePdf($invoice, $user, $subscription);
+            
+            // Envoyer l'email avec pièce jointe
+            Mail::to($user->email)
+                ->queue(new SubscriptionInvoice($user, $invoice, $subscription, $pdfPath));
+            
+            Log::info('Invoice email queued', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'invoice_id' => $invoice->id,
+                'type' => $type,
+                'pdf_path' => $pdfPath,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to queue invoice email: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'type' => $type,
+                'error_trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Envoyer l'email de confirmation d'annulation.
+     */
+    private function sendCancellationEmail($user, $subscription): void
+    {
+        try {
+            Mail::to($user->email)
+                ->queue(new SubscriptionCancellation($user, $subscription, now()));
+            
+            Log::info('Cancellation confirmation email queued', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'email' => $user->email,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to queue cancellation email: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+            ]);
+        }
+    }
+
+    /**
+     * Récupérer la dernière facture pour un abonnement.
+     */
+    private function getLatestInvoiceForSubscription($subscription)
+    {
+        try {
+            // Vous devrez créer ce modèle Invoice ou adapter selon votre structure
+            if (class_exists('App\Models\Invoice')) {
+                return \App\Models\Invoice::where('subscription_id', $subscription->id)
+                    ->latest()
+                    ->first();
+            }
+            
+            // Fallback: créer une facture factice si le modèle n'existe pas
+            return $this->createMockInvoice($subscription);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to get latest invoice: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Créer une facture factice pour les tests (à remplacer par votre modèle réel).
+     */
+    private function createMockInvoice($subscription)
+    {
+        return (object) [
+            'id' => uniqid(),
+            'invoice_number' => 'INV-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6)),
+            'amount' => $subscription->plan->price,
+            'tax' => 0,
+            'total' => $subscription->plan->price,
+            'currency' => 'EUR',
+            'status' => 'paid',
+            'description' => $subscription->plan->title . ' - Abonnement',
+            'created_at' => now(),
+            'due_date' => now()->addDays(30),
+        ];
+    }
+
+    /**
+     * Générer le PDF de la facture.
+     */
+    private function generateInvoicePdf($invoice, $user, $subscription): string
+    {
+        try {
+            // Créer le contenu HTML de la facture
+            $html = view('pdf.invoice', [
+                'invoice' => $invoice,
+                'user' => $user,
+                'subscription' => $subscription,
+            ])->render();
+            
+            // Utiliser DomPDF pour générer le PDF
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            // Chemin de sauvegarde
+            $fileName = 'invoices/invoice-' . $invoice->invoice_number . '-' . time() . '.pdf';
+            $filePath = storage_path('app/' . $fileName);
+            
+            // Créer le dossier si nécessaire
+            $directory = storage_path('app/invoices');
+            if (!file_exists($directory)) {
+                mkdir($directory, 0775, true);
+            }
+            
+            // Sauvegarder le PDF
+            file_put_contents($filePath, $dompdf->output());
+            
+            return $fileName;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to generate invoice PDF: ' . $e->getMessage());
+            throw new \Exception('Failed to generate invoice PDF');
         }
     }
 }

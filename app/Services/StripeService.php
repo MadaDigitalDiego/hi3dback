@@ -643,5 +643,201 @@ class StripeService
             throw new \Exception('Failed to update subscription payment method: ' . $e->getMessage());
         }
     }
+
+
+    /**
+     * Create an invoice record in database from Stripe invoice.
+     */
+    public function createInvoiceFromStripe(User $user, $stripeInvoice, Subscription $subscription = null): Invoice
+    {
+        try {
+            // Générer un numéro de facture unique
+            $invoiceNumber = 'INV-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -8));
+            
+            $invoice = Invoice::create([
+                'user_id' => $user->id,
+                'subscription_id' => $subscription ? $subscription->id : null,
+                'stripe_invoice_id' => $stripeInvoice->id,
+                'invoice_number' => $invoiceNumber,
+                'status' => $stripeInvoice->status,
+                'amount' => $stripeInvoice->amount_due / 100, // Convertir de cents
+                'tax' => $stripeInvoice->tax / 100 ?? 0,
+                'discount' => 0, // À adapter selon vos besoins
+                'total' => $stripeInvoice->total / 100,
+                'currency' => $stripeInvoice->currency,
+                'description' => $stripeInvoice->description ?? 'Abonnement',
+                'due_date' => $stripeInvoice->due_date ? \Carbon\Carbon::createFromTimestamp($stripeInvoice->due_date) : null,
+                'paid_at' => $stripeInvoice->status === 'paid' ? now() : null,
+                'metadata' => json_encode($stripeInvoice->toArray()),
+            ]);
+            
+            return $invoice;
+        } catch (\Exception $e) {
+            Log::error('Failed to create invoice from Stripe: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Generate PDF invoice.
+     */
+    public function generateInvoicePdf(Invoice $invoice, User $user, Subscription $subscription = null): string
+    {
+        try {
+            // Créer le contenu HTML de la facture
+            $html = view('pdf.invoice', [
+                'invoice' => $invoice,
+                'user' => $user,
+                'subscription' => $subscription,
+            ])->render();
+            
+            // Chemin de sauvegarde
+            $fileName = 'invoices/invoice-' . $invoice->invoice_number . '-' . time() . '.pdf';
+            $filePath = storage_path('app/' . $fileName);
+            
+            // Créer le dossier si nécessaire
+            if (!file_exists(storage_path('app/invoices'))) {
+                mkdir(storage_path('app/invoices'), 0775, true);
+            }
+            
+            // Utiliser DomPDF pour générer le PDF
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            
+            // Sauvegarder le PDF
+            file_put_contents($filePath, $dompdf->output());
+            
+            return $fileName;
+        } catch (\Exception $e) {
+            Log::error('Failed to generate invoice PDF: ' . $e->getMessage());
+            throw new \Exception('Failed to generate invoice PDF');
+        }
+    }
+
+    /**
+     * Send invoice email with PDF attachment.
+     */
+    public function sendInvoiceEmail(User $user, Invoice $invoice, Subscription $subscription = null): bool
+    {
+        try {
+            // Générer le PDF
+            $pdfPath = $this->generateInvoicePdf($invoice, $user, $subscription);
+            
+            // Envoyer l'email
+            \Mail::to($user->email)->send(new \App\Mail\SubscriptionInvoice(
+                $user, 
+                $invoice, 
+                $subscription, 
+                $pdfPath
+            ));
+            
+            Log::info('Invoice email sent to user ' . $user->id . ' for invoice ' . $invoice->invoice_number);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send invoice email: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send subscription confirmation email.
+     */
+    public function sendSubscriptionConfirmation(User $user, Subscription $subscription): bool
+    {
+        try {
+            \Mail::to($user->email)->send(new \App\Mail\SubscriptionConfirmation($user, $subscription));
+            
+            Log::info('Subscription confirmation sent to user ' . $user->id);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send subscription confirmation: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send subscription cancellation email.
+     */
+    public function sendSubscriptionCancellation(User $user, Subscription $subscription): bool
+    {
+        try {
+            \Mail::to($user->email)->send(new \App\Mail\SubscriptionCancellation(
+                $user, 
+                $subscription,
+                now()
+            ));
+            
+            Log::info('Subscription cancellation sent to user ' . $user->id);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send subscription cancellation: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+
+    /**
+     * Create or update invoice from Stripe.
+     */
+    public function syncInvoiceFromStripe($stripeInvoice, User $user, Subscription $subscription = null)
+    {
+        try {
+            // Vérifier si l'invoice existe déjà
+            $invoice = \App\Models\Invoice::where('stripe_invoice_id', $stripeInvoice->id)->first();
+            
+            $invoiceData = [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription ? $subscription->id : null,
+                'stripe_invoice_id' => $stripeInvoice->id,
+                'invoice_number' => $stripeInvoice->number ?? 'INV-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -8)),
+                'status' => $stripeInvoice->status,
+                'amount' => $stripeInvoice->subtotal / 100, // Convertir de cents
+                'tax' => ($stripeInvoice->tax ?? 0) / 100,
+                'discount' => ($stripeInvoice->discount ?? 0) / 100,
+                'total' => $stripeInvoice->total / 100,
+                'currency' => $stripeInvoice->currency,
+                'description' => $stripeInvoice->description ?? 'Subscription payment',
+                'due_date' => $stripeInvoice->due_date ? \Carbon\Carbon::createFromTimestamp($stripeInvoice->due_date) : null,
+                'paid_at' => $stripeInvoice->status === 'paid' ? \Carbon\Carbon::createFromTimestamp($stripeInvoice->created) : null,
+                'metadata' => json_encode($stripeInvoice->toArray()),
+            ];
+            
+            if ($invoice) {
+                $invoice->update($invoiceData);
+            } else {
+                $invoice = \App\Models\Invoice::create($invoiceData);
+            }
+            
+            return $invoice;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to sync invoice from Stripe: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Récupérer la dernière facture pour un abonnement Stripe.
+     */
+    public function getLatestStripeInvoiceForSubscription($stripeSubscriptionId)
+    {
+        try {
+            $invoices = $this->stripe->invoices->all([
+                'subscription' => $stripeSubscriptionId,
+                'limit' => 1,
+            ]);
+            
+            return $invoices->data[0] ?? null;
+            
+        } catch (ApiErrorException $e) {
+            Log::error('Failed to get Stripe invoice: ' . $e->getMessage());
+            return null;
+        }
+    }
 }
 

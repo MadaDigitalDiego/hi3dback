@@ -97,15 +97,49 @@ class Invoice extends Model
     /**
      * Generate invoice number if not exists.
      */
+ 
     public static function generateInvoiceNumber(): string
     {
         $year = now()->year;
         $month = now()->month;
+        
+        // Formater le mois sur 2 chiffres (01, 02, ..., 12)
+        $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
+        
+        // Compter les factures créées ce mois-ci
+        // IMPORTANT: Utiliser whereRaw pour comparer correctement les mois/années
         $count = static::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->count() + 1;
-
-        return sprintf('INV-%d%02d%05d', $year, $month, $count);
+        
+        // Formater le compteur sur 5 chiffres (00001, 00002, etc.)
+        $formattedCount = str_pad($count, 5, '0', STR_PAD_LEFT);
+        
+        // Générer le numéro de facture
+        $invoiceNumber = sprintf('INV-%d%s-%s', $year, $formattedMonth, $formattedCount);
+        
+        // VÉRIFICATION CRITIQUE : S'assurer que le numéro n'existe pas déjà
+        // Cela peut arriver si deux appels sont faits en même temps
+        $attempts = 0;
+        $maxAttempts = 5;
+        
+        while (static::where('invoice_number', $invoiceNumber)->exists()) {
+            $attempts++;
+            
+            if ($attempts >= $maxAttempts) {
+                // Si on a trop de collisions, ajouter un identifiant unique
+                $uniqueId = substr(uniqid(), -4);
+                $invoiceNumber = sprintf('INV-%d%s-%s-%s', $year, $formattedMonth, $formattedCount, $uniqueId);
+                break;
+            }
+            
+            // Incrémenter le compteur et régénérer
+            $count++;
+            $formattedCount = str_pad($count, 5, '0', STR_PAD_LEFT);
+            $invoiceNumber = sprintf('INV-%d%s-%s', $year, $formattedMonth, $formattedCount);
+        }
+        
+        return $invoiceNumber;
     }
 }
 

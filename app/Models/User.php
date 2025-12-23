@@ -341,12 +341,16 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the user's active subscription.
+     * Get the user's current subscription.
+     *
+     * We consider both `active` and `trialing` Stripe statuses as "current"
+     * so that users on a valid trial benefit from their plan limits instead
+     * of falling back to the free plan quotas.
      */
     public function currentSubscription()
     {
         return $this->subscriptions()
-            ->where('stripe_status', 'active')
+            ->whereIn('stripe_status', ['active', 'trialing'])
             ->latest()
             ->first();
     }

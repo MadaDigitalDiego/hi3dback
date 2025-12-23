@@ -3,19 +3,24 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreServiceOfferRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     *
-     * @return bool
      */
-    public function authorize()
+    public function authorize(): bool
     {
-        // You should add your authorization logic here.
-        // For example, check if the user has the permission to create service offers.
-        return true; // Or your authorization logic, e.g., Auth::user()->can('create', ServiceOffer::class);
+        $user = $this->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Check subscription limits: users on the free plan (or without
+        // subscription) will be blocked here when their quota is 0.
+        return $user->canPerformAction('service_offers');
     }
 
     /**
@@ -64,5 +69,18 @@ class StoreServiceOfferRequest extends FormRequest
             'price.min' => 'Le prix doit être un nombre positif.',
             // Add custom messages for other rules if needed.
         ];
+    }
+
+    /**
+     * Handle a failed authorization attempt (subscription limits).
+     */
+    protected function failedAuthorization()
+    {
+        throw new HttpResponseException(
+            response()->json([
+                'success' => false,
+                'message' => 'Vous avez atteint la limite de création de services pour votre abonnement. Veuillez mettre à niveau votre plan.',
+            ], 403)
+        );
     }
 }

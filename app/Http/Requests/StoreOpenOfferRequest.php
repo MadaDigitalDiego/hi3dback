@@ -14,7 +14,15 @@ class StoreOpenOfferRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Check subscription limits for open offers. Users without an active
+        // subscription (free plan) will be blocked when their quota is 0.
+        return $user->canPerformAction('open_offers');
     }
 
     /**
@@ -111,6 +119,19 @@ class StoreOpenOfferRequest extends FormRequest
                 'errors' => $validator->errors(),
                 'message' => 'Erreur de validation des données'
             ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY)
+        );
+    }
+
+    /**
+     * Gestion de l'échec d'autorisation (limites d'abonnement).
+     */
+    protected function failedAuthorization()
+    {
+        throw new HttpResponseException(
+            response()->json([
+                'success' => false,
+                'message' => 'Vous avez atteint la limite de création d\'offres ouvertes pour votre abonnement. Veuillez mettre à niveau votre plan.',
+            ], JsonResponse::HTTP_FORBIDDEN)
         );
     }
 

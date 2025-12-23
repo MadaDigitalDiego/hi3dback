@@ -60,8 +60,8 @@ class PlanResource extends Resource
                             ->helperText('Permet de trier les plans dans l\'interface.'),
                     ])->columns(2),
 
-	                // Tarification & facturation (référence pour Stripe)
-	                Forms\Components\Section::make('Tarification & facturation')
+		                // Tarifications & facturations (référence pour Stripe)
+		                Forms\Components\Section::make('Tarifications & facturations')
                     ->schema([
                         Forms\Components\TextInput::make('price')
                             ->required()

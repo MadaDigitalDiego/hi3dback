@@ -6,14 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\StripeService;
-use App\Mail\SubscriptionInvoice;
 use App\Mail\SubscriptionConfirmation;
 use App\Mail\SubscriptionCancellation;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 
 class SubscriptionController extends Controller
 {
@@ -132,14 +130,14 @@ class SubscriptionController extends Controller
 
             // Récupérer l'abonnement avec toutes les relations
             $subscription->load('plan', 'user');
-            
+
             // ENVOYER LES EMAILS EN ARRIÈRE-PLAN (QUEUE)
-            
+
             // 1. Email de confirmation d'abonnement
             $this->sendSubscriptionConfirmationEmail($user, $subscription);
-            
-            // 2. Email avec facture PDF
-            $this->sendInvoiceEmailForSubscription($user, $subscription);
+
+            // 2. L'email de facture sera envoyé automatiquement via le webhook Stripe
+            //    "invoice.payment_succeeded" (voir WebhookController).
 
             Log::info('Subscription created and emails queued', [
                 'subscription_id' => $subscription->id,
@@ -300,21 +298,21 @@ class SubscriptionController extends Controller
                 $billingPeriod,
                 $validated['payment_method_id'] ?? null
             );
-            
+
             // Recharger les relations
             $subscription->load('plan', 'user');
-            
-            // ENVOYER L'EMAIL AVEC LA FACTURE DE PRORATA
-            $this->sendInvoiceEmailForSubscription($user, $subscription, 'change');
 
-            Log::info('Subscription changed and email queued', [
+            // La facture de proration et son email seront geres par le webhook Stripe
+            // "invoice.payment_succeeded" une fois le paiement confirme.
+
+            Log::info('Subscription changed, waiting for invoice webhook', [
                 'subscription_id' => $subscription->id,
                 'user_id' => $user->id,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription changed successfully. Invoice email sent.',
+                'message' => 'Subscription changed successfully. An invoice email will be sent once the payment is confirmed.',
                 'data' => $subscription,
             ]);
             

@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Subscription;
-use App\Models\Invoice;
-use App\Models\StripeConfiguration;
-use App\Models\User;
-use App\Notifications\InvoicePaidNotification;
-use App\Notifications\InvoicePaymentFailedNotification;
-use App\Services\InvoicePdfService;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+    use App\Models\Subscription;
+    use App\Models\Invoice;
+    use App\Models\StripeConfiguration;
+    use App\Models\User;
+    use App\Notifications\InvoicePaidNotification;
+    use App\Notifications\InvoicePaymentFailedNotification;
+    use App\Services\InvoicePdfService;
+    use App\Mail\SubscriptionCancellation;
+    use Carbon\Carbon;
+    use Illuminate\Http\Request;
+    use Illuminate\Http\Response;
+    use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Facades\Mail;
 use Stripe\Event;
 use Stripe\StripeClient;
 
@@ -107,8 +109,51 @@ class WebhookController extends Controller
         $subscription = Subscription::where('stripe_subscription_id', $stripeSubscription->id)->first();
 
         if ($subscription) {
-            $subscription->update(['stripe_status' => 'canceled']);
-            Log::info('Subscription canceled: ' . $stripeSubscription->id);
+            // Déterminer la date de fin à partir des informations Stripe si possible
+            if (!empty($stripeSubscription->ended_at)) {
+                $endsAt = Carbon::createFromTimestamp($stripeSubscription->ended_at);
+            } elseif (!empty($stripeSubscription->canceled_at)) {
+                $endsAt = Carbon::createFromTimestamp($stripeSubscription->canceled_at);
+            } else {
+                $endsAt = now();
+            }
+
+            $subscription->update([
+                'stripe_status' => 'canceled',
+                'ends_at' => $endsAt,
+            ]);
+
+            Log::info('Subscription canceled from Stripe webhook', [
+                'stripe_subscription_id' => $stripeSubscription->id ?? null,
+                'subscription_id' => $subscription->id,
+                'ends_at' => $endsAt,
+            ]);
+
+            // Envoyer l'email d'annulation à l'utilisateur
+            $user = $subscription->user;
+
+            if ($user) {
+                try {
+                    Mail::to($user->email)
+                        ->queue(new SubscriptionCancellation($user, $subscription, $endsAt));
+
+                    Log::info('Cancellation confirmation email queued from Stripe webhook', [
+                        'user_id' => $user->id,
+                        'subscription_id' => $subscription->id,
+                        'email' => $user->email,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('Failed to queue cancellation email from Stripe webhook', [
+                        'subscription_id' => $subscription->id,
+                        'user_id' => $user->id ?? null,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } else {
+            Log::warning('Subscription deleted webhook received but no local subscription found', [
+                'stripe_subscription_id' => $stripeSubscription->id ?? null,
+            ]);
         }
     }
 

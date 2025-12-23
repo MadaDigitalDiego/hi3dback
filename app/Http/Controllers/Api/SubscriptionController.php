@@ -379,7 +379,7 @@ class SubscriptionController extends Controller
     {
         try {
             Mail::to($user->email)
-                ->queue(new SubscriptionConfirmation($user, $subscription));
+	                ->send(new SubscriptionConfirmation($user, $subscription));
             
             Log::info('Subscription confirmation email queued', [
                 'user_id' => $user->id,
@@ -417,7 +417,7 @@ class SubscriptionController extends Controller
             
             // Envoyer l'email avec pièce jointe
             Mail::to($user->email)
-                ->queue(new SubscriptionInvoice($user, $invoice, $subscription, $pdfPath));
+	                ->send(new SubscriptionInvoice($user, $invoice, $subscription, $pdfPath));
             
             Log::info('Invoice email queued', [
                 'user_id' => $user->id,
@@ -444,7 +444,7 @@ class SubscriptionController extends Controller
     {
         try {
             Mail::to($user->email)
-                ->queue(new SubscriptionCancellation($user, $subscription, now()));
+	                ->send(new SubscriptionCancellation($user, $subscription, now()));
             
             Log::info('Cancellation confirmation email queued', [
                 'user_id' => $user->id,

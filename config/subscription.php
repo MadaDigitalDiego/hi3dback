@@ -24,10 +24,12 @@ return [
             'price' => 0,
             'currency' => 'EUR',
             'interval' => 'month',
+            // Free plan has 0 quota on all main resources; users must upgrade
+            // to create service offers, open offers, or upload portfolio files.
             'limits' => [
-                'service_offers' => 3,
-                'open_offers' => 5,
-                'portfolio_files' => 10,
+                'service_offers' => 0,
+                'open_offers' => 0,
+                'portfolio_files' => 0,
                 'analytics_retention_days' => 30,
             ],
             'features' => [

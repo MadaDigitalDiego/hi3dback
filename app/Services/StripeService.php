@@ -150,9 +150,13 @@ class StripeService
                 $params['payment_behavior'] = 'default_incomplete';
             }
 
-            if ($couponCode) {
-                $params['coupon'] = $couponCode;
-            }
+	            // Stripe API (versions récentes) n'accepte plus le paramètre direct "coupon".
+	            // On doit utiliser "discounts" avec un objet { coupon: <coupon_id> }.
+	            if ($couponCode) {
+	                $params['discounts'] = [
+	                    ['coupon' => $couponCode],
+	                ];
+	            }
 
             $stripeSubscription = $this->stripe->subscriptions->create($params);
 
@@ -348,9 +352,12 @@ class StripeService
     public function applyDiscountToSubscription(Subscription $subscription, string $couponCode): void
     {
         try {
-            $this->stripe->subscriptions->update($subscription->stripe_subscription_id, [
-                'coupon' => $couponCode,
-            ]);
+	            // Utiliser "discounts" au lieu de "coupon" avec les nouvelles versions de l'API Stripe
+	            $this->stripe->subscriptions->update($subscription->stripe_subscription_id, [
+	                'discounts' => [
+	                    ['coupon' => $couponCode],
+	                ],
+	            ]);
         } catch (ApiErrorException $e) {
             throw new \Exception('Failed to apply coupon: ' . $e->getMessage());
         }

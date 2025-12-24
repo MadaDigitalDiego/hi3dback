@@ -84,9 +84,9 @@ class MessageController extends Controller
      */
     public function store(Request $request, OpenOffer $openOffer): JsonResponse
     {
-        $receiverId = $request->input('receiver_id'); // Récupérer le receiver_id depuis le body de la requête
+	        $receiverId = $request->input('receiver_id'); // Récupérer le receiver_id depuis le body de la requête
+	        $user = auth()->user();
 
-        
         // Validation
         $validator = Validator::make($request->all(), [
             'message_text' => 'nullable|string',
@@ -97,15 +97,15 @@ class MessageController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Authorization:
-        $isClient = $openOffer->user_id === auth()->id();
-        $isProfessional = auth()->user()->is_professional;
+	        // Authorization:
+	        $isClient = $openOffer->user_id === ($user?->id);
+	        $isProfessional = $user && $user->is_professional;
 
         if (!$isClient && !$isProfessional) {
             return response()->json(['message' => 'Non autorisé à envoyer des messages pour cette offre.'], 403);
         }
 
-        if ($isClient) {
+	        if ($isClient) {
             // Client sending first message to a professional
             if (!$receiverId) {
                 return response()->json(['message' => 'receiver_id est requis pour envoyer le premier message à un professionnel.'], 400);
@@ -119,7 +119,7 @@ class MessageController extends Controller
                 return response()->json(['message' => 'Le receiver_id spécifié n\'est pas un professionnel valide pour cette offre.'], 400);
             }
 
-        } elseif ($isProfessional) {
+	        } elseif ($isProfessional) {
             // Professional replying to a client
             $hasClientMessage = Message::where('open_offer_id', $openOffer->id)
                 ->where('sender_id', $openOffer->user_id) // Client est l'expéditeur initial
@@ -134,13 +134,22 @@ class MessageController extends Controller
                 return response()->json(['message' => 'Non autorisé à envoyer des messages initialement. Le client doit envoyer le premier message pour ouvrir le chat.'], 403);
             }
             $receiverId = $openOffer->user_id; // Professional replies to the client (offer creator)
-        }
+	        }
 
+	        // Check subscription/message limits for the authenticated user
+	        if (!$user || !$user->canPerformAction('messages')) {
+	            $subscription = $user?->currentSubscription();
+	            $message = $subscription
+	                ? 'Vous avez atteint la limite d\'envoi de messages pour votre abonnement. Veuillez mettre à niveau votre plan.'
+	                : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
 
-        try {
+	            return response()->json(['message' => $message], 403);
+	        }
+
+	        try {
             $message = Message::create([
                 'open_offer_id' => $openOffer->id,
-                'sender_id' => auth()->id(),
+	                'sender_id' => $user->id,
                 'receiver_id' => $receiverId, // Utiliser le receiver_id spécifié
                 'message_text' => $request->message_text,
             ]);

@@ -29,6 +29,8 @@ return [
             'limits' => [
                 'service_offers' => 0,
                 'open_offers' => 0,
+	                'applications' => 0,
+	                'messages' => 0,
                 'portfolio_files' => 0,
                 'analytics_retention_days' => 30,
             ],

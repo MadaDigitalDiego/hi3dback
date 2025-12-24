@@ -230,12 +230,19 @@ class OpenOfferController extends Controller
         }
 
         $user = $request->user();
-
-
-
-        if (!$user->is_professional || !$user->professionalProfile) {
+	        if (!$user->is_professional || !$user->professionalProfile) {
             return response()->json(['message' => 'Seuls les professionnels avec un profil professionnel peuvent postuler.'], 403);
         }
+
+	        // Check subscription/application limits for this professional
+	        if (!$user->canPerformAction('applications')) {
+	            $subscription = $user->currentSubscription();
+	            $message = $subscription
+	                ? 'Vous avez atteint la limite de candidatures pour votre abonnement. Veuillez mettre  e0 niveau votre plan.'
+	                : 'Plan Free actif. Un abonnement est requis pour acc e9der  e0 toutes les fonctionnalit e9s.';
+
+	            return response()->json(['message' => $message], 403);
+	        }
 
         try {
             $existingInvitedApplication = OfferApplication::where('open_offer_id', $openOffer->id)

@@ -45,6 +45,16 @@ class ServiceMessageController extends Controller
             // Get authenticated user
             $user = Auth::user();
 
+            // Enforce subscription message limits
+            if (!$user || !$user->canPerformAction('messages')) {
+                $subscription = $user?->currentSubscription();
+                $message = $subscription
+                    ? "Vous avez atteint la limite d'envoi de messages pour votre abonnement. Veuillez mettre a niveau votre plan."
+                    : 'Plan Free actif. Un abonnement est requis pour acceder a toutes les fonctionnalites.';
+
+                return response()->json(['message' => $message], 403);
+            }
+
             // Check if service exists
             $service = ServiceOffer::findOrFail($request->service_id);
 
@@ -89,7 +99,7 @@ class ServiceMessageController extends Controller
 
             return response()->json([
                 'message' => 'Message sent successfully',
-                'data' => $message
+                'data' => $message,
             ], 201);
         } catch (\Exception $e) {
             Log::error('Error sending message: ' . $e->getMessage());
@@ -115,7 +125,7 @@ class ServiceMessageController extends Controller
                 ->get();
 
             return response()->json([
-                'data' => $messages
+                'data' => $messages,
             ]);
         } catch (\Exception $e) {
             Log::error('Error getting messages: ' . $e->getMessage());
@@ -158,7 +168,7 @@ class ServiceMessageController extends Controller
             });
 
             return response()->json([
-                'data' => $filteredMessages->values()
+                'data' => $filteredMessages->values(),
             ]);
         } catch (\Exception $e) {
             Log::error('Error getting service messages: ' . $e->getMessage());
@@ -190,7 +200,7 @@ class ServiceMessageController extends Controller
 
             return response()->json([
                 'message' => 'Message marked as read',
-                'data' => $message
+                'data' => $message,
             ]);
         } catch (\Exception $e) {
             Log::error('Error marking message as read: ' . $e->getMessage());
@@ -212,15 +222,6 @@ class ServiceMessageController extends Controller
             // Check if other user exists
             $otherUser = User::findOrFail($userId);
 
-            // $messages = Message::where(function ($query) use ($user, $userId) {
-            //     $query->where('sender_id', $userId)
-            //     ->orWhere('receiver_id', $userId);
-            // })
-            //     -> with(['sender', 'receiver'])
-            //     ->orderBy('created_at', 'asc')
-            //     ->get();
-
-
             $messages = Message::select('*', DB::raw('LEAST(sender_id, receiver_id) as user1'), DB::raw('GREATEST(sender_id, receiver_id) as user2'))
                 ->where(function ($query) use ($userId) {
                     $query->where('sender_id', $userId)
@@ -232,43 +233,11 @@ class ServiceMessageController extends Controller
                 ->groupBy(function ($message) {
                     return $message->user1 . '_' . $message->user2;
                 })
-                ->values(); 
+                ->values();
 
             return response()->json([
-                'data' => $messages
+                'data' => $messages,
             ]);
-
-
-            // $messages = Message::where(function ($query) use ($user, $userId) {
-            //     $query->where('sender_id', $user->id)
-            //         ->where('receiver_id', $userId);
-            // })->orWhere(function ($query) use ($user, $userId) {
-            //     $query->where('sender_id', $userId)
-            //         ->where('receiver_id', $user->id);
-            // })
-            // ->with(['sender', 'receiver'])
-            // ->orderBy('created_at', 'asc')
-            // ->get();
-
-            // return response()->json([
-            //     'data' => $messages
-            // ]);
-
-            // Get all messages between these two users
-            // $messages = Message::where(function ($query) use ($user, $userId) {
-            //     $query->where('sender_id', $user->id)
-            //         ->where('receiver_id', $userId);
-            // })->orWhere(function ($query) use ($user, $userId) {
-            //     $query->where('sender_id', $userId)
-            //         ->where('receiver_id', $user->id);
-            // })
-            //     ->with(['sender', 'receiver'])
-            //     ->orderBy('created_at', 'asc')
-            //     ->get();
-
-            // return response()->json([
-            //     'data' => $messages
-            // ]);
         } catch (\Exception $e) {
             Log::error('Error getting conversation: ' . $e->getMessage());
             return response()->json(['message' => 'Error getting conversation'], 500);

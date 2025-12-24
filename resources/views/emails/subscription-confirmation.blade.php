@@ -26,11 +26,11 @@
                 <p><strong>Plan:</strong> {{ $plan->title ?? $plan->name }}</p>
                 <p><strong>ID d'abonnement:</strong> {{ $subscription->stripe_subscription_id }}</p>
                 <p><strong>Statut:</strong> {{ $subscription->stripe_status }}</p>
-                <p><strong>Début:</strong> {{ $subscription->current_period_start->format('d/m/Y') }}</p>
-                <p><strong>Fin:</strong> {{ $subscription->current_period_end->format('d/m/Y') }}</p>
+                <p><strong>Début:</strong> {{ optional($subscription->current_period_start)->format('d/m/Y') ?? 'Non défini' }}</p>
+                <p><strong>Fin:</strong> {{ optional($subscription->current_period_end)->format('d/m/Y') ?? 'Non défini' }}</p>
             </div>
             
-            <p>Votre prochain paiement sera automatiquement prélevé le {{ $subscription->current_period_end->format('d/m/Y') }}.</p>
+            <p>Votre prochain paiement sera automatiquement prélevé le {{ optional($subscription->current_period_end)->format('d/m/Y') ?? 'Non défini' }}.</p>
             
             <p>Vous pouvez gérer votre abonnement depuis votre espace personnel.</p>
         </div>

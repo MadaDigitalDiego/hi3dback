@@ -74,10 +74,16 @@ class OfferMatchingService
      */
     protected function sendNotification(OpenOffer $offer, $user): void
     {
-        OfferEmailLog::firstOrCreate([
-            'offer_id' => $offer->id,
-            'user_id' => $user->id
-        ]);
+	        // Log de l'envoi avec date obligatoire (sent_at NOT NULL en base)
+	        OfferEmailLog::firstOrCreate(
+	            [
+	                'offer_id' => $offer->id,
+	                'user_id' => $user->id,
+	            ],
+	            [
+	                'sent_at' => now(),
+	            ]
+	        );
 
 	        // Envoi synchrone de l'email (pas de file d'attente)
 	        Mail::to($user->email)->send(new OfferMatchNotification($offer));

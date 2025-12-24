@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Services\StripeService;
+use Illuminate\Support\Facades\Log;
 
 class Coupon extends Model
 {
@@ -12,6 +14,7 @@ class Coupon extends Model
 
     protected $fillable = [
         'code',
+        'stripe_coupon_id',
         'description',
         'type',
         'value',
@@ -122,6 +125,26 @@ class Coupon extends Model
 
         // Check if user has already used this coupon
         return !$this->users()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Automatically sync newly created coupons with Stripe.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $coupon) {
+            try {
+                /** @var StripeService $stripeService */
+                $stripeService = app(StripeService::class);
+                $stripeService->syncCoupon($coupon);
+            } catch (\Throwable $e) {
+                Log::error('Failed to sync coupon with Stripe on create', [
+                    'coupon_id' => $coupon->id,
+                    'code' => $coupon->code,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        });
     }
 }
 

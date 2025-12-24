@@ -8,6 +8,13 @@ use App\Models\Subscription;
 
 class CouponService
 {
+    protected StripeService $stripeService;
+
+    public function __construct(StripeService $stripeService)
+    {
+        $this->stripeService = $stripeService;
+    }
+
     /**
      * Validate and apply a coupon to a subscription.
      */
@@ -45,6 +52,25 @@ class CouponService
 
         // Calculate discount
         $discountAmount = $coupon->calculateDiscount($subscription->plan->price);
+
+        // Ensure the coupon exists on Stripe and apply it to the Stripe subscription
+        try {
+            $this->stripeService->syncCoupon($coupon);
+
+            if (!$coupon->stripe_coupon_id) {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to prepare coupon for Stripe',
+                ];
+            }
+
+            $this->stripeService->applyDiscountToSubscription($subscription, $coupon->stripe_coupon_id);
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to apply coupon on Stripe: ' . $e->getMessage(),
+            ];
+        }
 
         // Apply coupon to subscription
         $subscription->update([

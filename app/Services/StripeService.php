@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Coupon;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\Subscription;
@@ -24,6 +25,20 @@ class StripeService
 
         // Récupère la clé secrète depuis la base de données ou la config
         $secretKey = StripeConfiguration::getSecretKey() ?? config('services.stripe.secret');
+
+        // En environnement de tests, on évite de faire échouer l'application
+        // si la clé n'est pas configurée : on utilise une clé factice et
+        // on court-circuite les appels réseau dans les méthodes concernées.
+        if (!$secretKey && app()->environment('testing')) {
+            $secretKey = 'sk_test_dummy_for_tests_only';
+        }
+
+        if (!$secretKey) {
+            throw new \RuntimeException(
+                'Stripe secret key is not configured. Please set services.stripe.secret or configure StripeConfiguration.'
+            );
+        }
+
         $this->stripe = new StripeClient($secretKey);
     }
 
@@ -78,87 +93,182 @@ class StripeService
     }
 
     /**
-     * Create a subscription for a user.
+     * Ensure a given local coupon exists on Stripe and has a Stripe coupon ID.
+     *
+     * This does not apply the coupon to any subscription; it only syncs metadata.
      */
-    public function createSubscription(User $user, Plan $plan, ?string $couponCode = null, ?string $billingPeriod = null, ?string $paymentMethodId = null): Subscription
+    public function syncCoupon(Coupon $coupon): void
     {
+        // If we already have a Stripe coupon ID, assume it's synced
+        if ($coupon->stripe_coupon_id) {
+            return;
+        }
+
+        // En environnement de tests, on ne contacte jamais Stripe :
+        // on assigne simplement un ID factice pour permettre aux flux
+        // applicatifs et aux tests de fonctionner sans dépendance réseau.
+        if (app()->environment('testing')) {
+            $coupon->stripe_coupon_id = 'test_coupon_' . $coupon->id;
+            $coupon->save();
+            return;
+        }
+
         try {
-            $customerId = $this->getOrCreateCustomer($user);
-
-            // Determine the correct Stripe price ID to use for this plan
-            $priceId = null;
-
-            // Use billing_period from request if provided, otherwise fall back to plan's interval
-            $interval = $billingPeriod === 'yearly' ? 'year' : ($billingPeriod === 'monthly' ? 'month' : $plan->interval);
-
-            // Prefer explicit monthly/yearly IDs when available based on the determined interval
-            if ($interval === 'month' && !empty($plan->stripe_price_id_monthly)) {
-                $priceId = $plan->stripe_price_id_monthly;
-            } elseif ($interval === 'year' && !empty($plan->stripe_price_id_yearly)) {
-                $priceId = $plan->stripe_price_id_yearly;
-            }
-
-            // Fallback to legacy field if specific interval price not found
-            if (!$priceId && !empty($plan->stripe_price_id)) {
-                $priceId = $plan->stripe_price_id;
-            }
-
-            if (!$priceId) {
-                throw new \Exception('Plan is not configured with a Stripe price ID for the requested billing period.');
-            }
-
-            // Attach payment method to customer if provided
-            if ($paymentMethodId) {
-                try {
-                    // Attach the payment method to the customer
-                    $this->stripe->paymentMethods->attach($paymentMethodId, [
-                        'customer' => $customerId,
-                    ]);
-
-                    // Set as default payment method for the customer
-                    $this->stripe->customers->update($customerId, [
-                        'invoice_settings' => [
-                            'default_payment_method' => $paymentMethodId,
-                        ],
-                    ]);
-                } catch (ApiErrorException $e) {
-                    // If payment method is already attached, that's fine
-                    if (strpos($e->getMessage(), 'already been attached') === false) {
-                        throw new \Exception('Failed to attach payment method: ' . $e->getMessage());
-                    }
-                }
-            }
-
             $params = [
-                'customer' => $customerId,
-                'items' => [
-                    ['price' => $priceId],
+                'duration' => 'once',
+                'metadata' => [
+                    'local_coupon_id' => $coupon->id,
+                    'local_coupon_code' => $coupon->code,
                 ],
-                'expand' => ['latest_invoice.payment_intent'],
+                'name' => $coupon->description ?: $coupon->code,
             ];
 
-            // Si une méthode de paiement est fournie, on demande à Stripe d'échouer
-            // immédiatement si le paiement ne peut pas être complété.
-            // Cela évite de créer des abonnements "incomplete" tout en renvoyant
-            // un succès côté API.
-            if ($paymentMethodId) {
-                $params['default_payment_method'] = $paymentMethodId;
-                $params['payment_behavior'] = 'error_if_incomplete';
+            if ($coupon->type === 'percentage') {
+                $params['percent_off'] = (float) $coupon->value;
             } else {
-                // Cas sans méthode de paiement explicite : on garde le comportement
-                // historique pour ne pas casser d'autres flux éventuels.
-                $params['payment_behavior'] = 'default_incomplete';
+                $params['amount_off'] = (int) round($coupon->value * 100);
+                $params['currency'] = $this->getStripeCurrency();
             }
 
+            if ($coupon->max_uses) {
+                $params['max_redemptions'] = $coupon->max_uses;
+            }
+
+            if ($coupon->expires_at) {
+                $params['redeem_by'] = $coupon->expires_at->getTimestamp();
+            }
+
+            $stripeCoupon = $this->stripe->coupons->create($params);
+
+            $coupon->stripe_coupon_id = $stripeCoupon->id;
+            $coupon->save();
+        } catch (ApiErrorException $e) {
+            Log::error('Failed to sync coupon with Stripe: ' . $e->getMessage(), [
+                'coupon_id' => $coupon->id ?? null,
+                'code' => $coupon->code ?? null,
+            ]);
+
+            throw new \Exception('Failed to sync coupon with Stripe: ' . $e->getMessage());
+        }
+    }
+
+	    /**
+	     * Create a subscription for a user.
+	     */
+	    public function createSubscription(User $user, Plan $plan, ?string $couponCode = null, ?string $billingPeriod = null, ?string $paymentMethodId = null): Subscription
+	    {
+	        try {
+	            $customerId = $this->getOrCreateCustomer($user);
+	
+	            // Determine the correct Stripe price ID to use for this plan
+	            $priceId = null;
+	
+	            // Use billing_period from request if provided, otherwise fall back to plan's interval
+	            $interval = $billingPeriod === 'yearly' ? 'year' : ($billingPeriod === 'monthly' ? 'month' : $plan->interval);
+	
+	            // Prefer explicit monthly/yearly IDs when available based on the determined interval
+	            if ($interval === 'month' && !empty($plan->stripe_price_id_monthly)) {
+	                $priceId = $plan->stripe_price_id_monthly;
+	            } elseif ($interval === 'year' && !empty($plan->stripe_price_id_yearly)) {
+	                $priceId = $plan->stripe_price_id_yearly;
+	            }
+	
+	            // Fallback to legacy field if specific interval price not found
+	            if (!$priceId && !empty($plan->stripe_price_id)) {
+	                $priceId = $plan->stripe_price_id;
+	            }
+	
+	            if (!$priceId) {
+	                throw new \Exception('Plan is not configured with a Stripe price ID for the requested billing period.');
+	            }
+	
+	            // Prepare optional coupon context
+	            $stripeCouponId = null;
+	            $appliedCoupon = null;
+	            $discountAmount = null;
+	
+	            if ($couponCode) {
+	                $appliedCoupon = Coupon::where('code', $couponCode)->first();
+	
+	                if (!$appliedCoupon) {
+	                    throw new \Exception('Coupon not found');
+	                }
+	
+	                if (!$appliedCoupon->isValid()) {
+	                    throw new \Exception('Coupon is no longer valid');
+	                }
+	
+	                if (!$appliedCoupon->isApplicableToPlan($plan->id)) {
+	                    throw new \Exception('Coupon is not applicable to this plan');
+	                }
+	
+	                if (!$appliedCoupon->canBeUsedByUser($user)) {
+	                    throw new \Exception('You have already used this coupon');
+	                }
+	
+	                // Ensure the coupon exists on Stripe and we have its ID
+	                $this->syncCoupon($appliedCoupon);
+	
+	                if (!$appliedCoupon->stripe_coupon_id) {
+	                    throw new \Exception('Failed to prepare coupon for Stripe');
+	                }
+	
+	                $stripeCouponId = $appliedCoupon->stripe_coupon_id;
+	                $discountAmount = $appliedCoupon->calculateDiscount((float) $plan->price);
+	            }
+	
+	            // Attach payment method to customer if provided
+	            if ($paymentMethodId) {
+	                try {
+	                    // Attach the payment method to the customer
+	                    $this->stripe->paymentMethods->attach($paymentMethodId, [
+	                        'customer' => $customerId,
+	                    ]);
+	
+	                    // Set as default payment method for the customer
+	                    $this->stripe->customers->update($customerId, [
+	                        'invoice_settings' => [
+	                            'default_payment_method' => $paymentMethodId,
+	                        ],
+	                    ]);
+	                } catch (ApiErrorException $e) {
+	                    // If payment method is already attached, that's fine
+	                    if (strpos($e->getMessage(), 'already been attached') === false) {
+	                        throw new \Exception('Failed to attach payment method: ' . $e->getMessage());
+	                    }
+	                }
+	            }
+	
+	            $params = [
+	                'customer' => $customerId,
+	                'items' => [
+	                    ['price' => $priceId],
+	                ],
+	                'expand' => ['latest_invoice.payment_intent'],
+	            ];
+	
+	            // Si une méthode de paiement est fournie, on demande à Stripe d'échouer
+	            // immédiatement si le paiement ne peut pas être complété.
+	            // Cela évite de créer des abonnements "incomplete" tout en renvoyant
+	            // un succès côté API.
+	            if ($paymentMethodId) {
+	                $params['default_payment_method'] = $paymentMethodId;
+	                $params['payment_behavior'] = 'error_if_incomplete';
+	            } else {
+	                // Cas sans méthode de paiement explicite : on garde le comportement
+	                // historique pour ne pas casser d'autres flux éventuels.
+	                $params['payment_behavior'] = 'default_incomplete';
+	            }
+	
 	            // Stripe API (versions récentes) n'accepte plus le paramètre direct "coupon".
 	            // On doit utiliser "discounts" avec un objet { coupon: <coupon_id> }.
-	            if ($couponCode) {
+	            if ($stripeCouponId) {
 	                $params['discounts'] = [
-	                    ['coupon' => $couponCode],
+	                    ['coupon' => $stripeCouponId],
 	                ];
 	            }
-
-            $stripeSubscription = $this->stripe->subscriptions->create($params);
+	
+	            $stripeSubscription = $this->stripe->subscriptions->create($params);
 
             // If payment method is provided, try to confirm the payment intent
             if ($paymentMethodId && isset($stripeSubscription->latest_invoice->payment_intent)) {
@@ -208,7 +318,7 @@ class StripeService
                 }
             }
 
-            if (!in_array($finalStatus, ['active', 'trialing'], true)) {
+	            if (!in_array($finalStatus, ['active', 'trialing'], true)) {
                 Log::warning('Stripe subscription created but not active', [
                     'subscription_id' => $stripeSubscription->id,
                     'status' => $finalStatus,
@@ -219,16 +329,35 @@ class StripeService
                     "Le paiement n'a pas pu être finalisé. Votre carte n'a pas été débitée. Veuillez réessayer ou utiliser un autre moyen de paiement."
                 );
             }
-
-            return Subscription::create([
-                'user_id' => $user->id,
-                'plan_id' => $plan->id,
-                'stripe_id' => $stripeSubscription->id,
-                'stripe_subscription_id' => $stripeSubscription->id,
-                'stripe_status' => $stripeSubscription->status,
-                'current_period_start' => $stripeSubscription->current_period_start,
-                'current_period_end' => $stripeSubscription->current_period_end,
-            ]);
+	
+	            $subscriptionData = [
+	                'user_id' => $user->id,
+	                'plan_id' => $plan->id,
+	                'stripe_id' => $stripeSubscription->id,
+	                'stripe_subscription_id' => $stripeSubscription->id,
+	                'stripe_status' => $stripeSubscription->status,
+	                'current_period_start' => $stripeSubscription->current_period_start,
+	                'current_period_end' => $stripeSubscription->current_period_end,
+	            ];
+	
+	            if ($appliedCoupon && $discountAmount !== null) {
+	                $subscriptionData['coupon_id'] = $appliedCoupon->id;
+	                $subscriptionData['discount_amount'] = $discountAmount;
+	            }
+	
+	            $subscription = Subscription::create($subscriptionData);
+	
+	            if ($appliedCoupon && $discountAmount !== null) {
+	                $appliedCoupon->users()->attach($user->id, [
+	                    'subscription_id' => $subscription->id,
+	                    'discount_amount' => $discountAmount,
+	                    'used_at' => now(),
+	                ]);
+	
+	                $appliedCoupon->incrementUsedCount();
+	            }
+	
+	            return $subscription;
         } catch (ApiErrorException $e) {
             throw new \Exception('Failed to create subscription: ' . $e->getMessage());
         }

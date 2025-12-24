@@ -22,7 +22,10 @@ class SubscriptionApiTest extends TestCase
         $this->plan = Plan::factory()->create([
             'name' => 'Pro',
             'price' => 49.99,
-            'is_active' => true,
+            // Make this base plan inactive so it doesn't interfere with
+            // plan filtering tests that expect only the explicitly
+            // created plans to be returned.
+            'is_active' => false,
         ]);
     }
 

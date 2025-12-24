@@ -76,11 +76,22 @@ class StoreServiceOfferRequest extends FormRequest
      */
     protected function failedAuthorization()
     {
-        throw new HttpResponseException(
-            response()->json([
-                'success' => false,
-                'message' => 'Vous avez atteint la limite de création de services pour votre abonnement. Veuillez mettre à niveau votre plan.',
-            ], 403)
-        );
+	        $user = $this->user();
+
+	        // Si l'utilisateur n'a pas d'abonnement Stripe actif, il est sur le plan Free
+	        // (limites issues de la configuration). Le message doit alors refléter
+	        // qu'un véritable abonnement est requis pour débloquer les fonctionnalités.
+	        $subscription = $user ? $user->currentSubscription() : null;
+
+	        $message = $subscription
+	            ? 'Vous avez atteint la limite de création de services pour votre abonnement. Veuillez mettre à niveau votre plan.'
+	            : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
+
+	        throw new HttpResponseException(
+	            response()->json([
+	                'success' => false,
+	                'message' => $message,
+	            ], 403)
+	        );
     }
 }

@@ -79,6 +79,7 @@ class OfferMatchingService
             'user_id' => $user->id
         ]);
 
-        Mail::to($user->email)->queue(new OfferMatchNotification($offer));
+	        // Envoi synchrone de l'email (pas de file d'attente)
+	        Mail::to($user->email)->send(new OfferMatchNotification($offer));
     }
 }

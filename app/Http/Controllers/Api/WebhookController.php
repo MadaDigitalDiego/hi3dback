@@ -311,7 +311,7 @@ class WebhookController extends Controller
                 'stripe_invoice_number' => $stripeInvoice->number ?? null,
             ],
             'pdf_url' => $stripeInvoice->invoice_pdf ?? null,
-        };
+        ];
     }
 
     /**

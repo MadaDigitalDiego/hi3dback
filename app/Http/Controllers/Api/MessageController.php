@@ -136,15 +136,20 @@ class MessageController extends Controller
             $receiverId = $openOffer->user_id; // Professional replies to the client (offer creator)
 	        }
 
-	        // Check subscription/message limits for the authenticated user
-	        if (!$user || !$user->canPerformAction('messages')) {
-	            $subscription = $user?->currentSubscription();
-	            $message = $subscription
-	                ? 'Vous avez atteint la limite d\'envoi de messages pour votre abonnement. Veuillez mettre à niveau votre plan.'
-	                : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
+		        // Check subscription/message limits for the authenticated user
+		        if (!$user || !$user->canPerformAction('messages')) {
+		            $subscription = $user?->currentSubscription();
+		            $message = $subscription
+		                ? 'Vous avez atteint la limite d\'envoi de messages pour votre abonnement. Veuillez mettre à niveau votre plan.'
+		                : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
+		            $errorType = $subscription ? 'QUOTA_EXCEEDED' : 'NO_SUBSCRIPTION';
 
-	            return response()->json(['message' => $message], 403);
-	        }
+		            return response()->json([
+		                'message' => $message,
+		                'error_code' => 'MESSAGES_LIMIT_REACHED',
+		                'error_type' => $errorType,
+		            ], 403);
+		        }
 
 	        try {
             $message = Message::create([

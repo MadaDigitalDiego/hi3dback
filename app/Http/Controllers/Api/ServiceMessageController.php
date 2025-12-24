@@ -45,15 +45,20 @@ class ServiceMessageController extends Controller
             // Get authenticated user
             $user = Auth::user();
 
-            // Enforce subscription message limits
-            if (!$user || !$user->canPerformAction('messages')) {
-                $subscription = $user?->currentSubscription();
-                $message = $subscription
-                    ? "Vous avez atteint la limite d'envoi de messages pour votre abonnement. Veuillez mettre a niveau votre plan."
-                    : 'Plan Free actif. Un abonnement est requis pour acceder a toutes les fonctionnalites.';
+	            // Enforce subscription message limits
+	            if (!$user || !$user->canPerformAction('messages')) {
+	                $subscription = $user?->currentSubscription();
+	                $message = $subscription
+	                    ? "Vous avez atteint la limite d'envoi de messages pour votre abonnement. Veuillez mettre a niveau votre plan."
+	                    : 'Plan Free actif. Un abonnement est requis pour acceder a toutes les fonctionnalites.';
+	                $errorType = $subscription ? 'QUOTA_EXCEEDED' : 'NO_SUBSCRIPTION';
 
-                return response()->json(['message' => $message], 403);
-            }
+	                return response()->json([
+	                    'message' => $message,
+	                    'error_code' => 'MESSAGES_LIMIT_REACHED',
+	                    'error_type' => $errorType,
+	                ], 403);
+	            }
 
             // Check if service exists
             $service = ServiceOffer::findOrFail($request->service_id);

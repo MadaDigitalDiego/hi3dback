@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
@@ -140,6 +141,67 @@ class CouponController extends Controller
                 'value' => $coupon->value,
                 'max_discount' => $coupon->max_discount,
                 'is_valid' => $coupon->isValid(),
+            ],
+        ]);
+    }
+
+    /**
+     * Validate a coupon for a given plan (used by subscription payment flow).
+     */
+    public function validateForSubscription(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'coupon_code' => 'required|string',
+            'plan_id' => 'required|exists:plans,id',
+        ]);
+
+        $user = auth()->user();
+
+        $coupon = Coupon::where('code', $validated['coupon_code'])->first();
+
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Coupon not found',
+            ], 404);
+        }
+
+        if (!$coupon->isValid()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Coupon is no longer valid',
+            ], 422);
+        }
+
+        // Check that the coupon can be applied to the requested plan
+        if (!$coupon->isApplicableToPlan((int) $validated['plan_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Coupon is not applicable to this plan',
+            ], 422);
+        }
+
+        // Ensure the current user can still use this coupon
+        if (!$coupon->canBeUsedByUser($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already used this coupon',
+            ], 422);
+        }
+
+        $plan = Plan::findOrFail($validated['plan_id']);
+        $baseAmount = (float) $plan->price;
+        $discount = $coupon->calculateDiscount($baseAmount);
+        $finalAmount = max(0, $baseAmount - $discount);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'code' => $coupon->code,
+                'type' => $coupon->type,
+                'value' => $coupon->value,
+                'discount_amount' => $discount,
+                'final_amount' => $finalAmount,
             ],
         ]);
     }

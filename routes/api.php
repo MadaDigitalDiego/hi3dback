@@ -234,6 +234,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::put('/payment-method', [SubscriptionController::class, 'updateSubscriptionPaymentMethod']);
         Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription']);
         Route::post('/resume', [SubscriptionController::class, 'resumeSubscription']);
+        Route::post('/validate-coupon', [CouponController::class, 'validateForSubscription']);
     });
 
     // Routes pour les coupons

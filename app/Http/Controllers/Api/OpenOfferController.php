@@ -257,36 +257,36 @@ class OpenOfferController extends Controller
 	        $limit = $limitData['limit'];
 	        $used = $limitData['used'];
 	
-	        if ($limit !== null) {
-	            // Cas 1 : le plan ne donne aucun droit de candidature (limite = 0)
-	            // -> interdire toute candidature, même en réponse à une invitation
-	            if ($limit === 0) {
-	                $subscription = $user->currentSubscription();
-	                $message = $subscription
-	                    ? 'Votre abonnement ne permet pas de postuler aux offres.'
-	                    : 'Plan Free actif. Un abonnement est requis pour postuler aux offres.';
-	
-	                return response()->json(['message' => $message], 403);
-	            }
-	
-	            // Cas 2 : le plan prévoit un nombre > 0 mais la limite est atteinte
-	            // -> autoriser uniquement la réponse à une invitation pour cette offre
-	            if ($used >= $limit) {
-	                $hasInvitationForThisOffer = OfferApplication::where('open_offer_id', $openOffer->id)
-	                    ->where('professional_profile_id', $user->professionalProfile->id)
-	                    ->where('status', 'invited')
-	                    ->exists();
-	
-	                if (!$hasInvitationForThisOffer) {
-	                    $subscription = $user->currentSubscription();
-	                    $message = $subscription
-	                        ? 'Vous avez atteint la limite de candidatures pour votre abonnement. Veuillez mettre à niveau votre plan.'
-	                        : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
-	
-	                    return response()->json(['message' => $message], 403);
-	                }
-	            }
-	        }
+		        if ($limit !== null) {
+		            // Cas 1 : le plan ne donne aucun droit de candidature (limite = 0)
+		            // -> interdire toute candidature, même en réponse à une invitation
+		            if ($limit === 0) {
+		                $subscription = $user->currentSubscription();
+		                $message = $subscription
+		                    ? 'Votre abonnement ne permet pas de postuler aux offres.'
+		                    : 'Vous devez avoir un abonnement actif pour effectuer cette action.';
+		
+		                return response()->json(['message' => $message], 403);
+		            }
+		
+		            // Cas 2 : le plan prévoit un nombre > 0 mais la limite est atteinte
+		            // -> autoriser uniquement la réponse à une invitation pour cette offre
+		            if ($used >= $limit) {
+		                $hasInvitationForThisOffer = OfferApplication::where('open_offer_id', $openOffer->id)
+		                    ->where('professional_profile_id', $user->professionalProfile->id)
+		                    ->where('status', 'invited')
+		                    ->exists();
+		
+		                if (!$hasInvitationForThisOffer) {
+		                    $subscription = $user->currentSubscription();
+		                    $message = $subscription
+		                        ? 'Vous avez atteint la limite de candidatures pour votre abonnement. Veuillez mettre à niveau votre plan.'
+		                        : 'Vous devez avoir un abonnement actif pour effectuer cette action.';
+		
+		                    return response()->json(['message' => $message], 403);
+		                }
+		            }
+		        }
 	
 	        try {
             $existingInvitedApplication = OfferApplication::where('open_offer_id', $openOffer->id)
@@ -678,15 +678,15 @@ class OpenOfferController extends Controller
 	    	
 	    	$user = $request->user();
 	    	
-	    	// Check subscription/invitation limits for this client
-	    	if (!$user->canPerformAction('applications')) {
-	    	    $subscription = $user->currentSubscription();
-	    	    $message = $subscription
-	    	        ? 'Vous avez atteint la limite de candidatures ou d\'invitations pour votre abonnement. Veuillez mettre à niveau votre plan.'
-	    	        : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
-	    	
-	    	    return response()->json(['message' => $message], 403);
-	    	}
+		    // Check subscription/invitation limits for this client
+		    if (!$user->canPerformAction('applications')) {
+		        $subscription = $user->currentSubscription();
+		        $message = $subscription
+		            ? 'Vous avez atteint la limite d’invitations pour votre abonnement. Veuillez mettre à niveau votre plan.'
+		            : 'Vous devez avoir un abonnement actif pour effectuer cette action.';
+		    
+		        return response()->json(['message' => $message], 403);
+		    }
 	    	
 	    	$validator = Validator::make($request->all(), [
             'professional_id' => 'required|exists:users,id,is_professional,1', // Ensure it's a professional user

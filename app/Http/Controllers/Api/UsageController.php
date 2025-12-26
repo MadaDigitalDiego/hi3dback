@@ -23,8 +23,8 @@ class UsageController extends Controller
         if (!$subscription) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active subscription',
-            ], 404);
+	                'message' => 'Vous devez avoir un abonnement actif pour effectuer cette action.',
+	            ], 403);
         }
 
         $plan = $subscription->plan;
@@ -32,48 +32,53 @@ class UsageController extends Controller
         // JSON `limits` and the typed `max_*` columns on Plan.
         $limits = $user->getPlanLimits();
 
-        // Get current usage
-        $usage = [
-            'service_offers' => [
-                'used' => $user->serviceOffers()->count(),
-                'limit' => $limits['service_offers'] ?? 0,
-                'percentage' => ($limits['service_offers'] ?? 0) > 0
-                    ? round(($user->serviceOffers()->count() / $limits['service_offers']) * 100, 2)
-                    : 0,
-            ],
-            'open_offers' => [
-                'used' => $user->openOffers()->count(),
-                'limit' => $limits['open_offers'] ?? 0,
-                'percentage' => ($limits['open_offers'] ?? 0) > 0
-                    ? round(($user->openOffers()->count() / $limits['open_offers']) * 100, 2)
-                    : 0,
-            ],
-            'portfolio_files' => [
-                'used' => $user->portfolioFiles()->count(),
-                'limit' => $limits['portfolio_files'] ?? 0,
-                'percentage' => ($limits['portfolio_files'] ?? 0) > 0
-                    ? round(($user->portfolioFiles()->count() / $limits['portfolio_files']) * 100, 2)
-                    : 0,
-            ],
-        ];
+	        // Get current usage (service/open offers are scoped to the current
+	        // subscription period via the unified helper on the User model).
+	        $usage = [];
+
+	        foreach (['service_offers', 'open_offers'] as $feature) {
+	            ['limit' => $rawLimit, 'used' => $used] = $user->getActionLimitAndUsage($feature);
+	            $limit = $rawLimit ?? ($limits[$feature] ?? 0);
+
+	            $usage[$feature] = [
+	                'used' => $used,
+	                'limit' => $limit,
+	                'percentage' => $limit > 0
+	                    ? round(($used / $limit) * 100, 2)
+	                    : 0,
+	            ];
+	        }
+
+	        // Portfolio files still use a simple per-account limit (no
+	        // subscription-period scoping at the moment).
+	        $portfolioLimit = $limits['portfolio_files'] ?? 0;
+	        $portfolioUsed = $user->portfolioFiles()->count();
+
+	        $usage['portfolio_files'] = [
+	            'used' => $portfolioUsed,
+	            'limit' => $portfolioLimit,
+	            'percentage' => $portfolioLimit > 0
+	                ? round(($portfolioUsed / $portfolioLimit) * 100, 2)
+	                : 0,
+	        ];
 
         // Calculate warnings
         $warnings = [];
-        foreach ($usage as $feature => $data) {
-            if ($data['percentage'] >= 100) {
-                $warnings[] = [
-                    'feature' => $feature,
-                    'level' => 'critical',
-                    'message' => "You have reached the limit for {$feature}",
-                ];
-            } elseif ($data['percentage'] >= 80) {
-                $warnings[] = [
-                    'feature' => $feature,
-                    'level' => 'warning',
-                    'message' => "You are using {$data['percentage']}% of your {$feature} limit",
-                ];
-            }
-        }
+	        foreach ($usage as $feature => $data) {
+	            if ($data['percentage'] >= 100) {
+	                $warnings[] = [
+	                    'feature' => $feature,
+	                    'level' => 'critical',
+	                    'message' => 'Vous avez atteint la limite pour votre abonnement. Veuillez mettre à niveau votre plan.',
+	                ];
+	            } elseif ($data['percentage'] >= 80) {
+	                $warnings[] = [
+	                    'feature' => $feature,
+	                    'level' => 'warning',
+	                    'message' => "Vous avez utilisé {$data['percentage']}% de votre quota pour cette fonctionnalité.",
+	                ];
+	            }
+	        }
 
         return response()->json([
             'success' => true,
@@ -102,8 +107,8 @@ class UsageController extends Controller
         if (!$subscription) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active subscription',
-            ], 404);
+	                'message' => 'Vous devez avoir un abonnement actif pour effectuer cette action.',
+	            ], 403);
         }
 
         // Use unified helper so limits are consistent with canPerformAction()
@@ -117,9 +122,9 @@ class UsageController extends Controller
                 'feature' => $feature,
                 'can_perform' => $canPerform,
                 'limit' => $limits[$feature] ?? 0,
-                'message' => $canPerform 
-                    ? "You can perform this action"
-                    : "You have reached the limit for {$feature}. Please upgrade your plan.",
+	                'message' => $canPerform
+	                    ? 'Vous pouvez effectuer cette action.'
+	                    : 'Vous avez atteint la limite d’invitations pour votre abonnement. Veuillez mettre à niveau votre plan.',
             ],
         ]);
     }
@@ -135,22 +140,22 @@ class UsageController extends Controller
         if (!$subscription) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active subscription',
-            ], 404);
+	                'message' => 'Vous devez avoir un abonnement actif pour effectuer cette action.',
+	            ], 403);
         }
 
         // Centralised limits helper (JSON + max_* columns)
         $limits = $user->getPlanLimits();
 
-        $used = match ($feature) {
-            'service_offers' => $user->serviceOffers()->count(),
-            'open_offers' => $user->openOffers()->count(),
-            'portfolio_files' => $user->portfolioFiles()->count(),
-            default => 0,
-        };
-
-        $limit = $limits[$feature] ?? 0;
-        $percentage = $limit > 0 ? round(($used / $limit) * 100, 2) : 0;
+	        if ($feature === 'portfolio_files') {
+	            $used = $user->portfolioFiles()->count();
+	            $limit = $limits[$feature] ?? 0;
+	        } else {
+	            ['limit' => $rawLimit, 'used' => $used] = $user->getActionLimitAndUsage($feature);
+	            $limit = $rawLimit ?? ($limits[$feature] ?? 0);
+	        }
+	
+	        $percentage = $limit > 0 ? round(($used / $limit) * 100, 2) : 0;
 
         return response()->json([
             'success' => true,

@@ -452,58 +452,88 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getActionLimitAndUsage(string $action): array
     {
-        // Normalise external aliases used by the API/frontend into internal keys
-        $normalized = match ($action) {
-            'services' => 'service_offers',
-            default => $action,
-        };
+	        // Normalise external aliases used by the API/frontend into internal keys
+	        $normalized = match ($action) {
+	            'services' => 'service_offers',
+	            default => $action,
+	        };
 
-        // Determine the limit for this feature
-        $subscription = $this->currentSubscription();
-        $limit = null;
+	        // Determine the limit for this feature
+	        $subscription = $this->currentSubscription();
+	        $limit = null;
 
-        if ($subscription && $subscription->plan) {
-            $planKey = match ($normalized) {
-                'service_offers' => 'service_offers',
-                default => $normalized,
-            };
+	        if ($subscription && $subscription->plan) {
+	            $planKey = match ($normalized) {
+	                'service_offers' => 'service_offers',
+	                default => $normalized,
+	            };
 
-            $limit = $subscription->plan->getLimit($planKey);
-        } else {
-            // No active subscription: use configured free plan limits
-            $freeLimits = config('subscription.plans.free.limits', []);
-            if (isset($freeLimits[$normalized])) {
-                $limit = $freeLimits[$normalized];
-            }
-        }
+	            $limit = $subscription->plan->getLimit($planKey);
+	        } else {
+	            // No active subscription: use configured free plan limits
+	            $freeLimits = config('subscription.plans.free.limits', []);
+	            if (isset($freeLimits[$normalized])) {
+	                $limit = $freeLimits[$normalized];
+	            }
+	        }
 
-        // Compute current usage for this feature
+	        // Determine from which date we should start counting usage for this
+	        // subscription period. If there is an active subscription, we only
+	        // count resources created since the start of the current billing
+	        // period (or, as a fallback, since the subscription itself was
+	        // created). This prevents usage from the free period from blocking a
+	        // newly started paid plan.
+	        $usageStart = null;
+	        if ($subscription) {
+	            $usageStart = $subscription->current_period_start ?? $subscription->created_at;
+	        }
 
-	    	// For "applications", we count:
-	    	// - applications submitted by the user as a professional (pending/accepted)
-	    	// - invitations sent by the user as a client (OfferApplication rows in
-	    	//   "invited" status on open offers owned by this user)
-	    	$applicationsUsed = $this->offerApplications()
-	    	    ->whereIn('status', ['pending', 'accepted'])
-	    	    ->count()
-	    	    + OfferApplication::whereHas('openOffer', function ($query) {
-	    	        $query->where('user_id', $this->id);
-	    	    })
-	    	        ->where('status', 'invited')
-	    	        ->count();
+	        // Build base queries for each feature so we can apply the same date
+	        // filter when a subscription is present.
+	        $serviceOffersQuery = $this->serviceOffers();
+	        $openOffersQuery = $this->openOffers();
+	        $messagesQuery = $this->sentMessages();
 
-        $used = match ($normalized) {
-            'service_offers' => $this->serviceOffers()->count(),
-            'open_offers' => $this->openOffers()->count(),
-            'applications' => $applicationsUsed,
-            'messages' => $this->sentMessages()->count(),
-            default => 0,
-        };
+	        if ($usageStart) {
+	            $serviceOffersQuery->where('created_at', '>=', $usageStart);
+	            $openOffersQuery->where('created_at', '>=', $usageStart);
+	            $messagesQuery->where('created_at', '>=', $usageStart);
+	        }
 
-        return [
-            'limit' => $limit,
-            'used' => $used,
-        ];
+	        // For "applications", we count:
+	        // - applications submitted by the user as a professional (pending/accepted)
+	        // - invitations sent by the user as a client (OfferApplication rows in
+	        //   "invited" status on open offers owned by this user)
+	        $professionalApplications = $this->offerApplications()
+	            ->whereIn('status', ['pending', 'accepted']);
+
+	        if ($usageStart) {
+	            $professionalApplications->where('created_at', '>=', $usageStart);
+	        }
+
+	        $clientInvitations = OfferApplication::whereHas('openOffer', function ($query) {
+	                $query->where('user_id', $this->id);
+	            })
+	            ->where('status', 'invited');
+
+	        if ($usageStart) {
+	            $clientInvitations->where('created_at', '>=', $usageStart);
+	        }
+
+	        $applicationsUsed = $professionalApplications->count() + $clientInvitations->count();
+
+	        $used = match ($normalized) {
+	            'service_offers' => $serviceOffersQuery->count(),
+	            'open_offers' => $openOffersQuery->count(),
+	            'applications' => $applicationsUsed,
+	            'messages' => $messagesQuery->count(),
+	            default => 0,
+	        };
+
+	        return [
+	            'limit' => $limit,
+	            'used' => $used,
+	        ];
     }
 
     /**

@@ -79,30 +79,55 @@ class OfferApplicationController extends Controller
      */
     public function accept(Request $request, $id): JsonResponse
     {
-        // try {
-            $user = $request->user();
+        $user = $request->user();
 
-            if (!$user->is_professional) {
-                return response()->json(['message' => 'Seuls les professionnels peuvent accepter des offres.'], 403);
+        if (!$user->is_professional) {
+            return response()->json(['message' => 'Seuls les professionnels peuvent accepter des offres.'], 403);
+        }
+
+        $application = OfferApplication::findOrFail($id);
+
+        // Vérifier que l'application appartient à l'utilisateur connecté
+        if (!$application->freelanceProfile || $application->freelanceProfile->user_id !== $user->id) {
+            return response()->json(['message' => 'Non autorisé à accepter cette offre.'], 403);
+        }
+
+        // Appliquer la même logique de quota que pour OpenOfferController::apply
+        // afin que l'acceptation d'une invitation consomme bien une "candidature"
+        // et respecte les limites du plan d'abonnement.
+        $limitData = $user->getActionLimitAndUsage('applications');
+        $limit = $limitData['limit'];
+        $used = $limitData['used'];
+
+        if ($limit !== null) {
+            // Cas 1 : le plan ne donne aucun droit de candidature (limite = 0)
+            // -> interdire toute acceptation, même en réponse à une invitation
+            if ($limit === 0) {
+                $subscription = $user->currentSubscription();
+                $message = $subscription
+                    ? 'Votre abonnement ne permet pas de postuler aux offres.'
+                    : 'Plan Free actif. Un abonnement est requis pour postuler aux offres.';
+
+                return response()->json(['message' => $message], 403);
             }
 
-            $application = OfferApplication::findOrFail($id);
+            // Cas 2 : le plan prévoit un nombre > 0 mais la limite est atteinte
+            // -> autoriser uniquement la réponse à une invitation pour cette offre
+            if ($used >= $limit && $application->status !== 'invited') {
+                $subscription = $user->currentSubscription();
+                $message = $subscription
+                    ? 'Vous avez atteint la limite de candidatures pour votre abonnement. Veuillez mettre à niveau votre plan.'
+                    : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
 
-            // Vérifier que l'application appartient à l'utilisateur
-            if ($application->freelanceProfile->user_id !== $user->id) {
-                return response()->json(['message' => 'Non autorisé à accepter cette offre.'], 403);
+                return response()->json(['message' => $message], 403);
             }
+        }
 
-            // Mettre à jour le statut de l'application
-            $application->status = 'accepted';
-            $application->save();
+        // Mettre à jour le statut de l'application
+        $application->status = 'accepted';
+        $application->save();
 
-            return response()->json(['message' => 'Offre acceptée avec succès.']);
-        // } catch (\Exception $e) {
-        //     Log::error('Erreur lors de l\'acceptation de l\'offre: ' . $e->getMessage());
-        //     // return response()->json(['message' => 'Erreur lors de l\'acceptation de l\'offre.'], 500);
-        //     return response()->json(['message' => 'Erreur lors de l\'acceptation de l\'offre.'.$e->getMessage()], 500);
-        // }
+        return response()->json(['message' => 'Offre acceptée avec succès.']);
     }
 
     /**

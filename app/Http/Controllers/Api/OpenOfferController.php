@@ -234,15 +234,23 @@ class OpenOfferController extends Controller
             return response()->json(['message' => 'Seuls les professionnels avec un profil professionnel peuvent postuler.'], 403);
         }
 
-	        // Check subscription/application limits for this professional
-	        if (!$user->canPerformAction('applications')) {
-	            $subscription = $user->currentSubscription();
-	            $message = $subscription
+		        // Check subscription/application limits for this professional
+		        if (!$user->canPerformAction('applications')) {
+		            // Autoriser la réponse à une invitation pour cette offre même si la limite est atteinte
+		            $hasInvitationForThisOffer = OfferApplication::where('open_offer_id', $openOffer->id)
+		                ->where('professional_profile_id', $user->professionalProfile->id)
+		                ->where('status', 'invited')
+		                ->exists();
+
+		            if (!$hasInvitationForThisOffer) {
+		                $subscription = $user->currentSubscription();
+		                $message = $subscription
 	                ? 'Vous avez atteint la limite de candidatures pour votre abonnement. Veuillez mettre  e0 niveau votre plan.'
 	                : 'Plan Free actif. Un abonnement est requis pour acc e9der  e0 toutes les fonctionnalit e9s.';
 
-	            return response()->json(['message' => $message], 403);
-	        }
+		                return response()->json(['message' => $message], 403);
+		            }
+		        }
 
         try {
             $existingInvitedApplication = OfferApplication::where('open_offer_id', $openOffer->id)
@@ -628,11 +636,23 @@ class OpenOfferController extends Controller
             return response()->json(['message' => 'Non autorisé à inviter des professionnels pour cette offre.'], 403);
         }
 
-        if ($openOffer->status !== 'open' && $openOffer->status !== 'pending') { // Allow invitation for 'pending' and 'open' offers
-            return response()->json(['message' => 'Les invitations ne peuvent être envoyées que pour les offres en statut "pending" ou "open".'], 400);
-        }
-
-        $validator = Validator::make($request->all(), [
+	    	if ($openOffer->status !== 'open' && $openOffer->status !== 'pending') { // Allow invitation for 'pending' and 'open' offers
+	    	    return response()->json(['message' => 'Les invitations ne peuvent être envoyées que pour les offres en statut "pending" ou "open".'], 400);
+	    	}
+	    	
+	    	$user = $request->user();
+	    	
+	    	// Check subscription/invitation limits for this client
+	    	if (!$user->canPerformAction('applications')) {
+	    	    $subscription = $user->currentSubscription();
+	    	    $message = $subscription
+	    	        ? 'Vous avez atteint la limite de candidatures ou d\'invitations pour votre abonnement. Veuillez mettre à niveau votre plan.'
+	    	        : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
+	    	
+	    	    return response()->json(['message' => $message], 403);
+	    	}
+	    	
+	    	$validator = Validator::make($request->all(), [
             'professional_id' => 'required|exists:users,id,is_professional,1', // Ensure it's a professional user
         ]);
 

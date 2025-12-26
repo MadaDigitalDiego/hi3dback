@@ -487,10 +487,24 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         // Compute current usage for this feature
+
+	    	// For "applications", we count:
+	    	// - applications submitted by the user as a professional (pending/accepted)
+	    	// - invitations sent by the user as a client (OfferApplication rows in
+	    	//   "invited" status on open offers owned by this user)
+	    	$applicationsUsed = $this->offerApplications()
+	    	    ->whereIn('status', ['pending', 'accepted'])
+	    	    ->count()
+	    	    + OfferApplication::whereHas('openOffer', function ($query) {
+	    	        $query->where('user_id', $this->id);
+	    	    })
+	    	        ->where('status', 'invited')
+	    	        ->count();
+
         $used = match ($normalized) {
             'service_offers' => $this->serviceOffers()->count(),
             'open_offers' => $this->openOffers()->count(),
-            'applications' => $this->offerApplications()->count(),
+            'applications' => $applicationsUsed,
             'messages' => $this->sentMessages()->count(),
             default => 0,
         };

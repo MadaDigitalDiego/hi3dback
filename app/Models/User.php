@@ -446,15 +446,11 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check if the user can perform an action based on plan limits.
+     * Compute the limit and current usage for a given feature/action.
      *
-     * Supported feature keys (aliases are accepted):
-     *  - service_offers / services
-     *  - open_offers
-     *  - applications
-     *  - messages
+     * @return array{limit: int|null, used: int}
      */
-    public function canPerformAction(string $action): bool
+    public function getActionLimitAndUsage(string $action): array
     {
         // Normalise external aliases used by the API/frontend into internal keys
         $normalized = match ($action) {
@@ -481,11 +477,6 @@ class User extends Authenticatable implements MustVerifyEmail
             }
         }
 
-        // If there is no limit configured, consider the feature unlimited
-        if ($limit === null) {
-            return true;
-        }
-
         // Compute current usage for this feature
 
 	    	// For "applications", we count:
@@ -508,6 +499,30 @@ class User extends Authenticatable implements MustVerifyEmail
             'messages' => $this->sentMessages()->count(),
             default => 0,
         };
+
+        return [
+            'limit' => $limit,
+            'used' => $used,
+        ];
+    }
+
+    /**
+     * Check if the user can perform an action based on plan limits.
+     *
+     * Supported feature keys (aliases are accepted):
+     *  - service_offers / services
+     *  - open_offers
+     *  - applications
+     *  - messages
+     */
+    public function canPerformAction(string $action): bool
+    {
+        ['limit' => $limit, 'used' => $used] = $this->getActionLimitAndUsage($action);
+
+        // If there is no limit configured, consider the feature unlimited
+        if ($limit === null) {
+            return true;
+        }
 
         return $used < $limit;
     }

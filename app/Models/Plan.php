@@ -124,4 +124,61 @@ class Plan extends Model
     {
         return number_format($this->price, 2) . ' ' . config('app.currency', 'USD');
     }
+
+    /**
+     * Check if this is a free plan (price = 0).
+     */
+    public function isFree(): bool
+    {
+        return $this->price == 0;
+    }
+
+    /**
+     * Find the free plan for a specific user type.
+     */
+    public static function findFreePlanForUserType(string $userType): ?self
+    {
+        return static::where('user_type', $userType)
+                    ->where('price', 0)
+                    ->where('is_active', true)
+                    ->first();
+    }
+
+    /**
+     * Check if a free plan already exists for the given user type (excluding current plan if updating).
+     */
+    public static function hasExistingFreePlanForUserType(string $userType, ?int $excludePlanId = null): bool
+    {
+        $query = static::where('user_type', $userType)
+                      ->where('price', 0)
+                      ->where('is_active', true);
+
+        if ($excludePlanId) {
+            $query->where('id', '!=', $excludePlanId);
+        }
+
+        return $query->exists();
+    }
+
+    /**
+     * Boot method to add model event listeners.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (Plan $plan) {
+            // Validate unique free plan constraint before creating
+            if ($plan->isFree() && static::hasExistingFreePlanForUserType($plan->user_type)) {
+                throw new \Exception('Un plan gratuit existe déjà pour ce type d\'utilisateur (' . $plan->user_type . ').');
+            }
+        });
+
+        static::updating(function (Plan $plan) {
+            // Validate unique free plan constraint before updating
+            if ($plan->isFree() && static::hasExistingFreePlanForUserType($plan->user_type, $plan->id)) {
+                throw new \Exception('Un plan gratuit existe déjà pour ce type d\'utilisateur (' . $plan->user_type . ').');
+            }
+        });
+    }
 }

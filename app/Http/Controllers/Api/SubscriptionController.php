@@ -61,6 +61,39 @@ class SubscriptionController extends Controller
     }
 
     /**
+     * Get the appropriate free plan for the authenticated user.
+     */
+    public function getFreePlan(): JsonResponse
+    {
+        try {
+            $user = auth()->user();
+            $userType = $user->is_professional ? 'professional' : 'client';
+
+            $freePlan = Plan::findFreePlanForUserType($userType);
+
+            if (!$freePlan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucun plan gratuit disponible pour ce type d\'utilisateur.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $freePlan,
+                'user_type' => $userType,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting free plan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération du plan gratuit.',
+            ], 500);
+        }
+    }
+
+    /**
      * Get user's current subscription.
      */
     public function getCurrentSubscription(): JsonResponse

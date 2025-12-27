@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class Plan extends Model
 {
@@ -170,14 +171,18 @@ class Plan extends Model
         static::creating(function (Plan $plan) {
             // Validate unique free plan constraint before creating
             if ($plan->isFree() && static::hasExistingFreePlanForUserType($plan->user_type)) {
-                throw new \Exception('Un plan gratuit existe déjà pour ce type d\'utilisateur (' . $plan->user_type . ').');
+                throw ValidationException::withMessages([
+                    'price' => ['Un plan gratuit existe déjà pour ce type d\'utilisateur (' . ($plan->user_type === 'professional' ? 'Professionnel' : 'Client') . '). Il ne peut y avoir qu\'un seul plan gratuit par type d\'utilisateur.']
+                ]);
             }
         });
 
         static::updating(function (Plan $plan) {
             // Validate unique free plan constraint before updating
             if ($plan->isFree() && static::hasExistingFreePlanForUserType($plan->user_type, $plan->id)) {
-                throw new \Exception('Un plan gratuit existe déjà pour ce type d\'utilisateur (' . $plan->user_type . ').');
+                throw ValidationException::withMessages([
+                    'price' => ['Un plan gratuit existe déjà pour ce type d\'utilisateur (' . ($plan->user_type === 'professional' ? 'Professionnel' : 'Client') . '). Il ne peut y avoir qu\'un seul plan gratuit par type d\'utilisateur.']
+                ]);
             }
         });
     }

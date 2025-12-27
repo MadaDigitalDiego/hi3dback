@@ -70,7 +70,7 @@ class PlanResource extends Resource
                             ->step(0.01)
 	                            ->prefix(config('subscription.currency', 'EUR') . ' ')
 		                            ->label('Prix mensuel de référence')
-		                            ->helperText('Montant mensuel (> 0) utilisé pour générer les prix Stripe mensuels et annuels.'),
+		                            ->helperText('Montant mensuel (0.00 pour plan gratuit) utilisé pour générer les prix Stripe mensuels et annuels.'),
 	                        Forms\Components\TextInput::make('yearly_price')
 	                            ->numeric()
 	                            ->minValue(0.00)
@@ -245,5 +245,52 @@ class PlanResource extends Resource
             'create' => Pages\CreatePlan::route('/create'),
             'edit' => Pages\EditPlan::route('/{record}/edit'),
         ];
-    }    
+    }
+
+    /**
+     * Gestion personnalisée des erreurs de création
+     */
+    public static function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Vérifier les plans gratuits avant la création
+        $price = $data['price'] ?? 0;
+        $userType = $data['user_type'] ?? null;
+        
+        if ($price == 0 && $userType) {
+            $existingFreePlan = Plan::where('user_type', $userType)
+                ->where('price', 0)
+                ->first();
+            
+            if ($existingFreePlan) {
+                // Lancer une exception avec un message clair pour Filament
+                throw new \Exception("Un plan gratuit existe déjà pour ce type d'utilisateur (" . ($userType === 'professional' ? 'Professionnel' : 'Client') . "). Il ne peut y avoir qu'un seul plan gratuit par type d'utilisateur.");
+            }
+        }
+        
+        return $data;
+    }
+
+    /**
+     * Gestion des erreurs après création
+     */
+    public static function afterCreate(Model $record, array $data, array $options = []): void
+    {
+        Notification::make()
+            ->title('Plan créé avec succès')
+            ->body('Le plan "' . $record->title . '" a été créé.')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Gestion des erreurs après sauvegarde
+     */
+    public static function afterSave(Model $record, array $data, array $options = []): void
+    {
+        Notification::make()
+            ->title('Plan modifié avec succès')
+            ->body('Le plan "' . $record->title . '" a été modifié.')
+            ->success()
+            ->send();
+    }
 }

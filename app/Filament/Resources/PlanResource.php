@@ -14,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\ValidationException;
 
 class PlanResource extends Resource
 {
@@ -262,8 +263,10 @@ class PlanResource extends Resource
                 ->first();
             
             if ($existingFreePlan) {
-                // Lancer une exception avec un message clair pour Filament
-                throw new \Exception("Un plan gratuit existe déjà pour ce type d'utilisateur (" . ($userType === 'professional' ? 'Professionnel' : 'Client') . "). Il ne peut y avoir qu'un seul plan gratuit par type d'utilisateur.");
+                // Lancer une ValidationException pour que Filament l'affiche correctement
+                throw ValidationException::withMessages([
+                    'price' => ['Un plan gratuit existe déjà pour ce type d\'utilisateur (' . ($userType === 'professional' ? 'Professionnel' : 'Client') . '). Il ne peut y avoir qu\'un seul plan gratuit par type d\'utilisateur.']
+                ]);
             }
         }
         

@@ -518,9 +518,9 @@ class StripeService
             // Valider les données du plan avant d'appeler Stripe
             $basePrice = (float) $plan->price;
 
-            if ($basePrice <= 0) {
-                throw new \Exception('Le prix du plan doit être strictement supérieur à 0 pour créer les prix Stripe. Mettez à jour le champ "Prix mensuel" du plan avant de synchroniser.');
-            }
+            // Pour les plans gratuits (prix = 0), on garde 0 dans la base de données
+            // mais on utilise 0.01 pour Stripe car Stripe n'accepte pas les montants à 0
+            $isFreePlan = $basePrice == 0;
 
             // Prix annuel : si un prix annuel explicite est saisi, on l'utilise.
             // Sinon, on calcule automatiquement 12 x le prix mensuel.
@@ -538,6 +538,11 @@ class StripeService
             if ($plan->yearly_price === null) {
                 $plan->yearly_price = $yearlyBasePrice;
             }
+
+            // Pour Stripe: utiliser 0.01 au lieu de 0 (minimum accepté par Stripe)
+            // Mais garder les vrais prix pour la base de données
+            $stripeMonthlyPrice = $isFreePlan ? 0.01 : $basePrice;
+            $stripeYearlyPrice = $isFreePlan ? 0.01 : $yearlyBasePrice;
 
             $currency = $this->getStripeCurrency();
 
@@ -568,8 +573,8 @@ class StripeService
 
 	            // 2) Créer ou mettre à jour les prix Stripe (mensuel & annuel)
 
-	            // Prix mensuel
-	            $expectedMonthlyAmount = (int) round($basePrice * 100); // prix par mois en cents
+	            // Prix mensuel - utiliser le prix Stripe (0.01 pour les plans gratuits)
+	            $expectedMonthlyAmount = (int) round($stripeMonthlyPrice * 100); // prix par mois en cents
 	            $needsNewMonthlyPrice = false;
 
 	            if ($plan->stripe_price_id_monthly) {
@@ -623,8 +628,8 @@ class StripeService
 	                }
 	            }
 
-	            // Prix annuel (par défaut: 12x le prix mensuel ou valeur saisie dans "Prix annuel")
-	            $expectedYearlyAmount = (int) round($yearlyBasePrice * 100);
+	            // Prix annuel - utiliser le prix Stripe (0.01 pour les plans gratuits)
+	            $expectedYearlyAmount = (int) round($stripeYearlyPrice * 100);
 	            $needsNewYearlyPrice = false;
 
 	            if ($plan->stripe_price_id_yearly) {

@@ -146,6 +146,19 @@ class SubscriptionController extends Controller
             $plan = Plan::findOrFail($validated['plan_id']);
             $billingPeriod = $validated['billing_period'] ?? null;
             
+            // Vérifier si l'utilisateur est déjà abonné à ce plan
+            $existingSubscription = $user->subscriptions()
+                ->where('plan_id', $validated['plan_id'])
+                ->whereIn('stripe_status', ['active', 'trialing'])
+                ->first();
+            
+            if ($existingSubscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous êtes déjà abonné à ce plan.',
+                ], 400);
+            }
+            
             Log::info('Creating subscription for user', [
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,

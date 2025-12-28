@@ -508,7 +508,7 @@ class User extends Authenticatable implements MustVerifyEmail
 	            ->whereIn('status', ['pending', 'accepted']);
 
 	        if ($usageStart) {
-	            $professionalApplications->where('created_at', '>=', $usageStart);
+	            $professionalApplications->where('offer_applications.created_at', '>=', $usageStart);
 	        }
 
 	        $clientInvitations = OfferApplication::whereHas('openOffer', function ($query) {
@@ -517,7 +517,7 @@ class User extends Authenticatable implements MustVerifyEmail
 	            ->where('status', 'invited');
 
 	        if ($usageStart) {
-	            $clientInvitations->where('created_at', '>=', $usageStart);
+	            $clientInvitations->where('offer_applications.created_at', '>=', $usageStart);
 	        }
 
 	        $applicationsUsed = $professionalApplications->count() + $clientInvitations->count();

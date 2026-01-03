@@ -282,7 +282,7 @@ class StripeService
 	                'items' => [
 	                    ['price' => $priceId],
 	                ],
-	                'expand' => ['latest_invoice.payment_intent'],
+	                'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
 	            ];
 	
 	            // Si une méthode de paiement est fournie, on demande à Stripe d'autoriser
@@ -337,7 +337,11 @@ class StripeService
                 if (is_string($invoice) || (is_object($invoice) && !isset($invoice->payment_intent))) {
                     Log::info('Retrieving invoice explicitly to find payment intent...');
                     $invoiceId = is_string($invoice) ? $invoice : $invoice->id;
-                    $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
+                    try {
+                        $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve invoice explicitly', ['error' => $e->getMessage()]);
+                    }
                 }
 
                 if (isset($invoice->payment_intent)) {
@@ -360,25 +364,54 @@ class StripeService
                             'secret_prefix' => $clientSecret ? substr($clientSecret, 0, 7) : 'null',
                         ]);
                     }
-                } else {
-                    Log::warning('No payment intent found on latest invoice EVEN AFTER explicit retrieve', [
-                        'invoice_id' => $invoice->id ?? 'unknown',
-                        'keys' => is_object($invoice) ? array_keys($invoice->toArray()) : 'not_an_object'
+                }
+            }
+
+            // Fallback 1: Check pending_setup_intent if still no secret (even if there was an invoice)
+            if (!$clientSecret && isset($stripeSubscription->pending_setup_intent)) {
+                Log::info('No payment_intent secret yet, checking pending_setup_intent...');
+                $si = $stripeSubscription->pending_setup_intent;
+                if (is_string($si)) {
+                    try {
+                        $si = $this->stripe->setupIntents->retrieve($si);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve setup_intent', ['error' => $e->getMessage()]);
+                    }
+                }
+                
+                if (is_object($si)) {
+                    $clientSecret = $si->client_secret ?? null;
+                    $paymentIntentStatus = $si->status ?? null; // For the check below
+                    Log::info('Found setup_intent secret', [
+                        'has_secret' => !empty($clientSecret),
+                        'status' => $paymentIntentStatus
                     ]);
                 }
-            } else {
-                Log::warning('No latest invoice found on subscription. Checking pending_setup_intent...', [
-                    'has_pending_setup_intent' => isset($stripeSubscription->pending_setup_intent)
-                ]);
-                if (isset($stripeSubscription->pending_setup_intent)) {
-                    $si = $stripeSubscription->pending_setup_intent;
-                    if (is_string($si)) {
-                        $si = $this->stripe->setupIntents->retrieve($si);
-                    }
-                    $clientSecret = $si->client_secret ?? null;
-                    Log::info('Found setup_intent instead of payment_intent', [
-                        'has_secret' => !empty($clientSecret)
+            }
+
+            // Fallback 2: Ultimate fallback for incomplete status - search customer payment intents
+            if (!$clientSecret && $finalStatus === 'incomplete') {
+                Log::info('Still no secret but status is incomplete. Searching recent payment intents for customer...');
+                try {
+                    $recentPIs = $this->stripe->paymentIntents->all([
+                        'customer' => $customerId,
+                        'limit' => 5,
                     ]);
+                    foreach ($recentPIs->data as $recentPI) {
+                        // If PI requires action and is very recent (created in last 2 minutes)
+                        $isRecent = (time() - $recentPI->created) < 120;
+                        if ($recentPI->status === 'requires_action' && $isRecent) {
+                            $clientSecret = $recentPI->client_secret;
+                            $paymentIntentStatus = $recentPI->status;
+                            Log::info('Found matching PI in customer history (requires_action & recent)', [
+                                'pi_id' => $recentPI->id,
+                                'created' => $recentPI->created
+                            ]);
+                            break;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to search recent payment intents', ['error' => $e->getMessage()]);
                 }
             }
 
@@ -508,7 +541,7 @@ class StripeService
                 ],
                 'proration_behavior' => 'always_invoice', // Prorate the change
                 'payment_behavior' => 'allow_incomplete',
-                'expand' => ['latest_invoice.payment_intent'],
+                'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
             ];
 
             // Update payment method if provided
@@ -563,7 +596,11 @@ class StripeService
                 if (is_string($invoice) || (is_object($invoice) && !isset($invoice->payment_intent))) {
                     Log::info('Retrieving invoice explicitly for change to find payment intent...');
                     $invoiceId = is_string($invoice) ? $invoice : $invoice->id;
-                    $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
+                    try {
+                        $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve invoice explicitly for change', ['error' => $e->getMessage()]);
+                    }
                 }
 
                 if (isset($invoice->payment_intent)) {
@@ -582,16 +619,48 @@ class StripeService
                         ]);
                     }
                 }
-            } else {
-                Log::warning('No latest invoice found on updated subscription. Checking pending_setup_intent...', [
-                    'has_pending_setup_intent' => isset($updatedSubscription->pending_setup_intent)
-                ]);
-                if (isset($updatedSubscription->pending_setup_intent)) {
-                    $si = $updatedSubscription->pending_setup_intent;
-                    if (is_string($si)) {
+            }
+
+            // Fallback 1: Check pending_setup_intent if still no secret
+            if (!$clientSecret && isset($updatedSubscription->pending_setup_intent)) {
+                Log::info('No payment_intent secret yet for change, checking pending_setup_intent...');
+                $si = $updatedSubscription->pending_setup_intent;
+                if (is_string($si)) {
+                    try {
                         $si = $this->stripe->setupIntents->retrieve($si);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve setup_intent for change', ['error' => $e->getMessage()]);
                     }
+                }
+                if (is_object($si)) {
                     $clientSecret = $si->client_secret ?? null;
+                    $paymentIntentStatus = $si->status ?? null;
+                    Log::info('Found setup_intent secret for change', [
+                        'has_secret' => !empty($clientSecret)
+                    ]);
+                }
+            }
+
+            // Fallback 2: Ultimate fallback for change
+            if (!$clientSecret && $updatedSubscription->status === 'incomplete') {
+                Log::info('Still no secret for change but status is incomplete. Searching recent PIs...');
+                try {
+                    $customerId = is_string($updatedSubscription->customer) ? $updatedSubscription->customer : $updatedSubscription->customer->id;
+                    $recentPIs = $this->stripe->paymentIntents->all([
+                        'customer' => $customerId,
+                        'limit' => 5,
+                    ]);
+                    foreach ($recentPIs->data as $recentPI) {
+                        $isRecent = (time() - $recentPI->created) < 120;
+                        if ($recentPI->status === 'requires_action' && $isRecent) {
+                            $clientSecret = $recentPI->client_secret;
+                            $paymentIntentStatus = $recentPI->status;
+                            Log::info('Found matching PI for change in customer history', ['pi_id' => $recentPI->id]);
+                            break;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to search recent PIs for change', ['error' => $e->getMessage()]);
                 }
             }
 

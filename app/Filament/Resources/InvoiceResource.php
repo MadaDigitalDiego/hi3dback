@@ -30,7 +30,8 @@ class InvoiceResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('invoice_number')->label('Numéro'),
                         Forms\Components\Select::make('user_id')
-                            ->relationship('user', 'name')
+                            ->relationship('user', 'email')
+                            ->searchable()
                             ->label('Client'),
                         Forms\Components\TextInput::make('amount')->label('Montant HT')->numeric(),
                         Forms\Components\TextInput::make('total')->label('Total TTC')->numeric(),
@@ -78,7 +79,7 @@ class InvoiceResource extends Resource
                     ->label('Numéro')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user.name')
+                Tables\Columns\TextColumn::make('user.email')
                     ->label('Client')
                     ->searchable()
                     ->sortable(),

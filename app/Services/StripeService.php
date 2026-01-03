@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\StripeConfiguration;
+use App\Models\BillingSetting;
 use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +41,43 @@ class StripeService
         }
 
         $this->stripe = new StripeClient($secretKey);
+    }
+
+    /**
+     * Update a Stripe customer with admin-defined billing information.
+     */
+    public function updateCustomerWithBillingSettings(User $user): void
+    {
+        $customerId = $this->getOrCreateCustomer($user);
+        $settings = BillingSetting::first();
+
+        if (!$settings) {
+            return;
+        }
+
+        try {
+            $this->stripe->customers->update($customerId, [
+                'name' => $settings->company_name ?: $user->name,
+                'email' => $settings->email ?: $user->email,
+                'address' => [
+                    'line1' => $settings->address,
+                ],
+                'invoice_settings' => [
+                    'custom_fields' => [
+                        [
+                            'name' => 'TVA',
+                            'value' => $settings->vat_number,
+                        ],
+                    ],
+                    'footer' => $settings->footer_text,
+                ],
+                'metadata' => [
+                    'legal_mentions' => $settings->legal_mentions,
+                ],
+            ]);
+        } catch (ApiErrorException $e) {
+            Log::error('Failed to update Stripe customer with billing settings: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -28,12 +28,18 @@
         
         <!-- Informations de la société -->
         <div class="company-info">
-            <h3>VOTRE SOCIÉTÉ</h3>
-            <p>123 Rue de l'Exemple</p>
-            <p>75000 Paris, France</p>
-            <p>Tél: +33 1 23 45 67 89</p>
-            <p>Email: facturation@votredomaine.com</p>
-            <p>SIRET: 123 456 789 00012</p>
+            @if($settings && $settings->logo_path)
+                <img src="{{ public_path('storage/' . $settings->logo_path) }}" style="max-height: 100px; margin-bottom: 10px;">
+            @endif
+            <h3>{{ $settings->company_name ?? 'VOTRE SOCIÉTÉ' }}</h3>
+            <p>{{ $settings->address ?? '123 Rue de l\'Exemple' }}</p>
+            @if($settings && $settings->phone)
+                <p>Tél: {{ $settings->phone }}</p>
+            @endif
+            <p>Email: {{ $settings->email ?? 'facturation@votredomaine.com' }}</p>
+            @if($settings && $settings->vat_number)
+                <p>TVA: {{ $settings->vat_number }}</p>
+            @endif
         </div>
         
         <!-- Informations du client -->
@@ -113,15 +119,18 @@
         
         <!-- Conditions de paiement -->
         <div class="footer">
-            <div style="margin-bottom: 20px; text-align: left;">
-                <h4>CONDITIONS DE PAIEMENT</h4>
-                <p>Paiement dû dans les 30 jours suivant la date de facture.</p>
-                <p>Les paiements en retard sont soumis à des frais de 1.5% par mois.</p>
-            </div>
+            @if($settings && $settings->legal_mentions)
+                <div style="margin-bottom: 20px; text-align: left;">
+                    <h4>MENTIONS LÉGALES</h4>
+                    <p>{{ $settings->legal_mentions }}</p>
+                </div>
+            @endif
             
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
-                <p>Merci pour votre confiance !</p>
-                <p>Pour toute question concernant cette facture, contactez-nous à facturation@votredomaine.com</p>
+                <p>{{ $settings->footer_text ?? 'Merci pour votre confiance !' }}</p>
+                @if(!$settings || !$settings->footer_text)
+                    <p>Pour toute question concernant cette facture, contactez-nous à {{ $settings->email ?? 'facturation@votredomaine.com' }}</p>
+                @endif
                 <p>Cette facture a été générée automatiquement par notre système.</p>
             </div>
         </div>

@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
     use App\Notifications\InvoicePaidNotification;
     use App\Notifications\InvoicePaymentFailedNotification;
     use App\Services\InvoicePdfService;
+    use App\Services\StripeService;
     use App\Mail\SubscriptionCancellation;
+    use App\Models\BillingSetting;
     use Carbon\Carbon;
     use Illuminate\Http\Request;
     use Illuminate\Http\Response;
@@ -196,7 +198,23 @@ class WebhookController extends Controller
             return;
         }
 
-        	$attributes = $this->mapStripeInvoiceToAttributes($stripeInvoice, $user, $subscription);
+        // Update customer info on Stripe with our latest billing settings
+        try {
+            $stripeService = app(StripeService::class);
+            $stripeService->updateCustomerWithBillingSettings($user);
+        } catch (\Throwable $e) {
+            Log::error('Failed to update Stripe customer info on payment_succeeded: ' . $e->getMessage());
+        }
+
+        $attributes = $this->mapStripeInvoiceToAttributes($stripeInvoice, $user, $subscription);
+
+        // Add current billing settings to invoice metadata for history
+        $settings = BillingSetting::first();
+        if ($settings) {
+            $attributes['metadata'] = array_merge($attributes['metadata'] ?? [], [
+                'billing_settings_at_time_of_payment' => $settings->toArray(),
+            ]);
+        }
 
         $invoice = Invoice::where('stripe_invoice_id', $stripeInvoice->id)->first();
 

@@ -318,8 +318,8 @@ class StripeService
 
             Log::info('Checking Stripe subscription for payment intent', [
                 'subscription_id' => $stripeSubscription->id,
+                'status' => $stripeSubscription->status,
                 'has_latest_invoice' => isset($stripeSubscription->latest_invoice),
-                'latest_invoice_type' => isset($stripeSubscription->latest_invoice) ? gettype($stripeSubscription->latest_invoice) : 'null',
             ]);
 
             if (isset($stripeSubscription->latest_invoice)) {
@@ -334,7 +334,6 @@ class StripeService
                 if (isset($invoice->payment_intent)) {
                     $pi = $invoice->payment_intent;
                     Log::info('Payment intent found on invoice', [
-                        'pi_type' => gettype($pi),
                         'pi_id' => is_string($pi) ? $pi : ($pi->id ?? 'unknown'),
                     ]);
 
@@ -349,9 +348,16 @@ class StripeService
                         Log::info('Payment intent details retrieved', [
                             'status' => $paymentIntentStatus,
                             'has_secret' => !empty($clientSecret),
+                            'secret_prefix' => $clientSecret ? substr($clientSecret, 0, 7) : 'null',
                         ]);
                     }
+                } else {
+                    Log::warning('No payment intent found on latest invoice', [
+                        'invoice_id' => $invoice->id ?? 'unknown'
+                    ]);
                 }
+            } else {
+                Log::warning('No latest invoice found on subscription');
             }
 
             if (!in_array($finalStatus, ['active', 'trialing', 'incomplete'], true)) {

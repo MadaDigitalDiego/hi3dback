@@ -27,6 +27,10 @@ class Subscription extends Model
         'notes',
     ];
 
+    protected $appends = [
+        'latest_payment_intent_client_secret',
+    ];
+
     protected $casts = [
         'trial_ends_at' => 'datetime',
         'ends_at' => 'datetime',
@@ -122,5 +126,13 @@ class Subscription extends Model
             'stripe_status' => 'active',
             'ends_at' => null,
         ]);
+    }
+
+    /**
+     * Get the latest payment intent client secret (virtual attribute).
+     */
+    public function getLatestPaymentIntentClientSecretAttribute()
+    {
+        return $this->attributes['latest_payment_intent_client_secret'] ?? null;
     }
 }

@@ -265,41 +265,11 @@ class StripeService
 	            }
 	
 	            $stripeSubscription = $this->stripe->subscriptions->create($params);
-
-            // If payment method is provided, try to confirm the payment intent
-            if ($paymentMethodId && isset($stripeSubscription->latest_invoice->payment_intent)) {
-                $paymentIntent = $stripeSubscription->latest_invoice->payment_intent;
-
-                // Handle different payment intent statuses
-                if ($paymentIntent && is_object($paymentIntent)) {
-                    $paymentIntentId = is_string($paymentIntent) ? $paymentIntent : $paymentIntent->id;
-                    $paymentIntentObj = $this->stripe->paymentIntents->retrieve($paymentIntentId, [
-                        'expand' => ['payment_method'],
-                    ]);
-
-                    // If payment intent needs payment method or confirmation
-                    if (in_array($paymentIntentObj->status, ['requires_payment_method', 'requires_confirmation'])) {
-                        try {
-                            // Update and confirm the payment intent
-                            $this->stripe->paymentIntents->update($paymentIntentId, [
-                                'payment_method' => $paymentMethodId,
-                            ]);
-
-                            // Confirm the payment intent
-                            $confirmedIntent = $this->stripe->paymentIntents->confirm($paymentIntentId);
-
-                            // Refresh the subscription to get updated status
-                            $stripeSubscription = $this->stripe->subscriptions->retrieve($stripeSubscription->id, [
-                                'expand' => ['latest_invoice.payment_intent'],
-                            ]);
-                        } catch (ApiErrorException $e) {
-                            // If confirmation fails (e.g., 3D Secure required), subscription remains incomplete
-                            // This is expected behavior - the frontend should handle 3D Secure
-                            Log::warning('Payment intent confirmation failed: ' . $e->getMessage());
-                        }
-                    }
-                }
-            }
+            
+            // On ne confirme pas le payment_intent ici côté serveur pour les nouveaux abonnements.
+            // Stripe s'en chargera via le paramètre 'default_payment_method' et renverra
+            // un statut 'incomplete' si une action (3DS) est requise, ou 'active' sinon.
+            // Le frontend gérera ensuite la confirmation si nécessaire via le client_secret.
 
             // Vérifier que la souscription Stripe est active, en essai ou incomplète (3DS)
             // avant de persister côté base de données.

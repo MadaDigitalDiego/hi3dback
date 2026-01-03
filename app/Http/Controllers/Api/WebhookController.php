@@ -238,7 +238,23 @@ class WebhookController extends Controller
     private function handleInvoicePaymentFailed(Event $event): void
     {
         $stripeInvoice = $event->data->object;
+        
+        // Vérifier si l'échec est dû à une action requise (3DS)
+        $paymentIntentStatus = null;
+        if (!empty($stripeInvoice->payment_intent)) {
+            try {
+                $paymentIntent = $this->stripe->paymentIntents->retrieve($stripeInvoice->payment_intent);
+                $paymentIntentStatus = $paymentIntent->status;
+            } catch (\Exception $e) {
+                Log::error('Failed to retrieve payment intent for failed invoice: ' . $e->getMessage());
+            }
+        }
+
         $invoice = Invoice::where('stripe_invoice_id', $stripeInvoice->id)->first();
+
+        // Si 3DS est requis, on ne marque pas comme échec définitif et on n'envoie pas de mail d'erreur
+        $is3DS = $paymentIntentStatus === 'requires_action';
+        $status = $is3DS ? 'open' : 'failed';
 
         if (!$invoice) {
             [$user, $subscription] = $this->resolveInvoiceOwner($stripeInvoice);
@@ -248,20 +264,22 @@ class WebhookController extends Controller
 
                 $invoice = Invoice::create(array_merge($attributes, [
                     'invoice_number' => Invoice::generateInvoiceNumber(),
-                    'status' => 'failed',
+                    'status' => $status,
                 ]));
             }
         } else {
-            $invoice->update(['status' => 'failed']);
+            $invoice->update(['status' => $status]);
         }
 
-        if ($invoice && $invoice->user) {
+        // Envoyer la notification d'échec seulement si ce n'est pas un 3DS en attente
+        if (!$is3DS && $invoice && $invoice->user) {
             $invoice->user->notify(new InvoicePaymentFailedNotification($invoice));
         }
 
-        Log::info('Invoice payment failed handled', [
+        Log::info($is3DS ? 'Invoice payment requires action (3DS)' : 'Invoice payment failed handled', [
             'stripe_invoice_id' => $stripeInvoice->id ?? null,
             'local_invoice_id' => $invoice->id ?? null,
+            'payment_intent_status' => $paymentIntentStatus,
         ]);
     }
 

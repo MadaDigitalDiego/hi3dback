@@ -325,10 +325,19 @@ class StripeService
             if (isset($stripeSubscription->latest_invoice)) {
                 $invoice = $stripeSubscription->latest_invoice;
                 
-                // Si c'est un ID, on le récupère (normalement expand s'en charge)
-                if (is_string($invoice)) {
-                    Log::info('Latest invoice is string, retrieving it...');
-                    $invoice = $this->stripe->invoices->retrieve($invoice, ['expand' => ['payment_intent']]);
+                // Log the structure of the invoice to debug
+                Log::info('Latest invoice object details', [
+                    'id' => is_string($invoice) ? $invoice : ($invoice->id ?? 'unknown'),
+                    'is_object' => is_object($invoice),
+                    'has_payment_intent' => is_object($invoice) && isset($invoice->payment_intent),
+                    'invoice_status' => is_object($invoice) ? ($invoice->status ?? 'unknown') : 'string',
+                ]);
+
+                // Si c'est un ID, ou si payment_intent est manquant alors qu'on en a besoin
+                if (is_string($invoice) || (is_object($invoice) && !isset($invoice->payment_intent))) {
+                    Log::info('Retrieving invoice explicitly to find payment intent...');
+                    $invoiceId = is_string($invoice) ? $invoice : $invoice->id;
+                    $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
                 }
 
                 if (isset($invoice->payment_intent)) {
@@ -352,12 +361,25 @@ class StripeService
                         ]);
                     }
                 } else {
-                    Log::warning('No payment intent found on latest invoice', [
-                        'invoice_id' => $invoice->id ?? 'unknown'
+                    Log::warning('No payment intent found on latest invoice EVEN AFTER explicit retrieve', [
+                        'invoice_id' => $invoice->id ?? 'unknown',
+                        'keys' => is_object($invoice) ? array_keys($invoice->toArray()) : 'not_an_object'
                     ]);
                 }
             } else {
-                Log::warning('No latest invoice found on subscription');
+                Log::warning('No latest invoice found on subscription. Checking pending_setup_intent...', [
+                    'has_pending_setup_intent' => isset($stripeSubscription->pending_setup_intent)
+                ]);
+                if (isset($stripeSubscription->pending_setup_intent)) {
+                    $si = $stripeSubscription->pending_setup_intent;
+                    if (is_string($si)) {
+                        $si = $this->stripe->setupIntents->retrieve($si);
+                    }
+                    $clientSecret = $si->client_secret ?? null;
+                    Log::info('Found setup_intent instead of payment_intent', [
+                        'has_secret' => !empty($clientSecret)
+                    ]);
+                }
             }
 
             if (!in_array($finalStatus, ['active', 'trialing', 'incomplete'], true)) {
@@ -531,8 +553,17 @@ class StripeService
             if (isset($updatedSubscription->latest_invoice)) {
                 $invoice = $updatedSubscription->latest_invoice;
                 
-                if (is_string($invoice)) {
-                    $invoice = $this->stripe->invoices->retrieve($invoice, ['expand' => ['payment_intent']]);
+                // Log the structure of the invoice to debug
+                Log::info('Latest invoice object details for change', [
+                    'id' => is_string($invoice) ? $invoice : ($invoice->id ?? 'unknown'),
+                    'is_object' => is_object($invoice),
+                    'has_payment_intent' => is_object($invoice) && isset($invoice->payment_intent),
+                ]);
+
+                if (is_string($invoice) || (is_object($invoice) && !isset($invoice->payment_intent))) {
+                    Log::info('Retrieving invoice explicitly for change to find payment intent...');
+                    $invoiceId = is_string($invoice) ? $invoice : $invoice->id;
+                    $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
                 }
 
                 if (isset($invoice->payment_intent)) {
@@ -550,6 +581,17 @@ class StripeService
                             'has_secret' => !empty($clientSecret),
                         ]);
                     }
+                }
+            } else {
+                Log::warning('No latest invoice found on updated subscription. Checking pending_setup_intent...', [
+                    'has_pending_setup_intent' => isset($updatedSubscription->pending_setup_intent)
+                ]);
+                if (isset($updatedSubscription->pending_setup_intent)) {
+                    $si = $updatedSubscription->pending_setup_intent;
+                    if (is_string($si)) {
+                        $si = $this->stripe->setupIntents->retrieve($si);
+                    }
+                    $clientSecret = $si->client_secret ?? null;
                 }
             }
 

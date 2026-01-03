@@ -203,6 +203,7 @@ class SubscriptionController extends Controller
                 'data' => $subscription,
                 'action_required' => $isActionRequired,
                 'latest_payment_intent_client_secret' => $subscription->latest_payment_intent_client_secret,
+                'client_secret' => $subscription->latest_payment_intent_client_secret,
             ], 201);
             
         } catch (\Exception $e) {
@@ -376,6 +377,7 @@ class SubscriptionController extends Controller
                 'data' => $subscription,
                 'action_required' => $isActionRequired,
                 'latest_payment_intent_client_secret' => $subscription->latest_payment_intent_client_secret,
+                'client_secret' => $subscription->latest_payment_intent_client_secret,
             ]);
             
         } catch (\Exception $e) {

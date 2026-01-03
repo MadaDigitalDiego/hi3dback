@@ -247,16 +247,12 @@ class StripeService
 	                'expand' => ['latest_invoice.payment_intent'],
 	            ];
 	
-	            // Si une méthode de paiement est fournie, on demande à Stripe d'échouer
-	            // immédiatement si le paiement ne peut pas être complété.
-	            // Cela évite de créer des abonnements "incomplete" tout en renvoyant
-	            // un succès côté API.
+	            // Si une méthode de paiement est fournie, on demande à Stripe d'autoriser
+	            // un statut "incomplete" si une action supplémentaire (3D Secure) est requise.
 	            if ($paymentMethodId) {
 	                $params['default_payment_method'] = $paymentMethodId;
-	                $params['payment_behavior'] = 'error_if_incomplete';
+	                $params['payment_behavior'] = 'allow_incomplete';
 	            } else {
-	                // Cas sans méthode de paiement explicite : on garde le comportement
-	                // historique pour ne pas casser d'autres flux éventuels.
 	                $params['payment_behavior'] = 'default_incomplete';
 	            }
 	
@@ -305,47 +301,62 @@ class StripeService
                 }
             }
 
-            // Vérifier que la souscription Stripe est bien active (ou en période d'essai)
-            // avant de persister côté base de données. Cela évite de marquer en succès
-            // des paiements qui sont en réalité "incomplete" chez Stripe.
+            // Vérifier que la souscription Stripe est active, en essai ou incomplète (3DS)
+            // avant de persister côté base de données.
             $finalStatus = $stripeSubscription->status;
 
             $paymentIntentStatus = null;
+            $clientSecret = null;
             if (isset($stripeSubscription->latest_invoice) && isset($stripeSubscription->latest_invoice->payment_intent)) {
                 $pi = $stripeSubscription->latest_invoice->payment_intent;
-                if (is_object($pi) && isset($pi->status)) {
-                    $paymentIntentStatus = $pi->status;
+                if (is_object($pi)) {
+                    $paymentIntentStatus = $pi->status ?? null;
+                    $clientSecret = $pi->client_secret ?? null;
                 }
             }
 
-	            if (!in_array($finalStatus, ['active', 'trialing'], true)) {
-                Log::warning('Stripe subscription created but not active', [
+            if (!in_array($finalStatus, ['active', 'trialing', 'incomplete'], true)) {
+                Log::warning('Stripe subscription created with invalid status', [
                     'subscription_id' => $stripeSubscription->id,
                     'status' => $finalStatus,
                     'payment_intent_status' => $paymentIntentStatus,
                 ]);
 
                 throw new \Exception(
-                    "Le paiement n'a pas pu être finalisé. Votre carte n'a pas été débitée. Veuillez réessayer ou utiliser un autre moyen de paiement."
+                    "Le paiement n'a pas pu être initié. Veuillez réessayer ou utiliser un autre moyen de paiement."
                 );
             }
-	
-	            $subscriptionData = [
-	                'user_id' => $user->id,
-	                'plan_id' => $plan->id,
-	                'stripe_id' => $stripeSubscription->id,
-	                'stripe_subscription_id' => $stripeSubscription->id,
-	                'stripe_status' => $stripeSubscription->status,
-	                'current_period_start' => $stripeSubscription->current_period_start,
-	                'current_period_end' => $stripeSubscription->current_period_end,
-	            ];
-	
-	            if ($appliedCoupon && $discountAmount !== null) {
-	                $subscriptionData['coupon_id'] = $appliedCoupon->id;
-	                $subscriptionData['discount_amount'] = $discountAmount;
-	            }
-	
-	            $subscription = Subscription::create($subscriptionData);
+
+            // Si le statut est incomplete et que le PaymentIntent demande une action,
+            // on s'assure que le clientSecret est présent pour le frontend.
+            if ($finalStatus === 'incomplete' && $paymentIntentStatus !== 'requires_action') {
+                // Si c'est incomplete mais pas à cause d'une action requise, c'est probablement un échec réel
+                if ($paymentIntentStatus === 'requires_payment_method') {
+                    throw new \Exception("Votre carte a été refusée. Veuillez utiliser un autre moyen de paiement.");
+                }
+            }
+
+            $subscriptionData = [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'stripe_id' => $stripeSubscription->id,
+                'stripe_subscription_id' => $stripeSubscription->id,
+                'stripe_status' => $stripeSubscription->status,
+                'current_period_start' => $stripeSubscription->current_period_start,
+                'current_period_end' => $stripeSubscription->current_period_end,
+            ];
+
+            if ($appliedCoupon && $discountAmount !== null) {
+                $subscriptionData['coupon_id'] = $appliedCoupon->id;
+                $subscriptionData['discount_amount'] = $discountAmount;
+            }
+
+            $subscription = Subscription::create($subscriptionData);
+
+            // Ajouter le client_secret à l'objet pour le retour API
+            if ($clientSecret) {
+                $subscription->setAttribute('latest_payment_intent_client_secret', $clientSecret);
+            }
 	
 	            if ($appliedCoupon && $discountAmount !== null) {
 	                $appliedCoupon->users()->attach($user->id, [
@@ -429,6 +440,8 @@ class StripeService
                     ],
                 ],
                 'proration_behavior' => 'always_invoice', // Prorate the change
+                'payment_behavior' => 'allow_incomplete',
+                'expand' => ['latest_invoice.payment_intent'],
             ];
 
             // Update payment method if provided
@@ -461,6 +474,15 @@ class StripeService
                 $updateParams
             );
 
+            // Vérifier si une action est requise pour le paiement de la proration
+            $clientSecret = null;
+            if (isset($updatedSubscription->latest_invoice) && isset($updatedSubscription->latest_invoice->payment_intent)) {
+                $pi = $updatedSubscription->latest_invoice->payment_intent;
+                if (is_object($pi)) {
+                    $clientSecret = $pi->client_secret ?? null;
+                }
+            }
+
             // Update the subscription in the database
             $subscription->update([
                 'plan_id' => $newPlan->id,
@@ -469,7 +491,14 @@ class StripeService
                 'current_period_end' => $updatedSubscription->current_period_end,
             ]);
 
-            return $subscription->fresh();
+            $freshSubscription = $subscription->fresh();
+
+            // Ajouter le client_secret à l'objet pour le retour API
+            if ($clientSecret) {
+                $freshSubscription->setAttribute('latest_payment_intent_client_secret', $clientSecret);
+            }
+
+            return $freshSubscription;
         } catch (ApiErrorException $e) {
             throw new \Exception('Failed to change subscription: ' . $e->getMessage());
         }

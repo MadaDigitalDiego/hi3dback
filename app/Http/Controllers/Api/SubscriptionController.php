@@ -179,8 +179,10 @@ class SubscriptionController extends Controller
 
             // ENVOYER LES EMAILS EN ARRIÈRE-PLAN (QUEUE)
 
-            // 1. Email de confirmation d'abonnement
-            $this->sendSubscriptionConfirmationEmail($user, $subscription);
+            // 1. Email de confirmation d'abonnement (uniquement si actif ou en essai)
+            if (in_array($subscription->stripe_status, ['active', 'trialing'])) {
+                $this->sendSubscriptionConfirmationEmail($user, $subscription);
+            }
 
             // 2. L'email de facture sera envoyé automatiquement via le webhook Stripe
             //    "invoice.payment_succeeded" (voir WebhookController).
@@ -190,10 +192,16 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $isActionRequired = $subscription->getAttribute('latest_payment_intent_client_secret') !== null;
+            $message = $isActionRequired 
+                ? 'Subscription initiated. Additional action required to complete payment.' 
+                : 'Subscription created successfully. Confirmation email sent.';
+
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription created successfully. Confirmation email sent.',
+                'message' => $message,
                 'data' => $subscription,
+                'action_required' => $isActionRequired,
             ], 201);
             
         } catch (\Exception $e) {
@@ -356,10 +364,16 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $isActionRequired = $subscription->getAttribute('latest_payment_intent_client_secret') !== null;
+            $message = $isActionRequired 
+                ? 'Subscription change initiated. Additional action required to complete payment.' 
+                : 'Subscription changed successfully. An invoice email will be sent once the payment is confirmed.';
+
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription changed successfully. An invoice email will be sent once the payment is confirmed.',
+                'message' => $message,
                 'data' => $subscription,
+                'action_required' => $isActionRequired,
             ]);
             
         } catch (\Exception $e) {

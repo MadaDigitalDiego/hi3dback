@@ -89,6 +89,8 @@ class WebhookController extends Controller
         $subscription = Subscription::where('stripe_subscription_id', $stripeSubscription->id)->first();
 
         if ($subscription) {
+            $oldStatus = $subscription->stripe_status;
+            
             $subscription->update([
                 'stripe_status' => $stripeSubscription->status,
                 'current_period_start' => $stripeSubscription->current_period_start,
@@ -96,6 +98,23 @@ class WebhookController extends Controller
             ]);
 
             Log::info('Subscription updated: ' . $stripeSubscription->id);
+
+            // Si l'abonnement passe de incomplete à active, envoyer l'email de confirmation
+            if ($oldStatus === 'incomplete' && $stripeSubscription->status === 'active') {
+                $user = $subscription->user;
+                if ($user) {
+                    try {
+                        Mail::to($user->email)
+                            ->send(new \App\Mail\SubscriptionConfirmation($user, $subscription));
+                        Log::info('Subscription confirmation email sent after successful 3DS', [
+                            'user_id' => $user->id,
+                            'subscription_id' => $subscription->id,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to send confirmation email after 3DS: ' . $e->getMessage());
+                    }
+                }
+            }
         }
     }
 

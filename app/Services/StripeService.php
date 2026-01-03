@@ -277,11 +277,42 @@ class StripeService
 
             $paymentIntentStatus = null;
             $clientSecret = null;
-            if (isset($stripeSubscription->latest_invoice) && isset($stripeSubscription->latest_invoice->payment_intent)) {
-                $pi = $stripeSubscription->latest_invoice->payment_intent;
-                if (is_object($pi)) {
-                    $paymentIntentStatus = $pi->status ?? null;
-                    $clientSecret = $pi->client_secret ?? null;
+
+            Log::info('Checking Stripe subscription for payment intent', [
+                'subscription_id' => $stripeSubscription->id,
+                'has_latest_invoice' => isset($stripeSubscription->latest_invoice),
+                'latest_invoice_type' => isset($stripeSubscription->latest_invoice) ? gettype($stripeSubscription->latest_invoice) : 'null',
+            ]);
+
+            if (isset($stripeSubscription->latest_invoice)) {
+                $invoice = $stripeSubscription->latest_invoice;
+                
+                // Si c'est un ID, on le récupère (normalement expand s'en charge)
+                if (is_string($invoice)) {
+                    Log::info('Latest invoice is string, retrieving it...');
+                    $invoice = $this->stripe->invoices->retrieve($invoice, ['expand' => ['payment_intent']]);
+                }
+
+                if (isset($invoice->payment_intent)) {
+                    $pi = $invoice->payment_intent;
+                    Log::info('Payment intent found on invoice', [
+                        'pi_type' => gettype($pi),
+                        'pi_id' => is_string($pi) ? $pi : ($pi->id ?? 'unknown'),
+                    ]);
+
+                    if (is_string($pi)) {
+                        Log::info('Payment intent is string, retrieving it...');
+                        $pi = $this->stripe->paymentIntents->retrieve($pi);
+                    }
+
+                    if (is_object($pi)) {
+                        $paymentIntentStatus = $pi->status ?? null;
+                        $clientSecret = $pi->client_secret ?? null;
+                        Log::info('Payment intent details retrieved', [
+                            'status' => $paymentIntentStatus,
+                            'has_secret' => !empty($clientSecret),
+                        ]);
+                    }
                 }
             }
 
@@ -446,10 +477,35 @@ class StripeService
 
             // Vérifier si une action est requise pour le paiement de la proration
             $clientSecret = null;
-            if (isset($updatedSubscription->latest_invoice) && isset($updatedSubscription->latest_invoice->payment_intent)) {
-                $pi = $updatedSubscription->latest_invoice->payment_intent;
-                if (is_object($pi)) {
-                    $clientSecret = $pi->client_secret ?? null;
+            $paymentIntentStatus = null;
+
+            Log::info('Checking updated Stripe subscription for payment intent', [
+                'subscription_id' => $updatedSubscription->id,
+                'has_latest_invoice' => isset($updatedSubscription->latest_invoice),
+            ]);
+
+            if (isset($updatedSubscription->latest_invoice)) {
+                $invoice = $updatedSubscription->latest_invoice;
+                
+                if (is_string($invoice)) {
+                    $invoice = $this->stripe->invoices->retrieve($invoice, ['expand' => ['payment_intent']]);
+                }
+
+                if (isset($invoice->payment_intent)) {
+                    $pi = $invoice->payment_intent;
+                    
+                    if (is_string($pi)) {
+                        $pi = $this->stripe->paymentIntents->retrieve($pi);
+                    }
+
+                    if (is_object($pi)) {
+                        $paymentIntentStatus = $pi->status ?? null;
+                        $clientSecret = $pi->client_secret ?? null;
+                        Log::info('Payment intent details retrieved for subscription change', [
+                            'status' => $paymentIntentStatus,
+                            'has_secret' => !empty($clientSecret),
+                        ]);
+                    }
                 }
             }
 

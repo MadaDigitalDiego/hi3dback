@@ -27,6 +27,11 @@ class Subscription extends Model
         'notes',
     ];
 
+    /**
+     * Virtual attribute for the latest payment intent client secret.
+     */
+    protected $latest_payment_intent_client_secret = null;
+
     protected $appends = [
         'latest_payment_intent_client_secret',
     ];
@@ -36,7 +41,7 @@ class Subscription extends Model
      */
     public function getLatestPaymentIntentClientSecretAttribute()
     {
-        return $this->attributes['latest_payment_intent_client_secret'] ?? null;
+        return $this->latest_payment_intent_client_secret;
     }
 
     /**
@@ -44,7 +49,7 @@ class Subscription extends Model
      */
     public function setLatestPaymentIntentClientSecretAttribute($value)
     {
-        $this->attributes['latest_payment_intent_client_secret'] = $value;
+        $this->latest_payment_intent_client_secret = $value;
     }
 
     protected $casts = [

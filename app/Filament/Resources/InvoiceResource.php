@@ -22,6 +22,11 @@ class InvoiceResource extends Resource
     protected static ?string $label = 'Facture';
     protected static ?string $pluralLabel = 'Factures';
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

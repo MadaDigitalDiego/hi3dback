@@ -192,7 +192,7 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            $isActionRequired = $subscription->getAttribute('latest_payment_intent_client_secret') !== null;
+            $isActionRequired = $subscription->latest_payment_intent_client_secret !== null;
             $message = $isActionRequired 
                 ? 'Subscription initiated. Additional action required to complete payment.' 
                 : 'Subscription created successfully. Confirmation email sent.';
@@ -202,6 +202,7 @@ class SubscriptionController extends Controller
                 'message' => $message,
                 'data' => $subscription,
                 'action_required' => $isActionRequired,
+                'latest_payment_intent_client_secret' => $subscription->latest_payment_intent_client_secret,
             ], 201);
             
         } catch (\Exception $e) {
@@ -364,7 +365,7 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            $isActionRequired = $subscription->getAttribute('latest_payment_intent_client_secret') !== null;
+            $isActionRequired = $subscription->latest_payment_intent_client_secret !== null;
             $message = $isActionRequired 
                 ? 'Subscription change initiated. Additional action required to complete payment.' 
                 : 'Subscription changed successfully. An invoice email will be sent once the payment is confirmed.';
@@ -374,6 +375,7 @@ class SubscriptionController extends Controller
                 'message' => $message,
                 'data' => $subscription,
                 'action_required' => $isActionRequired,
+                'latest_payment_intent_client_secret' => $subscription->latest_payment_intent_client_secret,
             ]);
             
         } catch (\Exception $e) {

@@ -146,6 +146,19 @@ class SubscriptionController extends Controller
             $plan = Plan::findOrFail($validated['plan_id']);
             $billingPeriod = $validated['billing_period'] ?? null;
             
+            // Vérifier si l'utilisateur est déjà abonné à ce plan
+            $existingSubscription = $user->subscriptions()
+                ->where('plan_id', $validated['plan_id'])
+                ->whereIn('stripe_status', ['active', 'trialing'])
+                ->first();
+            
+            if ($existingSubscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous êtes déjà abonné à ce plan.',
+                ], 400);
+            }
+            
             Log::info('Creating subscription for user', [
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,
@@ -161,13 +174,23 @@ class SubscriptionController extends Controller
                 $validated['payment_method_id'] ?? null
             );
 
+            // Sauvegarder le client_secret avant le load pour être sûr de ne pas le perdre
+            $clientSecret = $subscription->latest_payment_intent_client_secret;
+
             // Récupérer l'abonnement avec toutes les relations
             $subscription->load('plan', 'user');
+            
+            // Le remettre au cas où load() l'aurait effacé (peu probable mais possible)
+            if ($clientSecret) {
+                $subscription->setLatestPaymentIntentClientSecretAttribute($clientSecret);
+            }
 
             // ENVOYER LES EMAILS EN ARRIÈRE-PLAN (QUEUE)
 
-            // 1. Email de confirmation d'abonnement
-            $this->sendSubscriptionConfirmationEmail($user, $subscription);
+            // 1. Email de confirmation d'abonnement (uniquement si actif ou en essai)
+            if (in_array($subscription->stripe_status, ['active', 'trialing'])) {
+                $this->sendSubscriptionConfirmationEmail($user, $subscription);
+            }
 
             // 2. L'email de facture sera envoyé automatiquement via le webhook Stripe
             //    "invoice.payment_succeeded" (voir WebhookController).
@@ -177,10 +200,25 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $isActionRequired = $subscription->latest_payment_intent_client_secret !== null;
+            $message = $isActionRequired 
+                ? 'Subscription initiated. Additional action required to complete payment.' 
+                : 'Subscription created successfully. Confirmation email sent.';
+
+            Log::info('Subscription response data', [
+                'subscription_id' => $subscription->id,
+                'stripe_status' => $subscription->stripe_status,
+                'has_client_secret' => !empty($subscription->latest_payment_intent_client_secret),
+                'client_secret_length' => strlen($subscription->latest_payment_intent_client_secret ?? ''),
+            ]);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription created successfully. Confirmation email sent.',
+                'message' => $message,
                 'data' => $subscription,
+                'action_required' => $isActionRequired,
+                'latest_payment_intent_client_secret' => $subscription->latest_payment_intent_client_secret,
+                'client_secret' => $subscription->latest_payment_intent_client_secret,
             ], 201);
             
         } catch (\Exception $e) {
@@ -332,8 +370,16 @@ class SubscriptionController extends Controller
                 $validated['payment_method_id'] ?? null
             );
 
+            // Sauvegarder le client_secret avant le load
+            $clientSecret = $subscription->latest_payment_intent_client_secret;
+
             // Recharger les relations
             $subscription->load('plan', 'user');
+            
+            // Le remettre
+            if ($clientSecret) {
+                $subscription->setLatestPaymentIntentClientSecretAttribute($clientSecret);
+            }
 
             // La facture de proration et son email seront geres par le webhook Stripe
             // "invoice.payment_succeeded" une fois le paiement confirme.
@@ -343,10 +389,25 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $isActionRequired = $subscription->latest_payment_intent_client_secret !== null;
+            $message = $isActionRequired 
+                ? 'Subscription change initiated. Additional action required to complete payment.' 
+                : 'Subscription changed successfully. An invoice email will be sent once the payment is confirmed.';
+
+            Log::info('Subscription change response data', [
+                'subscription_id' => $subscription->id,
+                'stripe_status' => $subscription->stripe_status,
+                'has_client_secret' => !empty($subscription->latest_payment_intent_client_secret),
+                'client_secret_length' => strlen($subscription->latest_payment_intent_client_secret ?? ''),
+            ]);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Subscription changed successfully. An invoice email will be sent once the payment is confirmed.',
+                'message' => $message,
                 'data' => $subscription,
+                'action_required' => $isActionRequired,
+                'latest_payment_intent_client_secret' => $subscription->latest_payment_intent_client_secret,
+                'client_secret' => $subscription->latest_payment_intent_client_secret,
             ]);
             
         } catch (\Exception $e) {

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Invoice;
+use App\Models\BillingSetting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -20,11 +21,13 @@ class InvoicePdfService
         try {
             $user = $invoice->user;
             $subscription = $invoice->subscription;
+            $settings = BillingSetting::first();
 
             $pdf = Pdf::loadView('pdf.invoice', [
                 'invoice' => $invoice,
                 'user' => $user,
                 'subscription' => $subscription,
+                'settings' => $settings,
             ])->setPaper('a4');
 
             $baseName = $invoice->invoice_number ?: ('INV-' . $invoice->id);

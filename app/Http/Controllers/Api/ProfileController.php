@@ -619,7 +619,7 @@ class ProfileController extends Controller
 
                 // Remplir les champs simples
                 $profile->fill($request->only([
-                    'title', 'hourly_rate', 'bio', 'phone',
+                    'first_name','last_name','title', 'hourly_rate', 'bio', 'phone',
                     'address', 'city', 'country', 'profession'
                 ]));
 

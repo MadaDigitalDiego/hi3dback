@@ -27,6 +27,31 @@ class Subscription extends Model
         'notes',
     ];
 
+    /**
+     * Virtual attribute for the latest payment intent client secret.
+     */
+    protected $latest_payment_intent_client_secret = null;
+
+    protected $appends = [
+        'latest_payment_intent_client_secret',
+    ];
+
+    /**
+     * Get the latest payment intent client secret (virtual attribute).
+     */
+    public function getLatestPaymentIntentClientSecretAttribute()
+    {
+        return $this->latest_payment_intent_client_secret;
+    }
+
+    /**
+     * Set the latest payment intent client secret (virtual attribute).
+     */
+    public function setLatestPaymentIntentClientSecretAttribute($value)
+    {
+        $this->latest_payment_intent_client_secret = $value;
+    }
+
     protected $casts = [
         'trial_ends_at' => 'datetime',
         'ends_at' => 'datetime',

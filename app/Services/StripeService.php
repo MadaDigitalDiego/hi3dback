@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\StripeConfiguration;
+use App\Models\BillingSetting;
 use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +41,43 @@ class StripeService
         }
 
         $this->stripe = new StripeClient($secretKey);
+    }
+
+    /**
+     * Update a Stripe customer with admin-defined billing information.
+     */
+    public function updateCustomerWithBillingSettings(User $user): void
+    {
+        $customerId = $this->getOrCreateCustomer($user);
+        $settings = BillingSetting::first();
+
+        if (!$settings) {
+            return;
+        }
+
+        try {
+            $this->stripe->customers->update($customerId, [
+                'name' => $settings->company_name ?: $user->name,
+                'email' => $settings->email ?: $user->email,
+                'address' => [
+                    'line1' => $settings->address,
+                ],
+                'invoice_settings' => [
+                    'custom_fields' => [
+                        [
+                            'name' => 'TVA',
+                            'value' => $settings->vat_number,
+                        ],
+                    ],
+                    'footer' => $settings->footer_text,
+                ],
+                'metadata' => [
+                    'legal_mentions' => $settings->legal_mentions,
+                ],
+            ]);
+        } catch (ApiErrorException $e) {
+            Log::error('Failed to update Stripe customer with billing settings: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -244,19 +282,15 @@ class StripeService
 	                'items' => [
 	                    ['price' => $priceId],
 	                ],
-	                'expand' => ['latest_invoice.payment_intent'],
+	                'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
 	            ];
 	
-	            // Si une méthode de paiement est fournie, on demande à Stripe d'échouer
-	            // immédiatement si le paiement ne peut pas être complété.
-	            // Cela évite de créer des abonnements "incomplete" tout en renvoyant
-	            // un succès côté API.
+	            // Si une méthode de paiement est fournie, on demande à Stripe d'autoriser
+	            // un statut "incomplete" si une action supplémentaire (3D Secure) est requise.
 	            if ($paymentMethodId) {
 	                $params['default_payment_method'] = $paymentMethodId;
-	                $params['payment_behavior'] = 'error_if_incomplete';
+	                $params['payment_behavior'] = 'allow_incomplete';
 	            } else {
-	                // Cas sans méthode de paiement explicite : on garde le comportement
-	                // historique pour ne pas casser d'autres flux éventuels.
 	                $params['payment_behavior'] = 'default_incomplete';
 	            }
 	
@@ -269,83 +303,160 @@ class StripeService
 	            }
 	
 	            $stripeSubscription = $this->stripe->subscriptions->create($params);
+            
+            // On ne confirme pas le payment_intent ici côté serveur pour les nouveaux abonnements.
+            // Stripe s'en chargera via le paramètre 'default_payment_method' et renverra
+            // un statut 'incomplete' si une action (3DS) est requise, ou 'active' sinon.
+            // Le frontend gérera ensuite la confirmation si nécessaire via le client_secret.
 
-            // If payment method is provided, try to confirm the payment intent
-            if ($paymentMethodId && isset($stripeSubscription->latest_invoice->payment_intent)) {
-                $paymentIntent = $stripeSubscription->latest_invoice->payment_intent;
+            // Vérifier que la souscription Stripe est active, en essai ou incomplète (3DS)
+            // avant de persister côté base de données.
+            $finalStatus = $stripeSubscription->status;
 
-                // Handle different payment intent statuses
-                if ($paymentIntent && is_object($paymentIntent)) {
-                    $paymentIntentId = is_string($paymentIntent) ? $paymentIntent : $paymentIntent->id;
-                    $paymentIntentObj = $this->stripe->paymentIntents->retrieve($paymentIntentId, [
-                        'expand' => ['payment_method'],
+            $paymentIntentStatus = null;
+            $clientSecret = null;
+
+            Log::info('Checking Stripe subscription for payment intent', [
+                'subscription_id' => $stripeSubscription->id,
+                'status' => $stripeSubscription->status,
+                'has_latest_invoice' => isset($stripeSubscription->latest_invoice),
+            ]);
+
+            if (isset($stripeSubscription->latest_invoice)) {
+                $invoice = $stripeSubscription->latest_invoice;
+                
+                // Log the structure of the invoice to debug
+                Log::info('Latest invoice object details', [
+                    'id' => is_string($invoice) ? $invoice : ($invoice->id ?? 'unknown'),
+                    'is_object' => is_object($invoice),
+                    'has_payment_intent' => is_object($invoice) && isset($invoice->payment_intent),
+                    'invoice_status' => is_object($invoice) ? ($invoice->status ?? 'unknown') : 'string',
+                ]);
+
+                // Si c'est un ID, ou si payment_intent est manquant alors qu'on en a besoin
+                if (is_string($invoice) || (is_object($invoice) && !isset($invoice->payment_intent))) {
+                    Log::info('Retrieving invoice explicitly to find payment intent...');
+                    $invoiceId = is_string($invoice) ? $invoice : $invoice->id;
+                    try {
+                        $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve invoice explicitly', ['error' => $e->getMessage()]);
+                    }
+                }
+
+                if (isset($invoice->payment_intent)) {
+                    $pi = $invoice->payment_intent;
+                    Log::info('Payment intent found on invoice', [
+                        'pi_id' => is_string($pi) ? $pi : ($pi->id ?? 'unknown'),
                     ]);
 
-                    // If payment intent needs payment method or confirmation
-                    if (in_array($paymentIntentObj->status, ['requires_payment_method', 'requires_confirmation'])) {
-                        try {
-                            // Update and confirm the payment intent
-                            $this->stripe->paymentIntents->update($paymentIntentId, [
-                                'payment_method' => $paymentMethodId,
-                            ]);
+                    if (is_string($pi)) {
+                        Log::info('Payment intent is string, retrieving it...');
+                        $pi = $this->stripe->paymentIntents->retrieve($pi);
+                    }
 
-                            // Confirm the payment intent
-                            $confirmedIntent = $this->stripe->paymentIntents->confirm($paymentIntentId);
-
-                            // Refresh the subscription to get updated status
-                            $stripeSubscription = $this->stripe->subscriptions->retrieve($stripeSubscription->id, [
-                                'expand' => ['latest_invoice.payment_intent'],
-                            ]);
-                        } catch (ApiErrorException $e) {
-                            // If confirmation fails (e.g., 3D Secure required), subscription remains incomplete
-                            // This is expected behavior - the frontend should handle 3D Secure
-                            Log::warning('Payment intent confirmation failed: ' . $e->getMessage());
-                        }
+                    if (is_object($pi)) {
+                        $paymentIntentStatus = $pi->status ?? null;
+                        $clientSecret = $pi->client_secret ?? null;
+                        Log::info('Payment intent details retrieved', [
+                            'status' => $paymentIntentStatus,
+                            'has_secret' => !empty($clientSecret),
+                            'secret_prefix' => $clientSecret ? substr($clientSecret, 0, 7) : 'null',
+                        ]);
                     }
                 }
             }
 
-            // Vérifier que la souscription Stripe est bien active (ou en période d'essai)
-            // avant de persister côté base de données. Cela évite de marquer en succès
-            // des paiements qui sont en réalité "incomplete" chez Stripe.
-            $finalStatus = $stripeSubscription->status;
-
-            $paymentIntentStatus = null;
-            if (isset($stripeSubscription->latest_invoice) && isset($stripeSubscription->latest_invoice->payment_intent)) {
-                $pi = $stripeSubscription->latest_invoice->payment_intent;
-                if (is_object($pi) && isset($pi->status)) {
-                    $paymentIntentStatus = $pi->status;
+            // Fallback 1: Check pending_setup_intent if still no secret (even if there was an invoice)
+            if (!$clientSecret && isset($stripeSubscription->pending_setup_intent)) {
+                Log::info('No payment_intent secret yet, checking pending_setup_intent...');
+                $si = $stripeSubscription->pending_setup_intent;
+                if (is_string($si)) {
+                    try {
+                        $si = $this->stripe->setupIntents->retrieve($si);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve setup_intent', ['error' => $e->getMessage()]);
+                    }
+                }
+                
+                if (is_object($si)) {
+                    $clientSecret = $si->client_secret ?? null;
+                    $paymentIntentStatus = $si->status ?? null; // For the check below
+                    Log::info('Found setup_intent secret', [
+                        'has_secret' => !empty($clientSecret),
+                        'status' => $paymentIntentStatus
+                    ]);
                 }
             }
 
-	            if (!in_array($finalStatus, ['active', 'trialing'], true)) {
-                Log::warning('Stripe subscription created but not active', [
+            // Fallback 2: Ultimate fallback for incomplete status - search customer payment intents
+            if (!$clientSecret && $finalStatus === 'incomplete') {
+                Log::info('Still no secret but status is incomplete. Searching recent payment intents for customer...');
+                try {
+                    $recentPIs = $this->stripe->paymentIntents->all([
+                        'customer' => $customerId,
+                        'limit' => 5,
+                    ]);
+                    foreach ($recentPIs->data as $recentPI) {
+                        // If PI requires action and is very recent (created in last 2 minutes)
+                        $isRecent = (time() - $recentPI->created) < 120;
+                        if ($recentPI->status === 'requires_action' && $isRecent) {
+                            $clientSecret = $recentPI->client_secret;
+                            $paymentIntentStatus = $recentPI->status;
+                            Log::info('Found matching PI in customer history (requires_action & recent)', [
+                                'pi_id' => $recentPI->id,
+                                'created' => $recentPI->created
+                            ]);
+                            break;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to search recent payment intents', ['error' => $e->getMessage()]);
+                }
+            }
+
+            if (!in_array($finalStatus, ['active', 'trialing', 'incomplete'], true)) {
+                Log::warning('Stripe subscription created with invalid status', [
                     'subscription_id' => $stripeSubscription->id,
                     'status' => $finalStatus,
                     'payment_intent_status' => $paymentIntentStatus,
                 ]);
 
                 throw new \Exception(
-                    "Le paiement n'a pas pu être finalisé. Votre carte n'a pas été débitée. Veuillez réessayer ou utiliser un autre moyen de paiement."
+                    "Le paiement n'a pas pu être initié. Veuillez réessayer ou utiliser un autre moyen de paiement."
                 );
             }
-	
-	            $subscriptionData = [
-	                'user_id' => $user->id,
-	                'plan_id' => $plan->id,
-	                'stripe_id' => $stripeSubscription->id,
-	                'stripe_subscription_id' => $stripeSubscription->id,
-	                'stripe_status' => $stripeSubscription->status,
-	                'current_period_start' => $stripeSubscription->current_period_start,
-	                'current_period_end' => $stripeSubscription->current_period_end,
-	            ];
-	
-	            if ($appliedCoupon && $discountAmount !== null) {
-	                $subscriptionData['coupon_id'] = $appliedCoupon->id;
-	                $subscriptionData['discount_amount'] = $discountAmount;
-	            }
-	
-	            $subscription = Subscription::create($subscriptionData);
+
+            // Si le statut est incomplete et que le PaymentIntent demande une action,
+            // on s'assure que le clientSecret est présent pour le frontend.
+            if ($finalStatus === 'incomplete' && $paymentIntentStatus !== 'requires_action') {
+                // Si c'est incomplete mais pas à cause d'une action requise, c'est probablement un échec réel
+                if ($paymentIntentStatus === 'requires_payment_method') {
+                    throw new \Exception("Votre carte a été refusée. Veuillez utiliser un autre moyen de paiement.");
+                }
+            }
+
+            $subscriptionData = [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'stripe_id' => $stripeSubscription->id,
+                'stripe_subscription_id' => $stripeSubscription->id,
+                'stripe_status' => $stripeSubscription->status,
+                'current_period_start' => $stripeSubscription->current_period_start,
+                'current_period_end' => $stripeSubscription->current_period_end,
+            ];
+
+            if ($appliedCoupon && $discountAmount !== null) {
+                $subscriptionData['coupon_id'] = $appliedCoupon->id;
+                $subscriptionData['discount_amount'] = $discountAmount;
+            }
+
+            $subscription = Subscription::create($subscriptionData);
+
+            // Ajouter le client_secret à l'objet pour le retour API
+            if ($clientSecret) {
+                $subscription->setAttribute('latest_payment_intent_client_secret', $clientSecret);
+            }
 	
 	            if ($appliedCoupon && $discountAmount !== null) {
 	                $appliedCoupon->users()->attach($user->id, [
@@ -429,6 +540,8 @@ class StripeService
                     ],
                 ],
                 'proration_behavior' => 'always_invoice', // Prorate the change
+                'payment_behavior' => 'allow_incomplete',
+                'expand' => ['latest_invoice.payment_intent', 'pending_setup_intent'],
             ];
 
             // Update payment method if provided
@@ -461,6 +574,96 @@ class StripeService
                 $updateParams
             );
 
+            // Vérifier si une action est requise pour le paiement de la proration
+            $clientSecret = null;
+            $paymentIntentStatus = null;
+
+            Log::info('Checking updated Stripe subscription for payment intent', [
+                'subscription_id' => $updatedSubscription->id,
+                'has_latest_invoice' => isset($updatedSubscription->latest_invoice),
+            ]);
+
+            if (isset($updatedSubscription->latest_invoice)) {
+                $invoice = $updatedSubscription->latest_invoice;
+                
+                // Log the structure of the invoice to debug
+                Log::info('Latest invoice object details for change', [
+                    'id' => is_string($invoice) ? $invoice : ($invoice->id ?? 'unknown'),
+                    'is_object' => is_object($invoice),
+                    'has_payment_intent' => is_object($invoice) && isset($invoice->payment_intent),
+                ]);
+
+                if (is_string($invoice) || (is_object($invoice) && !isset($invoice->payment_intent))) {
+                    Log::info('Retrieving invoice explicitly for change to find payment intent...');
+                    $invoiceId = is_string($invoice) ? $invoice : $invoice->id;
+                    try {
+                        $invoice = $this->stripe->invoices->retrieve($invoiceId, ['expand' => ['payment_intent']]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve invoice explicitly for change', ['error' => $e->getMessage()]);
+                    }
+                }
+
+                if (isset($invoice->payment_intent)) {
+                    $pi = $invoice->payment_intent;
+                    
+                    if (is_string($pi)) {
+                        $pi = $this->stripe->paymentIntents->retrieve($pi);
+                    }
+
+                    if (is_object($pi)) {
+                        $paymentIntentStatus = $pi->status ?? null;
+                        $clientSecret = $pi->client_secret ?? null;
+                        Log::info('Payment intent details retrieved for subscription change', [
+                            'status' => $paymentIntentStatus,
+                            'has_secret' => !empty($clientSecret),
+                        ]);
+                    }
+                }
+            }
+
+            // Fallback 1: Check pending_setup_intent if still no secret
+            if (!$clientSecret && isset($updatedSubscription->pending_setup_intent)) {
+                Log::info('No payment_intent secret yet for change, checking pending_setup_intent...');
+                $si = $updatedSubscription->pending_setup_intent;
+                if (is_string($si)) {
+                    try {
+                        $si = $this->stripe->setupIntents->retrieve($si);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to retrieve setup_intent for change', ['error' => $e->getMessage()]);
+                    }
+                }
+                if (is_object($si)) {
+                    $clientSecret = $si->client_secret ?? null;
+                    $paymentIntentStatus = $si->status ?? null;
+                    Log::info('Found setup_intent secret for change', [
+                        'has_secret' => !empty($clientSecret)
+                    ]);
+                }
+            }
+
+            // Fallback 2: Ultimate fallback for change
+            if (!$clientSecret && $updatedSubscription->status === 'incomplete') {
+                Log::info('Still no secret for change but status is incomplete. Searching recent PIs...');
+                try {
+                    $customerId = is_string($updatedSubscription->customer) ? $updatedSubscription->customer : $updatedSubscription->customer->id;
+                    $recentPIs = $this->stripe->paymentIntents->all([
+                        'customer' => $customerId,
+                        'limit' => 5,
+                    ]);
+                    foreach ($recentPIs->data as $recentPI) {
+                        $isRecent = (time() - $recentPI->created) < 120;
+                        if ($recentPI->status === 'requires_action' && $isRecent) {
+                            $clientSecret = $recentPI->client_secret;
+                            $paymentIntentStatus = $recentPI->status;
+                            Log::info('Found matching PI for change in customer history', ['pi_id' => $recentPI->id]);
+                            break;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to search recent PIs for change', ['error' => $e->getMessage()]);
+                }
+            }
+
             // Update the subscription in the database
             $subscription->update([
                 'plan_id' => $newPlan->id,
@@ -469,7 +672,14 @@ class StripeService
                 'current_period_end' => $updatedSubscription->current_period_end,
             ]);
 
-            return $subscription->fresh();
+            $freshSubscription = $subscription->fresh();
+
+            // Ajouter le client_secret à l'objet pour le retour API
+            if ($clientSecret) {
+                $freshSubscription->setAttribute('latest_payment_intent_client_secret', $clientSecret);
+            }
+
+            return $freshSubscription;
         } catch (ApiErrorException $e) {
             throw new \Exception('Failed to change subscription: ' . $e->getMessage());
         }
@@ -518,9 +728,9 @@ class StripeService
             // Valider les données du plan avant d'appeler Stripe
             $basePrice = (float) $plan->price;
 
-            if ($basePrice <= 0) {
-                throw new \Exception('Le prix du plan doit être strictement supérieur à 0 pour créer les prix Stripe. Mettez à jour le champ "Prix mensuel" du plan avant de synchroniser.');
-            }
+            // Pour les plans gratuits (prix = 0), on garde 0 dans la base de données
+            // mais on utilise 0.01 pour Stripe car Stripe n'accepte pas les montants à 0
+            $isFreePlan = $basePrice == 0;
 
             // Prix annuel : si un prix annuel explicite est saisi, on l'utilise.
             // Sinon, on calcule automatiquement 12 x le prix mensuel.
@@ -538,6 +748,11 @@ class StripeService
             if ($plan->yearly_price === null) {
                 $plan->yearly_price = $yearlyBasePrice;
             }
+
+            // Pour Stripe: utiliser 0.01 au lieu de 0 (minimum accepté par Stripe)
+            // Mais garder les vrais prix pour la base de données
+            $stripeMonthlyPrice = $isFreePlan ? 0.01 : $basePrice;
+            $stripeYearlyPrice = $isFreePlan ? 0.01 : $yearlyBasePrice;
 
             $currency = $this->getStripeCurrency();
 
@@ -568,8 +783,8 @@ class StripeService
 
 	            // 2) Créer ou mettre à jour les prix Stripe (mensuel & annuel)
 
-	            // Prix mensuel
-	            $expectedMonthlyAmount = (int) round($basePrice * 100); // prix par mois en cents
+	            // Prix mensuel - utiliser le prix Stripe (0.01 pour les plans gratuits)
+	            $expectedMonthlyAmount = (int) round($stripeMonthlyPrice * 100); // prix par mois en cents
 	            $needsNewMonthlyPrice = false;
 
 	            if ($plan->stripe_price_id_monthly) {
@@ -623,8 +838,8 @@ class StripeService
 	                }
 	            }
 
-	            // Prix annuel (par défaut: 12x le prix mensuel ou valeur saisie dans "Prix annuel")
-	            $expectedYearlyAmount = (int) round($yearlyBasePrice * 100);
+	            // Prix annuel - utiliser le prix Stripe (0.01 pour les plans gratuits)
+	            $expectedYearlyAmount = (int) round($stripeYearlyPrice * 100);
 	            $needsNewYearlyPrice = false;
 
 	            if ($plan->stripe_price_id_yearly) {

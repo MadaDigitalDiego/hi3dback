@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
     use App\Notifications\InvoicePaidNotification;
     use App\Notifications\InvoicePaymentFailedNotification;
     use App\Services\InvoicePdfService;
+    use App\Services\StripeService;
     use App\Mail\SubscriptionCancellation;
+    use App\Models\BillingSetting;
     use Carbon\Carbon;
     use Illuminate\Http\Request;
     use Illuminate\Http\Response;
@@ -89,6 +91,8 @@ class WebhookController extends Controller
         $subscription = Subscription::where('stripe_subscription_id', $stripeSubscription->id)->first();
 
         if ($subscription) {
+            $oldStatus = $subscription->stripe_status;
+            
             $subscription->update([
                 'stripe_status' => $stripeSubscription->status,
                 'current_period_start' => $stripeSubscription->current_period_start,
@@ -96,6 +100,23 @@ class WebhookController extends Controller
             ]);
 
             Log::info('Subscription updated: ' . $stripeSubscription->id);
+
+            // Si l'abonnement passe de incomplete à active, envoyer l'email de confirmation
+            if ($oldStatus === 'incomplete' && $stripeSubscription->status === 'active') {
+                $user = $subscription->user;
+                if ($user) {
+                    try {
+                        Mail::to($user->email)
+                            ->send(new \App\Mail\SubscriptionConfirmation($user, $subscription));
+                        Log::info('Subscription confirmation email sent after successful 3DS', [
+                            'user_id' => $user->id,
+                            'subscription_id' => $subscription->id,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to send confirmation email after 3DS: ' . $e->getMessage());
+                    }
+                }
+            }
         }
     }
 
@@ -177,7 +198,23 @@ class WebhookController extends Controller
             return;
         }
 
-        	$attributes = $this->mapStripeInvoiceToAttributes($stripeInvoice, $user, $subscription);
+        // Update customer info on Stripe with our latest billing settings
+        try {
+            $stripeService = app(StripeService::class);
+            $stripeService->updateCustomerWithBillingSettings($user);
+        } catch (\Throwable $e) {
+            Log::error('Failed to update Stripe customer info on payment_succeeded: ' . $e->getMessage());
+        }
+
+        $attributes = $this->mapStripeInvoiceToAttributes($stripeInvoice, $user, $subscription);
+
+        // Add current billing settings to invoice metadata for history
+        $settings = BillingSetting::first();
+        if ($settings) {
+            $attributes['metadata'] = array_merge($attributes['metadata'] ?? [], [
+                'billing_settings_at_time_of_payment' => $settings->toArray(),
+            ]);
+        }
 
         $invoice = Invoice::where('stripe_invoice_id', $stripeInvoice->id)->first();
 
@@ -219,7 +256,23 @@ class WebhookController extends Controller
     private function handleInvoicePaymentFailed(Event $event): void
     {
         $stripeInvoice = $event->data->object;
+        
+        // Vérifier si l'échec est dû à une action requise (3DS)
+        $paymentIntentStatus = null;
+        if (!empty($stripeInvoice->payment_intent)) {
+            try {
+                $paymentIntent = $this->stripe->paymentIntents->retrieve($stripeInvoice->payment_intent);
+                $paymentIntentStatus = $paymentIntent->status;
+            } catch (\Exception $e) {
+                Log::error('Failed to retrieve payment intent for failed invoice: ' . $e->getMessage());
+            }
+        }
+
         $invoice = Invoice::where('stripe_invoice_id', $stripeInvoice->id)->first();
+
+        // Si 3DS est requis, on ne marque pas comme échec définitif et on n'envoie pas de mail d'erreur
+        $is3DS = $paymentIntentStatus === 'requires_action';
+        $status = $is3DS ? 'open' : 'failed';
 
         if (!$invoice) {
             [$user, $subscription] = $this->resolveInvoiceOwner($stripeInvoice);
@@ -229,20 +282,22 @@ class WebhookController extends Controller
 
                 $invoice = Invoice::create(array_merge($attributes, [
                     'invoice_number' => Invoice::generateInvoiceNumber(),
-                    'status' => 'failed',
+                    'status' => $status,
                 ]));
             }
         } else {
-            $invoice->update(['status' => 'failed']);
+            $invoice->update(['status' => $status]);
         }
 
-        if ($invoice && $invoice->user) {
+        // Envoyer la notification d'échec seulement si ce n'est pas un 3DS en attente
+        if (!$is3DS && $invoice && $invoice->user) {
             $invoice->user->notify(new InvoicePaymentFailedNotification($invoice));
         }
 
-        Log::info('Invoice payment failed handled', [
+        Log::info($is3DS ? 'Invoice payment requires action (3DS)' : 'Invoice payment failed handled', [
             'stripe_invoice_id' => $stripeInvoice->id ?? null,
             'local_invoice_id' => $invoice->id ?? null,
+            'payment_intent_status' => $paymentIntentStatus,
         ]);
     }
 

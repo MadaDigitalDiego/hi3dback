@@ -412,7 +412,7 @@ class GmailAuthController extends Controller
                     'message' => $result['message']
                 ]);
 
-                return redirect($frontendUrl . '/' . $queryParams);
+                return redirect($frontendUrl . '/login?' . $queryParams);
             } else {
                 // Erreur - rediriger vers le frontend avec l'erreur
                 $queryParams = http_build_query([
@@ -423,7 +423,7 @@ class GmailAuthController extends Controller
                     'profile_completed' => $result['profile_completed'] ?? false
                 ]);
 
-                return redirect($frontendUrl . '/' . $queryParams);
+                return redirect($frontendUrl . '/login?' . $queryParams);
             }
 
         } catch (\Exception $e) {
@@ -438,7 +438,7 @@ class GmailAuthController extends Controller
                 'message' => 'Erreur lors de l\'authentification Gmail: ' . $e->getMessage()
             ]);
 
-            return redirect($frontendUrl . '/' . $queryParams);
+            return redirect($frontendUrl . '/login?' . $queryParams);
         }
     }
 }

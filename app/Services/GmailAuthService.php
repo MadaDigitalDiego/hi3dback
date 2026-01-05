@@ -110,10 +110,45 @@ class GmailAuthService
 
         // Vérifier si le profil est complètement configuré
         if (!$this->isUserProfileComplete($user)) {
+            // Récupérer plus d'informations de diagnostic
+            $profileInfo = [];
+            if ($user->is_professional) {
+                $profile = $user->professionalProfile;
+                if ($profile) {
+                    $profileInfo = [
+                        'profile_id' => $profile->id,
+                        'completion_percentage' => $profile->completion_percentage,
+                        'first_name' => $profile->first_name,
+                        'last_name' => $profile->last_name,
+                        'email' => $profile->email,
+                        'phone' => $profile->phone,
+                        'city' => $profile->city,
+                        'country' => $profile->country,
+                        'bio' => !empty($profile->bio),
+                        'title' => $profile->title,
+                        'profession' => $profile->profession,
+                    ];
+                }
+            } else {
+                $profile = $user->clientProfile;
+                if ($profile) {
+                    $profileInfo = [
+                        'profile_id' => $profile->id,
+                        'completion_percentage' => $profile->completion_percentage,
+                        'first_name' => $profile->first_name,
+                        'last_name' => $profile->last_name,
+                        'email' => $profile->email,
+                        'phone' => $profile->phone,
+                    ];
+                }
+            }
+
             Log::warning('Tentative de connexion Gmail avec profil incomplet', [
                 'user_id' => $user->id,
                 'email' => $user->email,
-                'profile_completed' => $user->profile_completed
+                'profile_completed' => $user->profile_completed,
+                'is_professional' => $user->is_professional,
+                'profile_info' => $profileInfo
             ]);
 
             return [
@@ -121,7 +156,8 @@ class GmailAuthService
                 'message' => 'Votre compte existe mais votre inscription n\'est pas complète. Veuillez vous connecter avec votre mot de passe pour terminer votre profil.',
                 'error_type' => 'profile_incomplete',
                 'user_exists' => true,
-                'profile_completed' => false
+                'profile_completed' => false,
+                'debug_info' => $profileInfo
             ];
         }
 
@@ -272,11 +308,17 @@ class GmailAuthService
     private function isUserProfileComplete(User $user): bool
     {
         // Vérifier d'abord le flag profile_completed sur l'utilisateur
-        if (!$user->profile_completed) {
-            return false;
+        // Ce flag est la source de vérité principale - s'il est true, on fait confiance
+        if ($user->profile_completed) {
+            Log::info('Profil considéré comme complet via flag profile_completed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'is_professional' => $user->is_professional
+            ]);
+            return true;
         }
 
-        // Vérifier que l'email est vérifié
+        // Si le flag n'est pas encore à true, vérifier que l'email est vérifié
         if (!$user->hasVerifiedEmail()) {
             return false;
         }

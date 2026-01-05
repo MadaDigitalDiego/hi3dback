@@ -367,25 +367,42 @@ class StripeService
                 }
             }
 
-            // Fallback 1: Check pending_setup_intent if still no secret (even if there was an invoice)
-            if (!$clientSecret && isset($stripeSubscription->pending_setup_intent)) {
-                Log::info('No payment_intent secret yet, checking pending_setup_intent...');
-                $si = $stripeSubscription->pending_setup_intent;
-                if (is_string($si)) {
-                    try {
-                        $si = $this->stripe->setupIntents->retrieve($si);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to retrieve setup_intent', ['error' => $e->getMessage()]);
+            // IMPORTANT: Pour les plans gratuits (prix = 0), Stripe ne crée pas de PaymentIntent
+            // car il n'y a pas de paiement à effectuer. Dans ce cas, on ne doit pas
+            // retourner de client_secret car le frontend va échouer avec confirmCardPayment().
+            // On laisse $clientSecret à null pour les plans gratuits.
+            $isFreePlan = (float) $plan->price == 0;
+            
+            if ($isFreePlan) {
+                Log::info('Free plan detected - no payment intent required', [
+                    'plan_id' => $plan->id,
+                    'plan_name' => $plan->title,
+                ]);
+                // Pour les plans gratuits, ne pas retourner de client_secret
+                // L'abonnement est directement actif sans action requise
+                $clientSecret = null;
+                $paymentIntentStatus = null;
+            } else {
+                // Fallback 1: Check pending_setup_intent if still no secret (only for paid plans)
+                if (!$clientSecret && isset($stripeSubscription->pending_setup_intent)) {
+                    Log::info('No payment_intent secret yet, checking pending_setup_intent...');
+                    $si = $stripeSubscription->pending_setup_intent;
+                    if (is_string($si)) {
+                        try {
+                            $si = $this->stripe->setupIntents->retrieve($si);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to retrieve setup_intent', ['error' => $e->getMessage()]);
+                        }
                     }
-                }
-                
-                if (is_object($si)) {
-                    $clientSecret = $si->client_secret ?? null;
-                    $paymentIntentStatus = $si->status ?? null; // For the check below
-                    Log::info('Found setup_intent secret', [
-                        'has_secret' => !empty($clientSecret),
-                        'status' => $paymentIntentStatus
-                    ]);
+                    
+                    if (is_object($si)) {
+                        $clientSecret = $si->client_secret ?? null;
+                        $paymentIntentStatus = $si->status ?? null; // For the check below
+                        Log::info('Found setup_intent secret', [
+                            'has_secret' => !empty($clientSecret),
+                            'status' => $paymentIntentStatus
+                        ]);
+                    }
                 }
             }
 
@@ -621,28 +638,40 @@ class StripeService
                 }
             }
 
-            // Fallback 1: Check pending_setup_intent if still no secret
-            if (!$clientSecret && isset($updatedSubscription->pending_setup_intent)) {
-                Log::info('No payment_intent secret yet for change, checking pending_setup_intent...');
-                $si = $updatedSubscription->pending_setup_intent;
-                if (is_string($si)) {
-                    try {
-                        $si = $this->stripe->setupIntents->retrieve($si);
-                    } catch (\Exception $e) {
-                        Log::error('Failed to retrieve setup_intent for change', ['error' => $e->getMessage()]);
+            // IMPORTANT: Pour les plans gratuits (prix = 0), pas de PaymentIntent requis
+            $isNewPlanFree = (float) $newPlan->price == 0;
+            
+            if ($isNewPlanFree) {
+                Log::info('Changing to free plan - no payment intent required', [
+                    'plan_id' => $newPlan->id,
+                    'plan_name' => $newPlan->title,
+                ]);
+                $clientSecret = null;
+                $paymentIntentStatus = null;
+            } else {
+                // Fallback 1: Check pending_setup_intent if still no secret (only for paid plans)
+                if (!$clientSecret && isset($updatedSubscription->pending_setup_intent)) {
+                    Log::info('No payment_intent secret yet for change, checking pending_setup_intent...');
+                    $si = $updatedSubscription->pending_setup_intent;
+                    if (is_string($si)) {
+                        try {
+                            $si = $this->stripe->setupIntents->retrieve($si);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to retrieve setup_intent for change', ['error' => $e->getMessage()]);
+                        }
                     }
-                }
-                if (is_object($si)) {
-                    $clientSecret = $si->client_secret ?? null;
-                    $paymentIntentStatus = $si->status ?? null;
-                    Log::info('Found setup_intent secret for change', [
-                        'has_secret' => !empty($clientSecret)
-                    ]);
+                    if (is_object($si)) {
+                        $clientSecret = $si->client_secret ?? null;
+                        $paymentIntentStatus = $si->status ?? null;
+                        Log::info('Found setup_intent secret for change', [
+                            'has_secret' => !empty($clientSecret)
+                        ]);
+                    }
                 }
             }
 
-            // Fallback 2: Ultimate fallback for change
-            if (!$clientSecret && $updatedSubscription->status === 'incomplete') {
+            // Fallback 2: Ultimate fallback for change (only if not free plan)
+            if (!$isNewPlanFree && !$clientSecret && $updatedSubscription->status === 'incomplete') {
                 Log::info('Still no secret for change but status is incomplete. Searching recent PIs...');
                 try {
                     $customerId = is_string($updatedSubscription->customer) ? $updatedSubscription->customer : $updatedSubscription->customer->id;

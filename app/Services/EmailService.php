@@ -44,7 +44,7 @@ class EmailService
             Log::info('Tentative d\'envoi d\'e-mail de vérification à ' . $user->email);
 
             // Envoi de l'e-mail de vérification
-            Mail::to($user->email)->send(new VerifyEmail($verificationUrl));
+            Mail::to($user->email)->send(new VerifyEmail($verificationUrl, $user));
             Log::info('E-mail de vérification envoyé avec succès à ' . $user->email);
             return true;
         } catch (\Exception $e) {

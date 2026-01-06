@@ -14,13 +14,15 @@ class VerifyEmail extends Mailable
     use Queueable, SerializesModels;
 
     public $verificationUrl;
+    public $user;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($verificationUrl)
+    public function __construct($verificationUrl, $user = null)
     {
         $this->verificationUrl = $verificationUrl;
+        $this->user = $user;
     }
 
     /**
@@ -29,7 +31,7 @@ class VerifyEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Vérification de votre adresse e-mail',
+            subject: 'Vérifiez votre adresse e-mail - ' . config('app.name'),
         );
     }
 
@@ -42,6 +44,7 @@ class VerifyEmail extends Mailable
             markdown: 'emails.verify-email',
             with: [
                 'verificationUrl' => $this->verificationUrl,
+                'user' => $this->user,
             ],
         );
     }

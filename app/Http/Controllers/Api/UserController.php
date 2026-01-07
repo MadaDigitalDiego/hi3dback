@@ -190,7 +190,11 @@ class UserController extends Controller
             // Vérification de l'email
             if (!$user->hasVerifiedEmail()) {
                 Log::info('Tentative de connexion avec un email non vérifié: ' . $request->email);
-                return response()->json(['message' => 'Votre e-mail n\'est pas vérifié. Veuillez vérifier votre boîte de réception.'], 403);
+                return response()->json([
+                    'message' => 'Votre e-mail n\'est pas vérifié. Veuillez vérifier votre boîte de réception ou demander un nouveau lien de vérification.',
+                    'email_not_verified' => true,
+                    'email' => $user->email,
+                ], 403);
             }
 
             // Création du token
@@ -435,6 +439,38 @@ class UserController extends Controller
             return response()->json(['message' => 'Un nouveau lien de vérification a été envoyé à votre adresse e-mail.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors du renvoi de l\'email de vérification pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors du renvoi de l\'email de vérification.'], 500);
+        }
+    }
+
+    public function resendVerificationEmailPublic(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        try {
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return response()->json(['message' => 'Aucun utilisateur trouvé avec cette adresse e-mail.'], 404);
+            }
+
+            if ($user->hasVerifiedEmail()) {
+                return response()->json(['message' => 'Adresse e-mail déjà vérifiée.'], 400);
+            }
+
+            // Utiliser le service d'e-mail pour envoyer l'e-mail de vérification
+            $emailSent = EmailService::sendVerificationEmail($user);
+
+            if (!$emailSent) {
+                Log::warning('Impossible d\'envoyer l\'e-mail de vérification à ' . $user->email . '.');
+                return response()->json(['message' => 'Erreur lors de l\'envoi de l\'e-mail de vérification. Veuillez réessayer plus tard.'], 500);
+            }
+
+            return response()->json(['message' => 'Un nouveau lien de vérification a été envoyé à votre adresse e-mail.'], 200);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du renvoi public de l\'email de vérification pour ' . $request->email . ': ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors du renvoi de l\'email de vérification.'], 500);
         }
     }

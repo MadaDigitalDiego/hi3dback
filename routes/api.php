@@ -69,6 +69,9 @@ Route::get('/email/verify/{id}/{hash}', [UserController::class, 'verifyEmail'])
 Route::get('/email/verify/resend', [UserController::class, 'resendVerificationEmail'])
     ->name('verification.resend')
     ->middleware('auth:sanctum');
+Route::post('/email/verify/resend-public', [UserController::class, 'resendVerificationEmailPublic'])
+    ->middleware('ip.ratelimit:3,1')
+    ->name('verification.resend.public');
 
 // Routes publiques
 Route::get('/professionals', [ProfessionalController::class, 'index']);

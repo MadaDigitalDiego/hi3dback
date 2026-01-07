@@ -109,13 +109,16 @@ class GmailAuthController extends Controller
     /**
      * Endpoint spécialisé pour l'authentification Google depuis le frontend
      *
-     * Cette route gère l'authentification Google avec la logique métier requise
+     * Cette route gère l'authentification Google avec la logique métier requise.
+     * NOTE: La connexion Google est autorisée même si le profil est incomplet.
+     * Le frontend utilisera le flag profile_completed pour afficher le ProfileWizard si nécessaire.
      *
      * @response 200 {
      *   "success": true,
      *   "message": "Connexion réussie via Gmail",
      *   "token": "1|abc123...",
      *   "user": {...},
+     *   "profile_completed": false,
      *   "redirect_to": "dashboard"
      * }
      *
@@ -123,13 +126,6 @@ class GmailAuthController extends Controller
      *   "success": false,
      *   "message": "Aucun compte n'existe avec cette adresse email",
      *   "error_type": "user_not_found",
-     *   "redirect_to": "login"
-     * }
-     *
-     * @response 403 {
-     *   "success": false,
-     *   "message": "Votre inscription n'est pas complète",
-     *   "error_type": "profile_incomplete",
      *   "redirect_to": "login"
      * }
      */
@@ -144,36 +140,26 @@ class GmailAuthController extends Controller
 
             // Adapter la réponse pour le frontend
             if ($result['success']) {
+                // Déterminer la redirection en fonction du profil
+                $redirectTo = isset($result['profile_completed']) && $result['profile_completed'] ? 'dashboard' : 'dashboard';
+                
                 return response()->json([
                     'success' => true,
                     'message' => $result['message'],
                     'token' => $result['token'],
                     'user' => $result['user'],
-                    'redirect_to' => 'dashboard'
+                    'profile_completed' => $result['profile_completed'] ?? false,
+                    'redirect_to' => $redirectTo
                 ]);
             } else {
                 // Gestion des erreurs spécifiques
                 $statusCode = 401; // Par défaut
-                $redirectTo = 'login';
-
-                if (isset($result['error_type'])) {
-                    switch ($result['error_type']) {
-                        case 'user_not_found':
-                            $statusCode = 401;
-                            $redirectTo = 'login';
-                            break;
-                        case 'profile_incomplete':
-                            $statusCode = 403;
-                            $redirectTo = 'login';
-                            break;
-                    }
-                }
 
                 return response()->json([
                     'success' => false,
                     'message' => $result['message'],
                     'error_type' => $result['error_type'] ?? 'unknown',
-                    'redirect_to' => $redirectTo,
+                    'redirect_to' => 'login',
                     'user_exists' => $result['user_exists'] ?? false,
                     'profile_completed' => $result['profile_completed'] ?? false
                 ], $statusCode);
@@ -368,6 +354,7 @@ class GmailAuthController extends Controller
 
     /**
      * Callback Gmail pour le frontend (avec sessions)
+     * NOTE: La connexion Google est autorisée même si le profil est incomplet.
      */
     public function frontendWebCallback(Request $request): RedirectResponse
     {
@@ -405,11 +392,13 @@ class GmailAuthController extends Controller
 
             if ($result['success']) {
                 // Succès - rediriger vers le frontend avec les données
+                // Inclure profile_completed pour que le frontend sache s'il doit afficher le ProfileWizard
                 $queryParams = http_build_query([
                     'google_auth' => 'success',
                     'token' => $result['token'],
                     'user' => base64_encode(json_encode($result['user'])),
-                    'message' => $result['message']
+                    'message' => $result['message'],
+                    'profile_completed' => isset($result['profile_completed']) && $result['profile_completed'] ? 'true' : 'false'
                 ]);
 
                 return redirect($frontendUrl . '/login?' . $queryParams);

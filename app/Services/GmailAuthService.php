@@ -100,6 +100,8 @@ class GmailAuthService
 
     /**
      * Connecter un utilisateur existant
+     * Note: On autorise toujours la connexion Google, même si le profil est incomplet.
+     * Le frontend se chargera d'afficher le ProfileWizard si nécessaire.
      */
     private function loginExistingUser(User $user): array
     {
@@ -109,9 +111,13 @@ class GmailAuthService
         }
 
         // Vérifier si le profil est complètement configuré
-        if (!$this->isUserProfileComplete($user)) {
-            // Récupérer plus d'informations de diagnostic
-            $profileInfo = [];
+        $isProfileComplete = $this->isUserProfileComplete($user);
+
+        // Récupérer les informations de diagnostic
+        $profileInfo = [];
+        $profileCompleted = $user->profile_completed;
+        
+        if (!$isProfileComplete || !$profileCompleted) {
             if ($user->is_professional) {
                 $profile = $user->professionalProfile;
                 if ($profile) {
@@ -128,6 +134,7 @@ class GmailAuthService
                         'title' => $profile->title,
                         'profession' => $profile->profession,
                     ];
+                    $profileCompleted = $profile->completion_percentage >= 80;
                 }
             } else {
                 $profile = $user->clientProfile;
@@ -140,31 +147,23 @@ class GmailAuthService
                         'email' => $profile->email,
                         'phone' => $profile->phone,
                     ];
+                    $profileCompleted = $profile->completion_percentage >= 60;
                 }
             }
 
-            Log::warning('Tentative de connexion Gmail avec profil incomplet', [
+            Log::info('Connexion Google avec profil incomplet - connexion autorisée', [
                 'user_id' => $user->id,
                 'email' => $user->email,
-                'profile_completed' => $user->profile_completed,
+                'profile_completed' => $profileCompleted,
                 'is_professional' => $user->is_professional,
                 'profile_info' => $profileInfo
             ]);
-
-            return [
-                'success' => false,
-                'message' => 'Votre compte existe mais votre inscription n\'est pas complète. Veuillez vous connecter avec votre mot de passe pour terminer votre profil.',
-                'error_type' => 'profile_incomplete',
-                'user_exists' => true,
-                'profile_completed' => false,
-                'debug_info' => $profileInfo
-            ];
         }
 
         // Créer un token d'authentification
         $token = $user->createToken('gmail-auth')->plainTextToken;
 
-        Log::info('Connexion réussie via Gmail', ['user_id' => $user->id, 'email' => $user->email]);
+        Log::info('Connexion réussie via Gmail', ['user_id' => $user->id, 'email' => $user->email, 'profile_completed' => $profileCompleted]);
 
         return [
             'success' => true,
@@ -172,7 +171,8 @@ class GmailAuthService
             'token' => $token,
             'user' => $user,
             'is_new_user' => false,
-            'profile_completed' => true
+            'profile_completed' => $profileCompleted,
+            'debug_info' => $profileInfo
         ];
     }
 

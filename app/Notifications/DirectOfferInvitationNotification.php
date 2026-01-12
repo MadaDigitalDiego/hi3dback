@@ -52,7 +52,7 @@ class DirectOfferInvitationNotification extends Notification
             ->greeting('Bonjour ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Using User model properties
             ->line('Vous avez été directement invité à rejoindre un appel d\'offres par ' . $this->clientUser->clientProfile->company_name . '.') // Use client's company name
             ->line('**Titre de l\'offre:** ' . $this->openOffer->title)
-            ->line('**Description:** ' . substr($this->openOffer->description, 0, 200) . '...') // Shorten description for email
+            ->line('**Description:** ' . substr(strip_tags($this->openOffer->description), 0, 200) . '...') // Shorten description for email
             ->action('Voir l\'Offre', $url)
             ->line('Vous pouvez consulter les détails de l\'offre et décider d\'y participer.')
             ->salutation('Cordialement,')

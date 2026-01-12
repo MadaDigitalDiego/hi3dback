@@ -23,6 +23,7 @@ use App\Notifications\OfferCompletedNotification;
 use App\Notifications\OfferReactivatedWithProfessionalNotification;
 use App\Notifications\OfferReopenedToAllNotification;
 use App\Notifications\InvitationDeclinedNotification;
+use App\Notifications\InvitationAcceptedNotification;
 use App\Services\OfferMatchingService;
 
 
@@ -303,7 +304,7 @@ class OpenOfferController extends Controller
 
                     // Notify the client that an invited professional has submitted an application
                     if ($openOffer->user) {
-                        Notification::send($openOffer->user, new NewApplicationNotification($existingInvitedApplication));
+                        Notification::send($openOffer->user, new InvitationAcceptedNotification($existingInvitedApplication));
                     }
 
                     return response()->json(['application' => $existingInvitedApplication, 'message' => 'Invitation acceptée et candidature soumise avec succès.'], 200);

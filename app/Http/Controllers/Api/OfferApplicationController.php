@@ -8,6 +8,9 @@ use App\Models\OpenOffer;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\InvitationAcceptedNotification;
+use App\Notifications\InvitationDeclinedNotification;
 
 class OfferApplicationController extends Controller
 {
@@ -127,6 +130,15 @@ class OfferApplicationController extends Controller
         $application->status = 'accepted';
         $application->save();
 
+        // Notifier le client que l'invitation a été acceptée
+        try {
+            if ($application->openOffer && $application->openOffer->user) {
+                Notification::send($application->openOffer->user, new InvitationAcceptedNotification($application));
+            }
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi de la notification d\'acceptation: ' . $e->getMessage());
+        }
+
         return response()->json(['message' => 'Offre acceptée avec succès.']);
     }
 
@@ -156,6 +168,15 @@ class OfferApplicationController extends Controller
             // Mettre à jour le statut de l'application
             $application->status = 'rejected';
             $application->save();
+
+            // Notifier le client que l'invitation a été refusée
+            try {
+                if ($application->openOffer && $application->openOffer->user) {
+                    Notification::send($application->openOffer->user, new InvitationDeclinedNotification($application));
+                }
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de l\'envoi de la notification de refus: ' . $e->getMessage());
+            }
 
             return response()->json(['message' => 'Offre refusée avec succès.']);
         } catch (\Exception $e) {

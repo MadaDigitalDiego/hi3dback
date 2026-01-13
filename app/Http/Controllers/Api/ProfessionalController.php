@@ -19,8 +19,8 @@ class ProfessionalController extends Controller
     public function index(): JsonResponse
     {
         try {
-            // Récupérer tous les profils professionnels avec les utilisateurs associés
-            $professionalProfiles = ProfessionalProfile::with(['user', 'views', 'likers'])->get();
+            // Récupérer tous les profils professionnels avec les utilisateurs associés et leurs abonnements
+            $professionalProfiles = ProfessionalProfile::with(['user.subscriptions.plan', 'views', 'likers'])->get();
 
             // Formater les données pour correspondre au format attendu par le frontend
             $professionals = $professionalProfiles->map(function ($profile) {
@@ -43,6 +43,26 @@ class ProfessionalController extends Controller
                 $user =  $profile->user;
                 $services =$user->serviceOffers;
 
+                // Récupérer l'abonnement actuel de l'utilisateur
+                $currentSubscription = $user ? $user->currentSubscription() : null;
+                $subscriptionInfo = null;
+
+                if ($currentSubscription) {
+                    $subscriptionInfo = [
+                        'id' => $currentSubscription->id,
+                        'plan_name' => $currentSubscription->plan ? $currentSubscription->plan->name : null,
+                        'plan_title' => $currentSubscription->plan ? $currentSubscription->plan->title : null,
+                        'stripe_status' => $currentSubscription->stripe_status,
+                        'current_period_start' => $currentSubscription->current_period_start?->toISOString(),
+                        'current_period_end' => $currentSubscription->current_period_end?->toISOString(),
+                        'trial_ends_at' => $currentSubscription->trial_ends_at?->toISOString(),
+                        'ends_at' => $currentSubscription->ends_at?->toISOString(),
+                        'is_active' => $currentSubscription->isActive(),
+                        'is_on_trial' => $currentSubscription->isOnTrial(),
+                        'is_canceled' => $currentSubscription->isCanceled(),
+                        'is_past_due' => $currentSubscription->isPastDue(),
+                    ];
+                }
 
                 return [
                     'id' => $profile->id,
@@ -66,6 +86,7 @@ class ProfessionalController extends Controller
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
                     'languages' => $profile->languages,
+                    'subscription' => $subscriptionInfo, // Ajout des informations d'abonnement
                     // Données de likes et views
                     'likes_count' => $profile->getTotalLikesAttribute(),
                     'views_count' => $profile->getTotalViewsAttribute(),
@@ -194,7 +215,7 @@ class ProfessionalController extends Controller
         try {
             // Récupérer le profil professionnel avec l'utilisateur associé et ses réalisations
             // $profile = ProfessionalProfile::with(['user', 'achievements'])->findOrFail($id);
-            $profile = ProfessionalProfile::with(['user', 'views', 'likers'])->findOrFail($id);
+            $profile = ProfessionalProfile::with(['user.subscriptions.plan', 'views', 'likers'])->findOrFail($id);
 
             // Traiter les skills qui peuvent être une chaîne JSON ou un tableau
             $skills = [];
@@ -220,6 +241,27 @@ class ProfessionalController extends Controller
             return response()->json(['message' => $e->getMessage()], 404);
         }
 
+            // Récupérer l'abonnement actuel de l'utilisateur
+            $user = $profile->user;
+            $currentSubscription = $user ? $user->currentSubscription() : null;
+            $subscriptionInfo = null;
+
+            if ($currentSubscription) {
+                $subscriptionInfo = [
+                    'id' => $currentSubscription->id,
+                    'plan_name' => $currentSubscription->plan ? $currentSubscription->plan->name : null,
+                    'plan_title' => $currentSubscription->plan ? $currentSubscription->plan->title : null,
+                    'stripe_status' => $currentSubscription->stripe_status,
+                    'current_period_start' => $currentSubscription->current_period_start?->toISOString(),
+                    'current_period_end' => $currentSubscription->current_period_end?->toISOString(),
+                    'trial_ends_at' => $currentSubscription->trial_ends_at?->toISOString(),
+                    'ends_at' => $currentSubscription->ends_at?->toISOString(),
+                    'is_active' => $currentSubscription->isActive(),
+                    'is_on_trial' => $currentSubscription->isOnTrial(),
+                    'is_canceled' => $currentSubscription->isCanceled(),
+                    'is_past_due' => $currentSubscription->isPastDue(),
+                ];
+            }
 
             // Formater les données pour correspondre au format attendu par le frontend
             $professional = [
@@ -247,6 +289,7 @@ class ProfessionalController extends Controller
                 'services_offered' => $profile->services_offered,
                 'portfolio' => $profile->portfolio,
                 'achievements' => $achievements, // Ajouter les réalisations
+                'subscription' => $subscriptionInfo, // Ajout des informations d'abonnement
                 // Données de likes et views
                 'likes_count' => $profile->getTotalLikesAttribute(),
                 'views_count' => $profile->getTotalViewsAttribute(),
@@ -272,7 +315,7 @@ class ProfessionalController extends Controller
     public function filter(Request $request): JsonResponse
     {
         try {
-            $query = ProfessionalProfile::with(['user', 'views', 'likers']);
+            $query = ProfessionalProfile::with(['user.subscriptions.plan', 'views', 'likers']);
 
             // Filtrage par recherche
             if ($request->has('search') && !empty($request->input('search'))) {
@@ -355,6 +398,27 @@ class ProfessionalController extends Controller
                 $user =  $profile->user;
                 $services =$user->serviceOffers;
 
+                // Récupérer l'abonnement actuel de l'utilisateur
+                $currentSubscription = $user ? $user->currentSubscription() : null;
+                $subscriptionInfo = null;
+
+                if ($currentSubscription) {
+                    $subscriptionInfo = [
+                        'id' => $currentSubscription->id,
+                        'plan_name' => $currentSubscription->plan ? $currentSubscription->plan->name : null,
+                        'plan_title' => $currentSubscription->plan ? $currentSubscription->plan->title : null,
+                        'stripe_status' => $currentSubscription->stripe_status,
+                        'current_period_start' => $currentSubscription->current_period_start?->toISOString(),
+                        'current_period_end' => $currentSubscription->current_period_end?->toISOString(),
+                        'trial_ends_at' => $currentSubscription->trial_ends_at?->toISOString(),
+                        'ends_at' => $currentSubscription->ends_at?->toISOString(),
+                        'is_active' => $currentSubscription->isActive(),
+                        'is_on_trial' => $currentSubscription->isOnTrial(),
+                        'is_canceled' => $currentSubscription->isCanceled(),
+                        'is_past_due' => $currentSubscription->isPastDue(),
+                    ];
+                }
+
                 return [
                     'id' => $profile->id,
                     'user_id' => $profile->user_id,
@@ -375,6 +439,7 @@ class ProfessionalController extends Controller
                     'title' => $profile->title,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
+                    'subscription' => $subscriptionInfo, // Ajout des informations d'abonnement
                     // Données de likes et views
                     'likes_count' => $profile->getTotalLikesAttribute(),
                     'views_count' => $profile->getTotalViewsAttribute(),

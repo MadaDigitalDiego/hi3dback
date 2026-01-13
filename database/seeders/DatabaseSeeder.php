@@ -23,8 +23,8 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
            // PlanSeeder::class,
             CategorySeeder::class,
-            ProfessionalSeeder::class,
-            HeroImageSeeder::class,
+            //ProfessionalSeeder::class,
+            //HeroImageSeeder::class,
             StripeConfigurationSeeder::class,
         ]);
     }

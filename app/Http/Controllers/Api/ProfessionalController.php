@@ -41,7 +41,17 @@ class ProfessionalController extends Controller
 
                 $achievements = $profile->achievements;
                 $user =  $profile->user;
-                $services =$user->serviceOffers;
+                
+                // Récupérer les services via la relation serviceOffers de l'utilisateur
+                // Note: La relation est définie dans User.php comme serviceOffers() (HasMany)
+                $services = $user ? $user->serviceOffers : collect([]);
+                
+                // Log pour déboguer les services
+                if ($user) {
+                    Log::info('Services pour le professionnel ID ' . $profile->id . ' (méthode index): ' . $services->count());
+                } else {
+                    Log::warning('Aucun utilisateur trouvé pour le professionnel ID ' . $profile->id);
+                }
 
                 // Récupérer l'abonnement actuel de l'utilisateur
                 $currentSubscription = $user ? $user->currentSubscription() : null;
@@ -396,7 +406,16 @@ class ProfessionalController extends Controller
 
                 $achievements = $profile->achievements;
                 $user =  $profile->user;
-                $services =$user->serviceOffers;
+                
+                // Récupérer les services via la relation serviceOffers de l'utilisateur
+                $services = $user ? $user->serviceOffers : collect([]);
+                
+                // Log pour déboguer les services (méthode filter)
+                if ($user) {
+                    Log::info('Services pour le professionnel ID ' . $profile->id . ' (méthode filter): ' . $services->count());
+                } else {
+                    Log::warning('Aucun utilisateur trouvé pour le professionnel ID ' . $profile->id);
+                }
 
                 // Récupérer l'abonnement actuel de l'utilisateur
                 $currentSubscription = $user ? $user->currentSubscription() : null;

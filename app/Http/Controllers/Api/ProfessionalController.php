@@ -241,6 +241,19 @@ class ProfessionalController extends Controller
                 }
             }
 
+            $software = [];
+            if ($profile->softwares){
+                if (is_array($profile->softwares)) {
+                    $software = $profile->softwares;
+                } elseif (is_string($profile->softwares)) {
+                    try {
+                        $software = json_decode($profile->softwares, true);
+                    } catch (\Exception $e) {
+                        $software = [$profile->software]; // Si ce n'est pas un JSON valide, le traiter comme une chaîne simple
+                    }
+                }
+            }
+
             // Récupérer les réalisations du professionnel
             $achievements = [];
 
@@ -284,6 +297,7 @@ class ProfessionalController extends Controller
                 'city' => $profile->city,
                 'country' => $profile->country,
                 'skills' => $skills,
+                'software' => $software,
                 'availability_status' => $profile->availability_status,
                 'hourly_rate' => $profile->hourly_rate,
                 'avatar' => $profile->avatar,

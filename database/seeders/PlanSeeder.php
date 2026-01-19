@@ -26,10 +26,10 @@ class PlanSeeder extends Seeder
                 'interval_count' => 1,
                 'is_active' => true,
                 // Free professional plan: 0 quota on main resources
-                'max_services' => 0,
-                'max_open_offers' => 0,
-                'max_applications' => 0,
-                'max_messages' => 0,
+                'max_services' => 2,
+                'max_open_offers' => 2,
+                'max_applications' => 2,
+                'max_messages' => 2,
                 'features' => json_encode([
                     'Profil de base',
                     'Portfolio limité (3 projets)',

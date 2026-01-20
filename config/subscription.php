@@ -27,11 +27,11 @@ return [
             // Free plan has 0 quota on all main resources; users must upgrade
             // to create service offers, open offers, or upload portfolio files.
             'limits' => [
-                'service_offers' => 0,
-                'open_offers' => 0,
-	                'applications' => 0,
-	                'messages' => 0,
-                'portfolio_files' => 0,
+                'service_offers' => 2,
+                'open_offers' => 2,
+	                'applications' => 2,
+	                'messages' => 2,
+                'portfolio_files' => 2,
                 'analytics_retention_days' => 30,
             ],
             'features' => [

@@ -68,6 +68,8 @@ class Kernel extends HttpKernel
         'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
         'precognitive' => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
         'search.ratelimit' => \App\Http\Middleware\SearchRateLimit::class,
+        'session.activity' => \App\Http\Middleware\SessionActivity::class,
+        'session.expiration' => \App\Http\Middleware\SessionExpiration::class,
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,

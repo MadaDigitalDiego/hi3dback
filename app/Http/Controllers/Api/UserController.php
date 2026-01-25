@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Models\PersonalAccessSession;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\ClientProfile;
@@ -199,7 +200,22 @@ class UserController extends Controller
 
             // Création du token
             try {
-                $token = $user->createToken('api-token')->plainTextToken;
+                // Supprimer les tokens existants pour cet utilisateur (session unique)
+                $user->tokens()->delete();
+                
+                $accessToken = $user->createToken('api-token');
+                $token = $accessToken->plainTextToken;
+                $tokenId = $accessToken->accessToken->id;
+
+                // Créer un enregistrement de session
+                PersonalAccessSession::create([
+                    'user_id' => $user->id,
+                    'token_id' => $tokenId,
+                    'last_activity_at' => now(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'is_active' => true,
+                ]);
 
                 // Récupération des informations d'abonnement de l'utilisateur
                 $subscription = $user->currentSubscription();
@@ -212,6 +228,11 @@ class UserController extends Controller
                     'user' => $user,
                     // Informations d'abonnement de l'utilisateur (null si aucun abonnement actif)
                     'subscription' => $subscriptionData,
+                    // Informations de session
+                    'session' => [
+                        'timeout_minutes' => config('session.timeout', 30),
+                        'expires_at' => now()->addMinutes(config('session.timeout', 30))->toIso8601String(),
+                    ],
                 ]);
             } catch (\Exception $tokenException) {
                 Log::error('Erreur lors de la création du token pour l\'utilisateur ' . $request->email . ': ' . $tokenException->getMessage());
@@ -231,12 +252,321 @@ class UserController extends Controller
     public function logout(Request $request): JsonResponse
     {
         try {
+            $user = $request->user();
+            $tokenId = $request->user()->currentAccessToken()->id;
+            
+            // Supprimer l'enregistrement de session
+            PersonalAccessSession::where('token_id', $tokenId)->delete();
+            
+            // Supprimer le token
             $request->user()->tokens()->delete();
+            
+            Log::info('Déconnexion réussie pour l\'utilisateur: ' . $user->email);
+            
             return response()->json(['message' => 'Déconnexion réussie.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la déconnexion de l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la déconnexion.'], 500);
         }
+    }
+
+    /**
+     * Obtenir les informations de la session courante.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function sessionInfo(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $token = $user->currentAccessToken();
+            
+            if (!$token) {
+                return response()->json(['message' => 'Token non trouvé.'], 404);
+            }
+
+            $session = PersonalAccessSession::where('token_id', $token->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$session) {
+                return response()->json([
+                    'message' => 'Session non trouvée.',
+                    'session_expired' => true,
+                ], 404);
+            }
+
+            $timeoutMinutes = config('session.timeout', 30);
+            $expiresAt = $session->last_activity_at->addMinutes($timeoutMinutes);
+            $isExpired = $session->isExpired($timeoutMinutes);
+
+            return response()->json([
+                'session' => [
+                    'is_active' => $session->is_active,
+                    'is_expired' => $isExpired,
+                    'last_activity_at' => $session->last_activity_at->toIso8601String(),
+                    'expires_at' => $expiresAt->toIso8601String(),
+                    'timeout_minutes' => $timeoutMinutes,
+                    'remaining_seconds' => $isExpired ? 0 : $expiresAt->diffInSeconds(now()),
+                    'ip_address' => $session->ip_address,
+                    'user_agent' => $session->user_agent,
+                ],
+                'user' => $user,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des informations de session pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la récupération des informations de session.'], 500);
+        }
+    }
+
+    /**
+     * Renouveler la session (prolonger le timeout).
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function refreshSession(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $token = $user->currentAccessToken();
+            
+            if (!$token) {
+                return response()->json(['message' => 'Token non trouvé.'], 404);
+            }
+
+            $session = PersonalAccessSession::where('token_id', $token->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$session) {
+                return response()->json([
+                    'message' => 'Session non trouvée.',
+                    'session_expired' => true,
+                    'redirect_to' => '/login',
+                ], 401);
+            }
+
+            // Vérifier si la session est inactive
+            if (!$session->is_active) {
+                // Supprimer le token
+                $user->tokens()->delete();
+                
+                return response()->json([
+                    'message' => 'Session inactive. Veuillez vous reconnecter.',
+                    'session_expired' => true,
+                    'redirect_to' => '/login',
+                ], 401);
+            }
+
+            // Vérifier si la session a expiré
+            $timeoutMinutes = config('session.timeout', 30);
+            if ($session->isExpired($timeoutMinutes)) {
+                // Désactiver la session et supprimer le token
+                $session->deactivate();
+                $user->tokens()->delete();
+                
+                return response()->json([
+                    'message' => 'Session expirée par inactivité.',
+                    'session_expired' => true,
+                    'redirect_to' => '/login',
+                ], 401);
+            }
+
+            // Renouveler la session (mettre à jour last_activity_at)
+            $session->updateActivity();
+
+            Log::info('Session renouvelée pour l\'utilisateur: ' . $user->email);
+
+            $timeoutMinutes = config('session.timeout', 30);
+
+            return response()->json([
+                'message' => 'Session renouvelée avec succès.',
+                'session' => [
+                    'last_activity_at' => $session->last_activity_at->toIso8601String(),
+                    'expires_at' => $session->last_activity_at->addMinutes($timeoutMinutes)->toIso8601String(),
+                    'timeout_minutes' => $timeoutMinutes,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors du renouvellement de session pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors du renouvellement de session.'], 500);
+        }
+    }
+
+    /**
+     * Obtenir toutes les sessions actives de l'utilisateur.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function sessions(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $currentTokenId = $request->user()->currentAccessToken()->id;
+
+            $sessions = PersonalAccessSession::getActiveSessionsForUser($user->id);
+
+            $sessionsData = $sessions->map(function ($session) use ($currentTokenId, $user) {
+                $timeoutMinutes = config('session.timeout', 30);
+                $isCurrent = $session->token_id === $currentTokenId;
+                $expiresAt = $session->last_activity_at->addMinutes($timeoutMinutes);
+
+                return [
+                    'id' => $session->id,
+                    'is_current' => $isCurrent,
+                    'is_active' => $session->is_active,
+                    'is_expired' => $session->isExpired($timeoutMinutes),
+                    'last_activity_at' => $session->last_activity_at->toIso8601String(),
+                    'expires_at' => $expiresAt->toIso8601String(),
+                    'ip_address' => $session->ip_address,
+                    'user_agent' => $session->user_agent,
+                    'device' => $this->parseUserAgent($session->user_agent),
+                ];
+            });
+
+            return response()->json([
+                'sessions' => $sessionsData,
+                'current_session_id' => $currentTokenId,
+                'timeout_minutes' => config('session.timeout', 30),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération des sessions pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la récupération des sessions.'], 500);
+        }
+    }
+
+    /**
+     * Supprimer une session spécifique (déconnexion d'un autre appareil).
+     *
+     * @param Request $request
+     * @param int $sessionId
+     * @return JsonResponse
+     */
+    public function destroySession(Request $request, int $sessionId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $currentTokenId = $request->user()->currentAccessToken()->id;
+
+            $session = PersonalAccessSession::where('id', $sessionId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$session) {
+                return response()->json(['message' => 'Session non trouvée.'], 404);
+            }
+
+            // Ne pas permettre de supprimer la session courante via cette route
+            if ($session->token_id === $currentTokenId) {
+                return response()->json(['message' => 'Impossible de supprimer la session courante. Utilisez logout pour vous déconnecter.'], 400);
+            }
+
+            // Supprimer le token associé à la session
+            $user->tokens()->where('id', $session->token_id)->delete();
+
+            // Supprimer la session
+            $session->delete();
+
+            Log::info('Session supprimée pour l\'utilisateur: ' . $user->email, ['session_id' => $sessionId]);
+
+            return response()->json(['message' => 'Session supprimée avec succès.']);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la suppression de la session pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la suppression de la session.'], 500);
+        }
+    }
+
+    /**
+     * Supprimer toutes les sessions sauf la courante.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function destroyOtherSessions(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $currentTokenId = $request->user()->currentAccessToken()->id;
+
+            // Récupérer toutes les sessions actives sauf la courante
+            $otherSessions = PersonalAccessSession::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->where('token_id', '!=', $currentTokenId)
+                ->get();
+
+            // Supprimer les tokens associés
+            $tokenIds = $otherSessions->pluck('token_id')->toArray();
+            if (!empty($tokenIds)) {
+                $user->tokens()->whereIn('id', $tokenIds)->delete();
+            }
+
+            // Supprimer les sessions
+            $otherSessions->each->delete();
+
+            Log::info('Toutes les autres sessions supprimées pour l\'utilisateur: ' . $user->email);
+
+            return response()->json([
+                'message' => 'Toutes les autres sessions ont été supprimées.',
+                'sessions_removed' => $otherSessions->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la suppression des autres sessions pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la suppression des sessions.'], 500);
+        }
+    }
+
+    /**
+     * Parser le user agent pour obtenir des informations sur l'appareil.
+     *
+     * @param string|null $userAgent
+     * @return array
+     */
+    private function parseUserAgent(?string $userAgent): array
+    {
+        if (!$userAgent) {
+            return [
+                'browser' => 'Unknown',
+                'os' => 'Unknown',
+                'device' => 'Unknown',
+            ];
+        }
+
+        // Simple user agent parsing (could be enhanced with a library like jenssegers/agent)
+        $browser = 'Unknown';
+        $os = 'Unknown';
+        $device = 'Desktop';
+
+        // Detect browser
+        if (preg_match('/(Firefox|Chrome|Safari|Edge|Opera|MSIE|Trident)/i', $userAgent, $matches)) {
+            $browser = $matches[1];
+            if ($browser === 'Trident') {
+                $browser = 'Internet Explorer';
+            }
+        }
+
+        // Detect OS
+        if (preg_match('/(Windows NT|Mac OS|Linux|Android|iOS|iPhone|iPad)/i', $userAgent, $matches)) {
+            $os = $matches[1];
+            if ($os === 'Windows NT') {
+                $os = 'Windows';
+            } elseif (preg_match('/(\d+)/', $userAgent, $versionMatch)) {
+                $os .= ' ' . $versionMatch[1];
+            }
+        }
+
+        // Detect device type
+        if (preg_match('/(Mobile|Tablet)/i', $userAgent)) {
+            $device = preg_match('/(Tablet|iPad)/i', $userAgent) ? 'Tablet' : 'Mobile';
+        }
+
+        return [
+            'browser' => $browser,
+            'os' => $os,
+            'device' => $device,
+        ];
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
@@ -315,76 +645,76 @@ class UserController extends Controller
         }
     }
 
-	    public function switchAccountType(Request $request): JsonResponse
-	    {
-	        $data = $request->validate([
-	            'is_professional' => 'required|boolean',
-	        ]);
+    public function switchAccountType(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'is_professional' => 'required|boolean',
+        ]);
 
-	        try {
-	            /** @var User|null $user */
-	            $user = $request->user();
+        try {
+            /** @var User|null $user */
+            $user = $request->user();
 
-	            if (!$user) {
-	                return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
-	            }
+            if (!$user) {
+                return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+            }
 
-	            $targetIsProfessional = (bool) $data['is_professional'];
+            $targetIsProfessional = (bool) $data['is_professional'];
 
-	            // Si l'utilisateur devient professionnel, s'assurer qu'un profil professionnel existe
-	            if ($targetIsProfessional) {
-	                if (!$user->professionalProfile) {
-	                    ProfessionalProfile::create([
-	                        'user_id' => $user->id,
-	                        'first_name' => $user->first_name,
-	                        'last_name' => $user->last_name,
-	                        'email' => $user->email,
-	                        'profession' => 'Non spécifié',
-	                        'years_of_experience' => 0,
-	                        'hourly_rate' => 0.00,
-	                        'availability_status' => 'available',
-	                        'rating' => 0.0,
-	                        'completion_percentage' => 20,
-	                        'skills' => json_encode([]),
-	                        'languages' => json_encode([]),
-	                        'services_offered' => json_encode([]),
-	                        'social_links' => json_encode([]),
-	                    ]);
-	                }
-	            } else {
-	                // Si l'utilisateur devient client, s'assurer qu'un profil client existe
-	                if (!$user->clientProfile) {
-	                    ClientProfile::create([
-	                        'user_id' => $user->id,
-	                        'first_name' => $user->first_name,
-	                        'last_name' => $user->last_name,
-	                        'email' => $user->email,
-	                        'completion_percentage' => 20,
-	                    ]);
-	                }
-	            }
+            // Si l'utilisateur devient professionnel, s'assurer qu'un profil professionnel existe
+            if ($targetIsProfessional) {
+                if (!$user->professionalProfile) {
+                    ProfessionalProfile::create([
+                        'user_id' => $user->id,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'email' => $user->email,
+                        'profession' => 'Non spécifié',
+                        'years_of_experience' => 0,
+                        'hourly_rate' => 0.00,
+                        'availability_status' => 'available',
+                        'rating' => 0.0,
+                        'completion_percentage' => 20,
+                        'skills' => json_encode([]),
+                        'languages' => json_encode([]),
+                        'services_offered' => json_encode([]),
+                        'social_links' => json_encode([]),
+                    ]);
+                }
+            } else {
+                // Si l'utilisateur devient client, s'assurer qu'un profil client existe
+                if (!$user->clientProfile) {
+                    ClientProfile::create([
+                        'user_id' => $user->id,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'email' => $user->email,
+                        'completion_percentage' => 20,
+                    ]);
+                }
+            }
 
-	            // Mettre à jour le type de compte sur l'utilisateur
-	            $user->is_professional = $targetIsProfessional;
-	            $user->save();
+            // Mettre à jour le type de compte sur l'utilisateur
+            $user->is_professional = $targetIsProfessional;
+            $user->save();
 
-	            // Rafraîchir les relations
-	            $user->refresh();
+            // Rafraîchir les relations
+            $user->refresh();
 
-	            $profileType = $user->is_professional ? 'professional' : 'client';
-	            $profileData = $user->is_professional ? $user->professionalProfile : $user->clientProfile;
+            $profileType = $user->is_professional ? 'professional' : 'client';
+            $profileData = $user->is_professional ? $user->professionalProfile : $user->clientProfile;
 
-	            return response()->json([
-	                'message' => 'Type de compte mis à jour avec succès.',
-	                'user' => $user,
-	                'profile_type' => $profileType,
-	                'profile_data' => $profileData,
-	            ], 200);
-	        } catch (\Exception $e) {
-	            Log::error("Erreur lors du changement de type de compte pour l'utilisateur ID " . optional($request->user())->id . ': ' . $e->getMessage());
-	            return response()->json(['message' => 'Erreur lors du changement de type de compte.'], 500);
-	        }
-	    }
+            return response()->json([
+                'message' => 'Type de compte mis à jour avec succès.',
+                'user' => $user,
+                'profile_type' => $profileType,
+                'profile_data' => $profileData,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Erreur lors du changement de type de compte pour l'utilisateur ID " . optional($request->user())->id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors du changement de type de compte.'], 500);
+        }
+    }
 
     public function user(Request $request): JsonResponse
     {

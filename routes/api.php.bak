@@ -112,13 +112,6 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::put('/user/password', [UserController::class, 'changePassword']);
     Route::put('/user/account-type', [UserController::class, 'switchAccountType']);
 
-    // Routes de gestion de session
-    Route::get('/session', [UserController::class, 'sessionInfo']);
-    Route::post('/session/refresh', [UserController::class, 'refreshSession']);
-    Route::get('/sessions', [UserController::class, 'sessions']);
-    Route::delete('/sessions/{id}', [UserController::class, 'destroySession']);
-    Route::delete('/sessions', [UserController::class, 'destroyOtherSessions']);
-
     // Routes de profil standardisées
     Route::get('/profile', [ProfileController::class, 'getProfile']);
     Route::put('/profile', [ProfileController::class, 'updateProfile']);

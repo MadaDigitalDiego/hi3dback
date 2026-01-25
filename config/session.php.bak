@@ -37,21 +37,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Session Timeout (Inactivity Timeout)
-    |--------------------------------------------------------------------------
-    |
-    | This is the timeout in minutes for API session inactivity.
-    | If the user is inactive for this duration, they will be automatically logged out.
-    | This is used by the SessionExpiration middleware.
-    |
-    | Default: 30 minutes
-    |
-    */
-
-    'timeout' => env('SESSION_TIMEOUT', 30),
-
-    /*
-    |--------------------------------------------------------------------------
     | Session Encryption
     |--------------------------------------------------------------------------
     |

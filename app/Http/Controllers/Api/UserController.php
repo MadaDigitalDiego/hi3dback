@@ -630,11 +630,28 @@ class UserController extends Controller
     public function changePassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
+        ], [
+            'current_password.required' => 'L\'ancien mot de passe est requis.',
+            'password.required' => 'Le nouveau mot de passe est requis.',
+            'password.min' => 'Le nouveau mot de passe doit contenir au moins 8 caractères.',
+            'password.confirmed' => 'La confirmation du nouveau mot de passe ne correspond pas.',
         ]);
 
         try {
             $user = $request->user();
+
+            // Vérifier si l'ancien mot de passe est correct
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'L\'ancien mot de passe est incorrect.',
+                    'errors' => [
+                        'current_password' => ['L\'ancien mot de passe est incorrect.']
+                    ]
+                ], 422);
+            }
+
             $user->password = Hash::make($validated['password']);
             $user->save();
 

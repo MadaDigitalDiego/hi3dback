@@ -124,7 +124,26 @@ class StripeService
     public function getOrCreateCustomer(User $user): string
     {
         if ($user->stripe_customer_id) {
-            return $user->stripe_customer_id;
+            try {
+                // Verify if the customer still exists on Stripe
+                $customer = $this->stripe->customers->retrieve($user->stripe_customer_id);
+                
+                // If the customer is deleted in Stripe, treat it as non-existent
+                if (isset($customer->deleted) && $customer->deleted) {
+                    return $this->createCustomer($user);
+                }
+                
+                return $user->stripe_customer_id;
+            } catch (ApiErrorException $e) {
+                // If customer not found (404), create a new one
+                // Stripe throws a 404 error with "No such customer" message if it doesn't exist
+                if ($e->getHttpStatus() === 404 || strpos($e->getMessage(), 'No such customer') !== false) {
+                    return $this->createCustomer($user);
+                }
+                
+                // Rethrow other Stripe exceptions
+                throw $e;
+            }
         }
 
         return $this->createCustomer($user);

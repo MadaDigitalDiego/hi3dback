@@ -1,14 +1,14 @@
 <!-- resources/views/emails/offer_match.blade.php -->
 @component('mail::message')
-# Nouvelle offre correspondant à votre profil
+# New offer matching your profile
 
 **{{ $offer->title }}**
 {{ $offer->description }}
 
 @component('mail::button', ['url' => route('offers.show', $offer->id)])
-Voir l'offre
+View Offer
 @endcomponent
 
-Merci,
+Thanks,
 {{ config('app.name') }}
 @endcomponent

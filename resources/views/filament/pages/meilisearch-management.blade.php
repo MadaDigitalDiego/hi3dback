@@ -1,9 +1,9 @@
 <x-filament-panels::page>
     <div class="space-y-6">
-        <!-- Configuration Meilisearch -->
+        <!-- Meilisearch Configuration -->
         <x-filament::section>
             <x-slot name="heading">
-                Configuration Meilisearch
+                Meilisearch Configuration
             </x-slot>
 
             <form wire:submit="saveConfiguration">
@@ -11,33 +11,33 @@
             </form>
         </x-filament::section>
 
-        <!-- Statut de Meilisearch -->
+        <!-- Meilisearch Status -->
         <x-filament::section>
             <x-slot name="heading">
-                Statut de Meilisearch
+                Meilisearch Status
             </x-slot>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <x-heroicon-o-check-circle class="w-5 h-5 text-green-600 mr-2" />
-                        <span class="text-green-800 font-medium">Service actif</span>
+                        <span class="text-green-800 font-medium">Active Service</span>
                     </div>
-                    <p class="text-green-600 text-sm mt-1">Meilisearch fonctionne correctement</p>
+                    <p class="text-green-600 text-sm mt-1">Meilisearch is running correctly</p>
                 </div>
 
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <x-heroicon-o-document-text class="w-5 h-5 text-blue-600 mr-2" />
-                        <span class="text-blue-800 font-medium">Index configurés</span>
+                        <span class="text-blue-800 font-medium">Configured Indexes</span>
                     </div>
-                    <p class="text-blue-600 text-sm mt-1">3 index actifs</p>
+                    <p class="text-blue-600 text-sm mt-1">3 active indexes</p>
                 </div>
 
                 <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <x-heroicon-o-clock class="w-5 h-5 text-purple-600 mr-2" />
-                        <span class="text-purple-800 font-medium">Dernière sync</span>
+                        <span class="text-purple-800 font-medium">Last Sync</span>
                     </div>
                     <p class="text-purple-600 text-sm mt-1">{{ now()->format('d/m/Y H:i') }}</p>
                 </div>
@@ -52,10 +52,10 @@
             </div>
         </x-filament::section>
 
-        <!-- Index disponibles -->
+        <!-- Available Indexes -->
         <x-filament::section>
             <x-slot name="heading">
-                Index disponibles
+                Available Indexes
             </x-slot>
 
             <div class="space-y-4">
@@ -63,11 +63,11 @@
                     <div class="flex justify-between items-center">
                         <div>
                             <h3 class="font-medium text-gray-900">professional_profiles_index</h3>
-                            <p class="text-sm text-gray-600">Index des profils professionnels</p>
+                            <p class="text-sm text-gray-600">Professional profiles index</p>
                         </div>
                         <div class="flex space-x-2">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Actif
+                                Active
                             </span>
                         </div>
                     </div>
@@ -77,11 +77,11 @@
                     <div class="flex justify-between items-center">
                         <div>
                             <h3 class="font-medium text-gray-900">service_offers_index</h3>
-                            <p class="text-sm text-gray-600">Index des offres de service</p>
+                            <p class="text-sm text-gray-600">Service offers index</p>
                         </div>
                         <div class="flex space-x-2">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Actif
+                                Active
                             </span>
                         </div>
                     </div>
@@ -91,11 +91,11 @@
                     <div class="flex justify-between items-center">
                         <div>
                             <h3 class="font-medium text-gray-900">achievements_index</h3>
-                            <p class="text-sm text-gray-600">Index des réalisations</p>
+                            <p class="text-sm text-gray-600">Achievements index</p>
                         </div>
                         <div class="flex space-x-2">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Actif
+                                Active
                             </span>
                         </div>
                     </div>
@@ -103,19 +103,19 @@
             </div>
         </x-filament::section>
 
-        <!-- Commandes utiles -->
+        <!-- Useful Commands -->
         <x-filament::section>
             <x-slot name="heading">
-                Commandes utiles
+                Useful Commands
             </x-slot>
 
             <div class="bg-gray-50 rounded-lg p-4">
-                <h4 class="font-medium text-gray-900 mb-2">Commandes Artisan disponibles :</h4>
+                <h4 class="font-medium text-gray-900 mb-2">Available Artisan Commands:</h4>
                 <ul class="space-y-1 text-sm text-gray-600">
-                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:import "App\Models\ProfessionalProfile"</code> - Importer les profils professionnels</li>
-                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:import "App\Models\ServiceOffer"</code> - Importer les offres de service</li>
-                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:import "App\Models\Achievement"</code> - Importer les réalisations</li>
-                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:flush "App\Models\ProfessionalProfile"</code> - Vider l'index des profils</li>
+                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:import "App\Models\ProfessionalProfile"</code> - Import professional profiles</li>
+                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:import "App\Models\ServiceOffer"</code> - Import service offers</li>
+                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:import "App\Models\Achievement"</code> - Import achievements</li>
+                    <li><code class="bg-gray-200 px-2 py-1 rounded">php artisan scout:flush "App\Models\ProfessionalProfile"</code> - Clear profiles index</li>
                 </ul>
             </div>
         </x-filament::section>

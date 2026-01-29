@@ -1,9 +1,9 @@
 <x-filament-panels::page>
     <div class="space-y-6">
-        <!-- Sélecteur de fichier de log -->
+        <!-- Log File Selector -->
         <x-filament::section>
             <x-slot name="heading">
-                Fichiers de logs disponibles
+                Available Log Files
             </x-slot>
             
             <div class="space-y-4">
@@ -20,38 +20,38 @@
                 </div>
                 
                 <div class="text-sm text-gray-600">
-                    Fichier sélectionné : <strong>{{ $selectedLog }}</strong>
+                    Selected file: <strong>{{ $selectedLog }}</strong>
                 </div>
             </div>
         </x-filament::section>
 
-        <!-- Contenu du log -->
+        <!-- Log Content -->
         <x-filament::section>
             <x-slot name="heading">
-                Contenu du log (50 dernières lignes)
+                Log Content (Last 50 lines)
             </x-slot>
             
             <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96">
-                <pre class="text-xs whitespace-pre-wrap">{{ $logContent ?: 'Aucun contenu disponible' }}</pre>
+                <pre class="text-xs whitespace-pre-wrap">{{ $logContent ?: 'No content available' }}</pre>
             </div>
         </x-filament::section>
 
-        <!-- Informations sur les logs -->
+        <!-- Log Information -->
         <x-filament::section>
             <x-slot name="heading">
-                Informations
+                Information
             </x-slot>
             
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex">
                     <x-heroicon-o-information-circle class="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
                     <div class="text-blue-800">
-                        <h4 class="font-medium">À propos des logs</h4>
+                        <h4 class="font-medium">About logs</h4>
                         <ul class="mt-2 text-sm space-y-1">
-                            <li>• Les logs sont stockés dans <code>storage/logs/</code></li>
-                            <li>• Seules les 50 dernières lignes sont affichées pour des raisons de performance</li>
-                            <li>• Utilisez le bouton "Télécharger" pour obtenir le fichier complet</li>
-                            <li>• Les logs sont automatiquement rotatés par Laravel</li>
+                            <li>• Logs are stored in <code>storage/logs/</code></li>
+                            <li>• Only the last 50 lines are displayed for performance reasons</li>
+                            <li>• Use the "Download" button to get the complete file</li>
+                            <li>• Logs are automatically rotated by Laravel</li>
                         </ul>
                     </div>
                 </div>

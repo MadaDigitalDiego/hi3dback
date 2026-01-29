@@ -1,18 +1,18 @@
 @component('mail::message')
-# Réinitialisation de votre mot de passe
+# Reset Your Password
 
-Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.
+You are receiving this email because we received a password reset request for your account.
 
-Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe :
+Click the button below to reset your password:
 
 @component('mail::button', ['url' => $resetUrl])
-Réinitialiser le mot de passe
+Reset Password
 @endcomponent
 
-Si vous n'avez pas demandé de réinitialisation de mot de passe, aucune action n'est requise.
+If you did not request a password reset, no action is required.
 
-Ce lien de réinitialisation de mot de passe expirera dans 60 minutes.
+This password reset link will expire in 60 minutes.
 
-Merci,
+Thank you,
 {{ config('app.name') }}
 @endcomponent

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vérification de votre adresse e-mail</title>
+    <title>Verify Your Email Address</title>
     <style>
         /* Reset styles */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -49,51 +49,51 @@
         <div class="container">
             <!-- Header -->
             <div class="header">
-                <h1>Vérification de compte</h1>
+                <h1>Account Verification</h1>
                 <p class="subtitle">{{ config('app.name') }}</p>
             </div>
             
             <!-- Content -->
             <div class="content">
                 <p class="greeting">
-                    Bonjour <strong>{{ $user->name ?? $user->first_name ?? 'utilisateur' }}</strong>,
+                    Hello <strong>{{ $user->name ?? $user->first_name ?? 'user' }}</strong>,
                 </p>
                 
                 <p class="message">
-                    Merci de vous être inscrit sur <strong>{{ config('app.name') }}</strong> ! 
-                    Nous sommes ravis de vous compter parmi nos membres.
+                    Thank you for signing up on <strong>{{ config('app.name') }}</strong>! 
+                    We are thrilled to have you as a member.
                 </p>
                 
                 <p class="message">
-                    Pour finaliser la création de votre compte et accéder à toutes nos fonctionnalités, 
-                    nous devons vérifier votre adresse e-mail. Cliquez sur le bouton ci-dessous :
+                    To complete your account creation and access all our features, 
+                    we need to verify your email address. Click the button below:
                 </p>
                 
                 <div class="button-wrapper">
-                    <a href="{{ $verificationUrl }}" class="button">Vérifier mon adresse e-mail</a>
+                    <a href="{{ $verificationUrl }}" class="button">Verify My Email Address</a>
                 </div>
                 
                 <div class="info-box">
-                    <p><strong>🔒 Lien sécurisé:</strong> Ce lien expire dans 60 minutes pour des raisons de sécurité.</p>
+                    <p><strong>🔒 Secure Link:</strong> This link expires in 60 minutes for security reasons.</p>
                 </div>
                 
                 <p class="message">
-                    Si le bouton ne fonctionne pas, copiez et collez le lien ci-dessous dans votre navigateur :
+                    If the button doesn't work, copy and paste the link below into your browser:
                 </p>
                 <p class="message" style="word-break: break-all; font-size: 13px; color: #667eea;">
                     <a href="{{ $verificationUrl }}" style="color: #667eea; text-decoration: none;">{{ $verificationUrl }}</a>
                 </p>
                 
                 <p class="message" style="margin-top: 30px;">
-                    Si vous n'avez pas créé de compte sur {{ config('app.name') }}, vous pouvez ignorer cet e-mail en toute sécurité.
+                    If you did not create an account on {{ config('app.name') }}, you can safely ignore this email.
                 </p>
             </div>
             
             <!-- Footer -->
             <div class="footer">
                 <p><strong>{{ config('app.name') }}</strong></p>
-                <p>Cet e-mail a été envoyé à {{ $user->email ?? 'votre adresse e-mail' }}</p>
-                <p>&copy; {{ date('Y') }} {{ config('app.name') }}. Tous droits réservés.</p>
+                <p>This email was sent to {{ $user->email ?? 'your email address' }}</p>
+                <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
             </div>
         </div>
     </div>

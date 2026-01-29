@@ -4,7 +4,7 @@
 
         <div class="mt-6 flex items-center justify-end gap-x-6">
             <x-filament::button type="submit">
-                Enregistrer
+                Save
             </x-filament::button>
         </div>
     </form>

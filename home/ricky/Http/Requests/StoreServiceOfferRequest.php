@@ -60,21 +60,21 @@ class StoreServiceOfferRequest extends FormRequest
     {
         return [
             // Customize your error messages here if needed.
-            'title.required' => 'Le titre de l\'offre de service est obligatoire.',
-            'title.string' => 'Le titre de l\'offre de service doit être une chaîne de caractères.',
-            'title.max' => 'Le titre de l\'offre de service ne doit pas dépasser 255 caractères.',
-            'price.required' => 'Le prix est obligatoire.',
-            'price.numeric' => 'Le prix doit être un nombre.',
-            'price.min' => 'Le prix doit être un nombre positif.',
-            'price_unit.required' => 'L\'unité de prix est obligatoire.',
-            'price_unit.in' => 'L\'unité de prix doit être "par image", "par m2" ou "par projet".',
-            'categories.required' => 'Au moins une catégorie est requise.',
-            'categories.array' => 'Les catégories doivent être un tableau.',
-            'execution_time.required' => 'Le délai d\'exécution est obligatoire.',
-            'concepts.required' => 'Le nombre de concepts est obligatoire.',
-            'revisions.required' => 'Le nombre de révisions est obligatoire.',
-            'status.required' => 'Le statut est obligatoire.',
-            'status.in' => 'Le statut doit être "published", "draft" ou "pending".',
+            'title.required' => 'The service offer title is required.',
+            'title.string' => 'The service offer title must be a string.',
+            'title.max' => 'The service offer title must not exceed 255 characters.',
+            'price.required' => 'The price is required.',
+            'price.numeric' => 'The price must be a number.',
+            'price.min' => 'The price must be a positive number.',
+            'price_unit.required' => 'The price unit is required.',
+            'price_unit.in' => 'The price unit must be "per image", "per m2", or "per project".',
+            'categories.required' => 'At least one category is required.',
+            'categories.array' => 'Categories must be an array.',
+            'execution_time.required' => 'The execution time is required.',
+            'concepts.required' => 'The number of concepts is required.',
+            'revisions.required' => 'The number of revisions is required.',
+            'status.required' => 'The status is required.',
+            'status.in' => 'The status must be "published", "draft", or "pending".',
         ];
     }
 
@@ -85,14 +85,14 @@ class StoreServiceOfferRequest extends FormRequest
     {
 	        $user = $this->user();
 
-	        // Si l'utilisateur n'a pas d'abonnement Stripe actif, il est sur le plan Free
-	        // (limites issues de la configuration). Le message doit alors refléter
-	        // qu'un véritable abonnement est requis pour débloquer les fonctionnalités.
+	        // If the user does not have an active Stripe subscription, they are on the Free plan
+	        // (limits from configuration). The message should reflect that a real subscription
+	        // is required to unlock features.
 	        $subscription = $user ? $user->currentSubscription() : null;
 
 	        $message = $subscription
-	            ? 'Vous avez atteint la limite de création de services pour votre abonnement. Veuillez mettre à niveau votre plan.'
-	            : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
+	            ? 'You have reached the service creation limit for your subscription. Please upgrade your plan.'
+	            : 'Free plan active. A subscription is required to access all features.';
 
 	        throw new HttpResponseException(
 	            response()->json([

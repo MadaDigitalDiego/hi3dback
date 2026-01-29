@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Facture #{{ $invoice->invoice_number }}</title>
+    <title>Invoice #{{ $invoice->invoice_number }}</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -23,25 +23,25 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Facture #{{ $invoice->invoice_number }}</h1>
-            <p>Date d'émission: {{ $invoice->created_at->format('d/m/Y') }}</p>
+            <h1>Invoice #{{ $invoice->invoice_number }}</h1>
+            <p>Issue Date: {{ $invoice->created_at->format('d/m/Y') }}</p>
         </div>
 
         <div class="invoice-details">
             <div class="details-grid">
                 <div>
                     <div class="detail-item">
-                        <div class="detail-label">Facturé à:</div>
+                        <div class="detail-label">Billed to:</div>
                         <div class="detail-value">{{ $user->name }}<br>{{ $user->email }}</div>
                     </div>
                 </div>
                 <div>
                     <div class="detail-item">
-                        <div class="detail-label">Statut:</div>
+                        <div class="detail-label">Status:</div>
                         <div class="detail-value">{{ ucfirst($invoice->status) }}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Date d'échéance:</div>
+                        <div class="detail-label">Due Date:</div>
                         <div class="detail-value">{{ $invoice->due_date ? $invoice->due_date->format('d/m/Y') : 'N/A' }}</div>
                     </div>
                 </div>
@@ -50,18 +50,18 @@
 
         @if($subscription)
         <div>
-            <h3>Détails de l'abonnement</h3>
+            <h3>Subscription Details</h3>
             <table class="table">
                 <tr>
                     <th>Plan</th>
                     <td>{{ $subscription->plan->title ?? $subscription->plan->name }}</td>
                 </tr>
                 <tr>
-                    <th>Période</th>
+                    <th>Period</th>
                     <td>{{ $subscription->current_period_start->format('d/m/Y') }} - {{ $subscription->current_period_end->format('d/m/Y') }}</td>
                 </tr>
                 <tr>
-                    <th>ID Stripe</th>
+                    <th>Stripe ID</th>
                     <td>{{ $subscription->stripe_subscription_id }}</td>
                 </tr>
             </table>
@@ -72,14 +72,14 @@
             <thead>
                 <tr>
                     <th>Description</th>
-                    <th>Montant HT</th>
-                    <th>Taxe</th>
+                    <th>Subtotal</th>
+                    <th>Tax</th>
                     <th>Total</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>{{ $invoice->description ?? 'Abonnement mensuel' }}</td>
+                    <td>{{ $invoice->description ?? 'Monthly Subscription' }}</td>
                     <td>{{ number_format($invoice->amount, 2, ',', ' ') }} {{ $invoice->currency }}</td>
                     <td>{{ number_format($invoice->tax, 2, ',', ' ') }} {{ $invoice->currency }}</td>
                     <td>{{ number_format($invoice->total, 2, ',', ' ') }} {{ $invoice->currency }}</td>
@@ -92,9 +92,9 @@
         </div>
 
         <div class="footer">
-            <p>Cette facture est disponible en pièce jointe au format PDF.</p>
-            <p>Pour toute question concernant cette facture, veuillez nous contacter à support@votredomaine.com</p>
-            <p>&copy; {{ date('Y') }} Votre Société. Tous droits réservés.</p>
+            <p>This invoice is available as an attachment in PDF format.</p>
+            <p>For any questions regarding this invoice, please contact us at support@yourdomain.com</p>
+            <p>&copy; {{ date('Y') }} Your Company. All rights reserved.</p>
         </div>
     </div>
 </body>

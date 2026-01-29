@@ -53,7 +53,7 @@ class UsageController extends Controller
                     ],
                     'warnings' => [],
                     'can_upgrade' => false,
-                    'message' => 'En tant que client, vous avez accès illimité à toutes les fonctionnalités.',
+                    'message' => 'As a client, you have unlimited access to all features.',
                 ],
             ]);
         }
@@ -63,7 +63,7 @@ class UsageController extends Controller
         if (!$subscription) {
             return response()->json([
                 'success' => false,
-	                'message' => 'Vous devez avoir un abonnement actif pour effectuer cette action.',
+	                'message' => 'You must have an active subscription to perform this action.',
 	            ], 403);
         }
 
@@ -109,13 +109,13 @@ class UsageController extends Controller
 	                $warnings[] = [
 	                    'feature' => $feature,
 	                    'level' => 'critical',
-	                    'message' => 'Vous avez atteint la limite pour votre abonnement. Veuillez mettre à niveau votre plan.',
+	                    'message' => 'You have reached the limit for your subscription. Please upgrade your plan.',
 	                ];
 	            } elseif ($data['percentage'] >= 80) {
 	                $warnings[] = [
 	                    'feature' => $feature,
 	                    'level' => 'warning',
-	                    'message' => "Vous avez utilisé {$data['percentage']}% de votre quota pour cette fonctionnalité.",
+	                    'message' => "You have used {$data['percentage']}% of your quota for this feature.",
 	                ];
 	            }
 	        }

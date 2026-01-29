@@ -50,8 +50,8 @@ class ServiceMessageController extends Controller
             if ($user && $user->is_professional && !$user->canPerformAction('messages')) {
                 $subscription = $user->currentSubscription();
                 $message = $subscription
-                    ? 'Vous avez atteint la limite d\'invitations pour votre abonnement. Veuillez mettre à niveau votre plan.'
-                    : 'Vous devez avoir un abonnement actif pour effectuer cette action.';
+                    ? 'You have reached the invitation limit for your subscription. Please upgrade your plan.'
+                    : 'You must have an active subscription to perform this action.';
                 $errorType = $subscription ? 'QUOTA_EXCEEDED' : 'NO_SUBSCRIPTION';
 
                 return response()->json([
@@ -67,7 +67,7 @@ class ServiceMessageController extends Controller
             // Check if recipient exists
             $recipient = User::findOrFail($request->recipient_id);
 
-            // Préparer le texte du message avec les métadonnées
+            // Prepare message text with metadata
             // $messageText = json_encode([
             //     'content' => $request->content,
             //     'service_id' => $request->service_id,
@@ -76,28 +76,28 @@ class ServiceMessageController extends Controller
 
             $messageText = $request->content;
 
-            // Trouver ou créer une offre ouverte pour les messages de service
+            // Find or create an open offer for service messages
             $serviceMessageOffer = OpenOffer::firstOrCreate(
                 ['title' => 'Service Messages'],
                 [
-                    'description' => 'Cette offre est utilisée pour les messages de service',
+                    'description' => 'This offer is used for service messages',
                     'budget' => 0,
-                    'status' => 'open', // Utiliser 'open' au lieu de 'pending'
-                    'user_id' => 1, // ID de l'administrateur
+                    'status' => 'open',
+                    'user_id' => 1, // Admin user ID
                 ]
             );
 
             // Create message
             $message = Message::create([
                 'sender_id' => $user->id,
-                'receiver_id' => $request->recipient_id, // Utiliser receiver_id au lieu de recipient_id
+                'receiver_id' => $request->recipient_id,
                 'message_text' => $messageText,
-                'open_offer_id' => $serviceMessageOffer->id, // Utiliser l'ID de l'offre ouverte pour les messages de service
+                'open_offer_id' => $serviceMessageOffer->id,
             ]);
 
             $message->load('sender', 'receiver');
 
-            // Envoi de la notification au receiver
+            // Send notification to receiver
             $receiverUser = User::find($request->recipient_id);
             if ($receiverUser) {
                 Notification::send($receiverUser, new NewMessageNotification($message));
@@ -154,7 +154,7 @@ class ServiceMessageController extends Controller
             $service = ServiceOffer::findOrFail($serviceId);
 
             // Get all messages between the user and the service owner
-            // Nous devons filtrer manuellement car nous stockons l'ID du service dans le message_text
+            // We need to filter manually since we store the service ID in message_text
             $messages = Message::where(function ($query) use ($user) {
                     $query->where('sender_id', $user->id)
                         ->orWhere('receiver_id', $user->id);
@@ -163,7 +163,7 @@ class ServiceMessageController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->get();
 
-            // Filtrer les messages pour ne garder que ceux liés à ce service
+            // Filter messages to keep only those related to this service
             $filteredMessages = $messages->filter(function ($message) use ($serviceId) {
                 try {
                     $messageData = json_decode($message->message_text, true);

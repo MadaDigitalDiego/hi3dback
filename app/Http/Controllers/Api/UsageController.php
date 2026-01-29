@@ -18,6 +18,46 @@ class UsageController extends Controller
     public function getUsageStats(): JsonResponse
     {
         $user = auth()->user();
+
+        // Clients have unlimited quotas - no subscription required
+        if (!$user->is_professional) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'subscription' => [
+                        'plan_name' => 'Client Unlimited',
+                        'plan_slug' => 'client-unlimited',
+                        'is_client' => true,
+                    ],
+                    'usage' => [
+                        'service_offers' => [
+                            'used' => 0,
+                            'limit' => null, // unlimited
+                            'percentage' => 0,
+                        ],
+                        'open_offers' => [
+                            'used' => $user->openOffers()->count(),
+                            'limit' => null, // unlimited
+                            'percentage' => 0,
+                        ],
+                        'messages' => [
+                            'used' => $user->sentMessages()->count(),
+                            'limit' => null, // unlimited
+                            'percentage' => 0,
+                        ],
+                        'portfolio_files' => [
+                            'used' => $user->portfolioFiles()->count(),
+                            'limit' => null, // unlimited
+                            'percentage' => 0,
+                        ],
+                    ],
+                    'warnings' => [],
+                    'can_upgrade' => false,
+                    'message' => 'En tant que client, vous avez accès illimité à toutes les fonctionnalités.',
+                ],
+            ]);
+        }
+
         $subscription = $user->currentSubscription();
 
         if (!$subscription) {
@@ -102,6 +142,21 @@ class UsageController extends Controller
     public function canPerformAction(string $feature): JsonResponse
     {
         $user = auth()->user();
+
+        // Clients have unlimited quotas - always allow actions
+        if (!$user->is_professional) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'feature' => $feature,
+                    'can_perform' => true,
+                    'limit' => null, // unlimited
+                    'message' => 'En tant que client, vous avez un accès illimité à cette fonctionnalité.',
+                    'is_client' => true,
+                ],
+            ]);
+        }
+
         $subscription = $user->currentSubscription();
 
         if (!$subscription) {
@@ -135,6 +190,31 @@ class UsageController extends Controller
     public function getUsagePercentage(string $feature): JsonResponse
     {
         $user = auth()->user();
+
+        // Clients have unlimited quotas
+        if (!$user->is_professional) {
+            $used = match ($feature) {
+                'service_offers' => $user->serviceOffers()->count(),
+                'open_offers' => $user->openOffers()->count(),
+                'messages' => $user->sentMessages()->count(),
+                'portfolio_files' => $user->portfolioFiles()->count(),
+                default => 0,
+            };
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'feature' => $feature,
+                    'used' => $used,
+                    'limit' => null, // unlimited
+                    'percentage' => 0,
+                    'remaining' => null, // unlimited
+                    'is_client' => true,
+                    'message' => 'En tant que client, vous avez un accès illimité à cette fonctionnalité.',
+                ],
+            ]);
+        }
+
         $subscription = $user->currentSubscription();
 
         if (!$subscription) {

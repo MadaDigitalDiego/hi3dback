@@ -137,8 +137,9 @@ class MessageController extends Controller
 	        }
 
 		        // Check subscription/message limits for the authenticated user
-		        if (!$user || !$user->canPerformAction('messages')) {
-		            $subscription = $user?->currentSubscription();
+		        // Note: Clients have unlimited quotas, so skip this check for them
+		        if ($user && $user->is_professional && !$user->canPerformAction('messages')) {
+		            $subscription = $user->currentSubscription();
 		            $message = $subscription
 		                ? 'Vous avez atteint la limite d\'envoi de messages pour votre abonnement. Veuillez mettre à niveau votre plan.'
 		                : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';

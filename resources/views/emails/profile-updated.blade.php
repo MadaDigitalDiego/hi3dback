@@ -1,10 +1,10 @@
 @component('mail::message')
-# Votre profil a été mis à jour
+# Your Profile Has Been Updated
 
-Vos informations de profil ont été mises à jour avec succès.
+Your profile information has been successfully updated.
 
-Si vous n'avez pas effectué cette modification, veuillez nous contacter immédiatement.
+If you did not make this change, please contact us immediately.
 
-Merci,
+Thank you,
 {{ config('app.name') }}
 @endcomponent

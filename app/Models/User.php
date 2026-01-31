@@ -458,6 +458,15 @@ class User extends Authenticatable implements MustVerifyEmail
 	            default => $action,
 	        };
 
+	        // Clients have unlimited quotas - no subscription required
+	        // Professionals need subscriptions to have quotas
+	        if (!$this->is_professional) {
+	            return [
+	                'limit' => null, // null means unlimited
+	                'used' => 0,
+	            ];
+	        }
+
 	        // Determine the limit for this feature
 	        $subscription = $this->currentSubscription();
 	        $limit = null;
@@ -547,6 +556,11 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function canPerformAction(string $action): bool
     {
+        // Clients have unlimited quotas - always allow actions
+        if (!$this->is_professional) {
+            return true;
+        }
+
         ['limit' => $limit, 'used' => $used] = $this->getActionLimitAndUsage($action);
 
         // If there is no limit configured, consider the feature unlimited

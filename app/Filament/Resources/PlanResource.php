@@ -43,8 +43,8 @@ class PlanResource extends Resource
                             ->required()
                             ->options([
                                 'professional' => 'Professionnel',
-                                'client' => 'Client',
                             ])
+                            ->default('professional')
 	                            ->label('Type d\'utilisateur')
 	                            ->helperText('Type d\'utilisateur ciblé par ce plan.'),
 	                        Forms\Components\Textarea::make('description')

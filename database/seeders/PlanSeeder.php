@@ -89,21 +89,22 @@ class PlanSeeder extends Seeder
                 'name' => 'client_free',
                 'user_type' => 'client',
                 'price' => 0.00,
-                'description' => 'Pour les clients qui débutent',
+                'description' => 'Pour les clients - Accès illimité à toutes les fonctionnalités',
                 'stripe_product_id' => null,
                 'stripe_price_id' => null,
                 'interval' => 'month',
                 'interval_count' => 1,
                 'is_active' => true,
-                'max_services' => 0,
-                'max_open_offers' => 2,
-                'max_applications' => 0,
-                'max_messages' => 50,
+                'max_services' => 0, // Not applicable for clients
+                'max_open_offers' => 999, // Unlimited
+                'max_applications' => 0, // Not applicable for clients
+                'max_messages' => 9999, // Unlimited for practical purposes
                 'features' => json_encode([
                     'Profil de base',
-                    'Création d\'offres limitées',
-                    'Messagerie de base',
+                    'Création d\'offres illimitées',
+                    'Messagerie illimitée',
                     'Support communautaire',
+                    'Tous les tarifs sont accessibles',
                 ])
             ],
             [
@@ -111,21 +112,22 @@ class PlanSeeder extends Seeder
                 'name' => 'client_pro',
                 'user_type' => 'client',
                 'price' => 14.99,
-                'description' => 'Pour les clients professionnels',
+                'description' => 'Pour les clients professionnels - Accès illimité à toutes les fonctionnalités',
                 'stripe_product_id' => null,
                 'stripe_price_id' => null,
                 'interval' => 'month',
                 'interval_count' => 1,
                 'is_active' => true,
-                'max_services' => 0,
-                'max_open_offers' => 50,
-                'max_applications' => 0,
-                'max_messages' => 5000,
+                'max_services' => 0, // Not applicable for clients
+                'max_open_offers' => 999, // Unlimited
+                'max_applications' => 0, // Not applicable for clients
+                'max_messages' => 99999, // Unlimited for practical purposes
                 'features' => json_encode([
                     'Profil avancé',
                     'Création d\'offres illimitées',
-                    'Messagerie avancée',
+                    'Messagerie illimitée',
                     'Support par email',
+                    'Tous les tarifs sont accessibles',
                 ])
             ]
         ];

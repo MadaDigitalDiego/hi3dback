@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Facture #{{ $invoice->invoice_number }}</title>
+    <title>Invoice #{{ $invoice->invoice_number }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
         .invoice-container { max-width: 800px; margin: 0 auto; padding: 20px; }
@@ -20,77 +20,77 @@
 </head>
 <body>
     <div class="invoice-container">
-        <!-- En-tête -->
+        <!-- Header -->
         <div class="header">
-            <h1>FACTURE</h1>
+            <h1>INVOICE</h1>
             <h2>#{{ $invoice->invoice_number }}</h2>
         </div>
         
-        <!-- Informations de la société -->
+        <!-- Company Information -->
         <div class="company-info">
             @if($settings && $settings->logo_path)
                 <img src="{{ public_path('storage/' . $settings->logo_path) }}" style="max-height: 100px; margin-bottom: 10px;">
             @endif
-            <h3>{{ $settings->company_name ?? 'VOTRE SOCIÉTÉ' }}</h3>
-            <p>{{ $settings->address ?? '123 Rue de l\'Exemple' }}</p>
+            <h3>{{ $settings->company_name ?? 'YOUR COMPANY' }}</h3>
+            <p>{{ $settings->address ?? '123 Example Street' }}</p>
             @if($settings && $settings->phone)
-                <p>Tél: {{ $settings->phone }}</p>
+                <p>Phone: {{ $settings->phone }}</p>
             @endif
-            <p>Email: {{ $settings->email ?? 'facturation@votredomaine.com' }}</p>
+            <p>Email: {{ $settings->email ?? 'billing@yourdomain.com' }}</p>
             @if($settings && $settings->vat_number)
-                <p>TVA: {{ $settings->vat_number }}</p>
+                <p>VAT: {{ $settings->vat_number }}</p>
             @endif
         </div>
         
-        <!-- Informations du client -->
+        <!-- Client Information -->
         <div class="client-info">
-            <h4>FACTURÉ À</h4>
+            <h4>BILLED TO</h4>
             <p><strong>{{ $user->name }}</strong></p>
             <p>{{ $user->email }}</p>
         </div>
         
-        <!-- Détails de la facture -->
+        <!-- Invoice Details -->
         <div class="invoice-details">
             <table style="width: 100%; margin-bottom: 20px;">
                 <tr>
-                    <td><strong>Date d'émission:</strong></td>
+                    <td><strong>Issue Date:</strong></td>
                     <td>{{ $invoice->created_at->format('d/m/Y') }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Date d'échéance:</strong></td>
-                    <td>{{ $invoice->due_date ? $invoice->due_date->format('d/m/Y') : 'Sur réception' }}</td>
+                    <td><strong>Due Date:</strong></td>
+                    <td>{{ $invoice->due_date ? $invoice->due_date->format('d/m/Y') : 'Upon receipt' }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Statut:</strong></td>
+                    <td><strong>Status:</strong></td>
                     <td>{{ strtoupper($invoice->status) }}</td>
                 </tr>
                 @if($subscription)
                 <tr>
-                    <td><strong>Abonnement:</strong></td>
+                    <td><strong>Subscription:</strong></td>
                     <td>{{ $subscription->plan->title ?? $subscription->plan->name }}</td>
                 </tr>
                 <tr>
-                    <td><strong>ID Abonnement:</strong></td>
+                    <td><strong>Subscription ID:</strong></td>
                     <td>{{ $subscription->stripe_subscription_id }}</td>
                 </tr>
                 @endif
             </table>
         </div>
         
-        <!-- Détails des articles -->
+        <!-- Line Items -->
         <table class="table">
             <thead>
                 <tr>
                     <th style="width: 50%;">DESCRIPTION</th>
-                    <th style="width: 15%; text-align: right;">PRIX UNITAIRE</th>
-                    <th style="width: 10%; text-align: center;">QUANTITÉ</th>
-                    <th style="width: 15%; text-align: right;">TAXE</th>
+                    <th style="width: 15%; text-align: right;">UNIT PRICE</th>
+                    <th style="width: 10%; text-align: center;">QUANTITY</th>
+                    <th style="width: 15%; text-align: right;">TAX</th>
                     <th style="width: 10%; text-align: right;">TOTAL</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>{{ $invoice->description ?? 'Abonnement' }}</td>
+                    <td>{{ $invoice->description ?? 'Subscription' }}</td>
                     <td style="text-align: right;">{{ number_format($invoice->amount, 2, ',', ' ') }} {{ $invoice->currency }}</td>
                     <td style="text-align: center;">1</td>
                     <td style="text-align: right;">{{ number_format($invoice->tax, 2, ',', ' ') }} {{ $invoice->currency }}</td>
@@ -99,15 +99,15 @@
             </tbody>
         </table>
         
-        <!-- Totaux -->
+        <!-- Totals -->
         <div class="totals">
             <table style="width: 300px; margin-left: auto;">
                 <tr>
-                    <td><strong>Sous-total:</strong></td>
+                    <td><strong>Subtotal:</strong></td>
                     <td style="text-align: right;">{{ number_format($invoice->amount, 2, ',', ' ') }} {{ $invoice->currency }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Taxe:</strong></td>
+                    <td><strong>Tax:</strong></td>
                     <td style="text-align: right;">{{ number_format($invoice->tax, 2, ',', ' ') }} {{ $invoice->currency }}</td>
                 </tr>
                 <tr style="border-top: 2px solid #333;">
@@ -117,21 +117,21 @@
             </table>
         </div>
         
-        <!-- Conditions de paiement -->
+        <!-- Payment Terms -->
         <div class="footer">
             @if($settings && $settings->legal_mentions)
                 <div style="margin-bottom: 20px; text-align: left;">
-                    <h4>MENTIONS LÉGALES</h4>
+                    <h4>LEGAL INFORMATION</h4>
                     <p>{{ $settings->legal_mentions }}</p>
                 </div>
             @endif
             
             <div style="border-top: 1px solid #ddd; padding-top: 20px;">
-                <p>{{ $settings->footer_text ?? 'Merci pour votre confiance !' }}</p>
+                <p>{{ $settings->footer_text ?? 'Thank you for your trust!' }}</p>
                 @if(!$settings || !$settings->footer_text)
-                    <p>Pour toute question concernant cette facture, contactez-nous à {{ $settings->email ?? 'facturation@votredomaine.com' }}</p>
+                    <p>For any questions regarding this invoice, contact us at {{ $settings->email ?? 'billing@yourdomain.com' }}</p>
                 @endif
-                <p>Cette facture a été générée automatiquement par notre système.</p>
+                <p>This invoice was automatically generated by our system.</p>
             </div>
         </div>
     </div>

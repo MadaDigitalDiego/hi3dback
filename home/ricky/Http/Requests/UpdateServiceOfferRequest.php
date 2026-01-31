@@ -54,17 +54,17 @@ class UpdateServiceOfferRequest extends FormRequest
     public function messages()
     {
         return [
-            'title.string' => 'Le titre de l\'offre de service doit être une chaîne de caractères.',
-            'title.max' => 'Le titre de l\'offre de service ne doit pas dépasser 255 caractères.',
-            'price.numeric' => 'Le prix doit être un nombre.',
-            'price.min' => 'Le prix doit être un nombre positif.',
-            'price_unit.in' => 'L\'unité de prix doit être "par image", "par m2" ou "par projet".',
-            'categories.array' => 'Les catégories doivent être un tableau.',
-            'categories.*.string' => 'Chaque catégorie doit être une chaîne de caractères.',
-            'execution_time.string' => 'Le délai d\'exécution doit être une chaîne de caractères.',
-            'concepts.string' => 'Le nombre de concepts doit être une chaîne de caractères.',
-            'revisions.string' => 'Le nombre de révisions doit être une chaîne de caractères.',
-            'status.in' => 'Le statut doit être "published", "draft" ou "pending".',
+            'title.string' => 'The service offer title must be a string.',
+            'title.max' => 'The service offer title must not exceed 255 characters.',
+            'price.numeric' => 'The price must be a number.',
+            'price.min' => 'The price must be a positive number.',
+            'price_unit.in' => 'The price unit must be "per image", "per m2", or "per project".',
+            'categories.array' => 'Categories must be an array.',
+            'categories.*.string' => 'Each category must be a string.',
+            'execution_time.string' => 'The execution time must be a string.',
+            'concepts.string' => 'The number of concepts must be a string.',
+            'revisions.string' => 'The number of revisions must be a string.',
+            'status.in' => 'The status must be "published", "draft", or "pending".',
         ];
     }
 }

@@ -1,4 +1,4 @@
-APP_NAME=Laravel
+APP_NAME=Hi3D
 APP_ENV=local
 APP_KEY=base64:KkMI1g8FX/V30VJ2u56tfLI+bptZslwoKWr8RAyTxLw=
 APP_DEBUG=true
@@ -100,8 +100,8 @@ FRONTEND_URL=http://localhost:3000
 # scout
 
 SCOUT_DRIVER=meilisearch
-MEILISEARCH_HOST="https://ms-b03e179d1951-27151.nyc.meilisearch.io"
-MEILISEARCH_KEY=1d38597ae333b59f74bc306ee28dd62d93531113
+MEILISEARCH_HOST="https://ms-da314b7f4131-38769.nyc.meilisearch.io"
+MEILISEARCH_KEY=fd0713165039bed4ff50ac45ff3d6f9795ddd173
 
 # Configuration personnalisée
 # Définir sur true pour sauter la vérification d'e-mail (utile en développement)

@@ -9,10 +9,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Laravel\Scout\Searchable;
 
 class IndexModelJob implements ShouldQueue, ShouldBeUnique
 {
@@ -42,7 +42,7 @@ class IndexModelJob implements ShouldQueue, ShouldBeUnique
     /**
      * The model to index.
      */
-    protected Searchable $model;
+    protected Model $model;
 
     /**
      * The type of operation.
@@ -52,7 +52,7 @@ class IndexModelJob implements ShouldQueue, ShouldBeUnique
     /**
      * Create a new job instance.
      */
-    public function __construct(Searchable $model, string $operation = 'index')
+    public function __construct(Model $model, string $operation = 'index')
     {
         $this->model = $model;
         $this->operation = $operation;

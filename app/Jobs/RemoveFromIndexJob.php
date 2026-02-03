@@ -5,10 +5,10 @@ namespace App\Jobs;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Laravel\Scout\Searchable;
 
 class RemoveFromIndexJob implements ShouldQueue
 {
@@ -32,12 +32,12 @@ class RemoveFromIndexJob implements ShouldQueue
     /**
      * The model to remove from index.
      */
-    protected Searchable $model;
+    protected Model $model;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(Searchable $model)
+    public function __construct(Model $model)
     {
         $this->model = $model;
     }

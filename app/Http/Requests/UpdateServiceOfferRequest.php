@@ -32,7 +32,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'price_unit' => [
                 'sometimes',
                 'string',
-                'regex:/^(per\s+image|per\s+m2|per\s+project|per-image|per-m2|per-project)$/i'
+                'regex:/^(per\s+image|per\s+m2|per\s+project|par\s+image|par\s+m2|par\s+project)$/i'
             ],
             'categories' => 'sometimes|array',
             'categories.*' => 'string|max:255',
@@ -63,7 +63,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'title.max' => 'The service offer title must not exceed 255 characters.',
             'price.numeric' => 'The price must be a number.',
             'price.min' => 'The price must be a positive number.',
-            'price_unit.regex' => 'The price unit must be "per image", "per m2" or "per project" (with space or hyphen).',
+            'price_unit.regex' => 'The price unit must be "per image", "per m2", "per project", "par image", "par m2" or "par projet".',
             'categories.array' => 'Categories must be an array.',
             'categories.*.string' => 'Each category must be a string.',
             'execution_time.string' => 'The execution time must be a string.',

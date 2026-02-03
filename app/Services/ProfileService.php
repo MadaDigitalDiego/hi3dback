@@ -170,53 +170,122 @@ class ProfileService
 
     /**
      * Calculate profile completion percentage
+     * Now includes ALL important fields for accurate calculation.
      */
     private function calculateCompletionPercentage(Profile $profile, array $data): int
     {
         $user = $profile->user;
-        $requiredFields = [
-            'phone', 'address', 'city', 'country', 'bio', 'avatar'
+        
+        if ($user->is_professional) {
+            return $this->calculateProfessionalCompletion($profile, $data);
+        } else {
+            return $this->calculateClientCompletion($profile);
+        }
+    }
+    
+    /**
+     * Calculate completion for professional profile with all fields.
+     */
+    private function calculateProfessionalCompletion(Profile $profile, array $data): int
+    {
+        $fields = [
+            // Common profile fields
+            'phone' => 5,
+            'address' => 5,
+            'city' => 5,
+            'country' => 5,
+            'bio' => 5,
+            'avatar' => 5,
+            
+            // Professional detail fields
+            'title' => 10,
+            'profession' => 10,
+            'description' => 10,
+            'skills' => 10,
+            'softwares' => 5,
+            'years_of_experience' => 5,
+            'hourly_rate' => 5,
+            'services_offered' => 5,
+            'availability_status' => 5,
+            'languages' => 5,
+            'portfolio' => 5,
         ];
         
-        $additionalFields = $user->is_professional 
-            ? ['title', 'profession', 'skills', 'hourly_rate'] 
-            : ['type'];
-            
-        $allFields = array_merge($requiredFields, $additionalFields);
-        $filledFields = 0;
+        $totalWeight = array_sum($fields);
+        $filledWeight = 0;
         
-        // Check common profile fields
-        foreach ($requiredFields as $field) {
-            if (!empty($profile->$field)) {
-                $filledFields++;
+        // Check profile fields
+        foreach (['phone', 'address', 'city', 'country', 'bio', 'avatar'] as $field) {
+            $value = $profile->$field ?? null;
+            if (!empty($value)) {
+                $filledWeight += $fields[$field];
             }
         }
         
-        // Check type-specific fields
-        if ($user->is_professional && $profile->professionalDetails) {
-            foreach (['title', 'profession', 'skills', 'hourly_rate'] as $field) {
-                if (!empty($profile->professionalDetails->$field)) {
-                    $filledFields++;
+        // Check professional detail fields
+        if ($profile->professionalDetails) {
+            foreach (['title', 'profession', 'description', 'skills', 'softwares', 
+                     'years_of_experience', 'hourly_rate', 'services_offered', 
+                     'availability_status', 'languages', 'portfolio'] as $field) {
+                $value = $profile->professionalDetails->$field ?? null;
+                if ($this->isFieldFilled($value)) {
+                    $filledWeight += $fields[$field];
                 }
-            }
-        } elseif (!$user->is_professional && $profile->clientDetails) {
-            if (!empty($profile->clientDetails->type)) {
-                $filledFields++;
-            }
-            
-            // Additional fields for company type
-            if ($profile->clientDetails->type === 'entreprise') {
-                $companyFields = ['company_name', 'industry'];
-                foreach ($companyFields as $field) {
-                    if (!empty($profile->clientDetails->$field)) {
-                        $filledFields++;
-                    }
-                }
-                $allFields = array_merge($allFields, $companyFields);
             }
         }
         
-        return min(100, round(($filledFields / count($allFields)) * 100));
+        return min(100, round(($filledWeight / $totalWeight) * 100));
+    }
+    
+    /**
+     * Check if a field is considered "filled".
+     */
+    private function isFieldFilled($value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+        if (is_array($value) && count($value) === 0) {
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Calculate completion for client profile.
+     */
+    private function calculateClientCompletion(Profile $profile): int
+    {
+        $fields = [
+            'phone' => 10,
+            'address' => 10,
+            'city' => 10,
+            'country' => 10,
+            'bio' => 10,
+            'avatar' => 10,
+            'type' => 15,
+            'company_name' => 15,
+            'industry' => 10,
+        ];
+        
+        $totalWeight = array_sum($fields);
+        $filledWeight = 0;
+        
+        foreach ($fields as $field => $weight) {
+            // Check profile fields first
+            $value = $profile->$field ?? null;
+            
+            // For client-specific fields, check clientDetails
+            if (in_array($field, ['type', 'company_name', 'industry']) && $profile->clientDetails) {
+                $value = $profile->clientDetails->$field ?? null;
+            }
+            
+            if ($this->isFieldFilled($value)) {
+                $filledWeight += $weight;
+            }
+        }
+        
+        return min(100, round(($filledWeight / $totalWeight) * 100));
     }
 
     /**

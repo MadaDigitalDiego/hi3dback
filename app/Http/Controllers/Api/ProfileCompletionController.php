@@ -251,7 +251,7 @@ class ProfileCompletionController extends Controller
     }
 
     /**
-     * Calcule le pourcentage de complétion du profil (exemple simplifié).
+     * Calcule le pourcentage de complétion du profil.
      *
      * @param  Model  $profile
      * @param  string $profileType
@@ -259,45 +259,140 @@ class ProfileCompletionController extends Controller
      */
     private function calculateCompletionPercentage($profile, string $profileType): int
     {
-        $totalFields = 0;
-        $completedFields = 0;
-
-        // Définir les champs considérés pour le calcul du pourcentage pour chaque type de profil et étape
-        $fieldsToConsider = [];
-
-        if ($profileType === 'freelance') {
-            $fieldsToConsider = [
-                'personal' => ['first_name', 'last_name', 'phone', 'address', 'city', 'country'],
-                'kyc' => ['identity_document_number'],
-                'experience' => ['experience'],
-                'skills' => ['skills'],
-                'availability' => ['availability_status'], // Inclure le statut de disponibilité
-                // ... ajouter d'autres étapes et champs pertinents pour freelance
-            ];
-        } elseif ($profileType === 'company') {
-            $fieldsToConsider = [
-                'personal' => ['company_name', 'company_size', 'industry', 'phone', 'address', 'city', 'country'],
-                'kyc' => ['registration_number'],
-                'description' => ['description'],
-                // ... ajouter d'autres étapes et champs pertinents pour company
-            ];
+        // Pour ProfessionalProfile (freelances), nous utilisons directement les champs du modèle
+        if ($profileType === 'freelance' || $profileType === 'professional') {
+            return $this->calculateProfessionalProfileCompletion($profile);
         }
-
-        foreach ($fieldsToConsider as $stepFields) {
-            $totalFields += count($stepFields);
-            foreach ($stepFields as $field) {
-                if (isset($profile->$field) && !empty($profile->$field)) { // Vérification plus robuste avec isset
-                    $completedFields++;
-                }
+        
+        // Pour CompanyProfile
+        return $this->calculateCompanyProfileCompletion($profile);
+    }
+    
+    /**
+     * Calcule le pourcentage de complétion pour un profil professionnel.
+     * Tous les champs importants sont pris en compte.
+     *
+     * @param ProfessionalProfile $profile
+     * @return int
+     */
+    private function calculateProfessionalProfileCompletion($profile): int
+    {
+        $fields = [
+            // Informations personnelles de base
+            'first_name' => 10,   // 10%
+            'last_name' => 5,     // 5%
+            'phone' => 5,         // 5%
+            'address' => 5,       // 5%
+            'city' => 5,          // 5%
+            'country' => 5,       // 5%
+            
+            // Photo de profil
+            'avatar' => 5,        // 5%
+            
+            // Bio et présentation
+            'bio' => 5,           // 5%
+            'title' => 5,         // 5%
+            'description' => 5,   // 5%
+            
+            // Compétences
+            'skills' => 5,        // 5%
+            'softwares' => 5,     // 5%
+            
+            // Expérience professionnelle
+            'years_of_experience' => 5, // 5%
+            'hourly_rate' => 5,         // 5%
+            
+            // Services et disponibilité
+            'services_offered' => 5,    // 5%
+            'availability_status' => 5, // 5%
+            
+            // Langues
+            'languages' => 5,           // 5%
+            
+            // Portfolio
+            'portfolio' => 5,           // 5%
+        ];
+        
+        $totalWeight = array_sum($fields);
+        $filledWeight = 0;
+        
+        foreach ($fields as $field => $weight) {
+            $value = $profile->$field ?? null;
+            
+            // Vérifier si le champ est remplisignificatif
+            if ($this->isFieldFilled($value)) {
+                $filledWeight += $weight;
             }
         }
-
-
-        if ($totalFields > 0) {
-            return intval(($completedFields / $totalFields) * 100);
-        } else {
-            return 0; // Éviter la division par zéro si aucun champ n'est considéré
+        
+        // Calculer le pourcentage avec un minimum de 0 et un maximum de 100
+        $percentage = min(100, max(0, round(($filledWeight / $totalWeight) * 100)));
+        
+        Log::channel('profile')->info('Completion percentage calculated', [
+            'profile_id' => $profile->id ?? null,
+            'filled_weight' => $filledWeight,
+            'total_weight' => $totalWeight,
+            'percentage' => $percentage,
+            'filled_fields' => array_keys(array_filter(array_map(function($field) use ($profile) {
+                $value = $profile->$field ?? null;
+                return $this->isFieldFilled($value) ? $field : null;
+            }, array_keys($fields))))
+        ]);
+        
+        return $percentage;
+    }
+    
+    /**
+     * Vérifie si un champ est considéré comme "rempli".
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    private function isFieldFilled($value): bool
+    {
+        if ($value === null || $value === '' || $value === []) {
+            return false;
         }
+        
+        // Pour les tableaux JSON, vérifier s'il y a au moins un élément
+        if (is_array($value)) {
+            return count($value) > 0;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Calcule le pourcentage de complétion pour un profil d'entreprise.
+     *
+     * @param ClientProfile $profile
+     * @return int
+     */
+    private function calculateCompanyProfileCompletion($profile): int
+    {
+        $fields = [
+            'company_name' => 15,
+            'company_size' => 10,
+            'industry' => 10,
+            'phone' => 10,
+            'address' => 10,
+            'city' => 10,
+            'country' => 10,
+            'description' => 10,
+            'registration_number' => 15,
+        ];
+        
+        $totalWeight = array_sum($fields);
+        $filledWeight = 0;
+        
+        foreach ($fields as $field => $weight) {
+            $value = $profile->$field ?? null;
+            if ($this->isFieldFilled($value)) {
+                $filledWeight += $weight;
+            }
+        }
+        
+        return min(100, round(($filledWeight / $totalWeight) * 100));
     }
 
 

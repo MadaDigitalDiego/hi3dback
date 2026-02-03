@@ -34,7 +34,11 @@ class StoreServiceOfferRequest extends FormRequest
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'price_unit' => 'required|string|in:per image,per m2,per project',
+            'price_unit' => [
+                'required',
+                'string',
+                'regex:/^(per\s+image|per\s+m2|per\s+project|per-image|per-m2|per-project)$/i'
+            ],
             'categories' => 'required|array', // Expecting an array for categories
             'categories.*' => 'string|max:255', // Each category should be a string
             'execution_time' => 'required|string', // Expecting string for execution_time
@@ -68,7 +72,7 @@ class StoreServiceOfferRequest extends FormRequest
             'price.numeric' => 'The price must be a number.',
             'price.min' => 'The price must be a positive number.',
             'price_unit.required' => 'The price unit is required.',
-            'price_unit.in' => 'The price unit must be "per image", "per m2" or "per project".',
+            'price_unit.regex' => 'The price unit must be "per image", "per m2" or "per project" (with space or hyphen).',
             'categories.required' => 'At least one category is required.',
             'categories.array' => 'Categories must be an array.',
             'execution_time.required' => 'The execution time is required.',

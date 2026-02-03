@@ -562,6 +562,7 @@ class ProfileController extends Controller
 
     /**
      * Calculer le pourcentage de complétion du profil
+     * Harmonisé avec ProfileCompletionController et ProfileService
      *
      * @param mixed $profile
      * @param array $data
@@ -572,36 +573,133 @@ class ProfileController extends Controller
         // Fusionner les données existantes avec les nouvelles données
         $mergedData = array_merge($profile->toArray(), $data);
 
-        // Déterminer le type de profil et définir les champs requis
+        // Déterminer le type de profil
         if ($profile instanceof ClientProfile) {
-            // Définir les champs requis pour un profil client complet
-            $requiredFields = [
-                'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'country',
-                'bio', 'avatar', 'company_name', 'industry', 'position'
-            ];
+            return $this->calculateClientCompletion($profile, $mergedData);
         } else if ($profile instanceof ProfessionalProfile) {
-            // Définir les champs requis pour un profil professionnel complet
-            $requiredFields = [
-                'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'country',
-                'bio', 'avatar', 'title', 'skills', 'hourly_rate', 'experience', 'education'
-            ];
+            return $this->calculateProfessionalCompletion($profile, $mergedData);
         } else {
             // Type de profil inconnu, utiliser des champs de base
             $requiredFields = [
                 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'country'
             ];
+            $filledFields = 0;
+            foreach ($requiredFields as $field) {
+                if (isset($mergedData[$field]) && !empty($mergedData[$field])) {
+                    $filledFields++;
+                }
+            }
+            return (int) round(($filledFields / count($requiredFields)) * 100);
         }
-
-        // Compter les champs remplis
-        $filledFields = 0;
-        foreach ($requiredFields as $field) {
-            if (isset($mergedData[$field]) && !empty($mergedData[$field])) {
-                $filledFields++;
+    }
+    
+    /**
+     * Calcule le pourcentage de complétion pour un profil professionnel.
+     * Tous les champs importants sont pris en compte avec des poids.
+     */
+    private function calculateProfessionalCompletion($profile, array $data): int
+    {
+        $fields = [
+            // Informations personnelles de base (30%)
+            'first_name' => 5,
+            'last_name' => 5,
+            'email' => 5,
+            'phone' => 5,
+            'address' => 5,
+            'city' => 5,
+            
+            // Bio et présentation (15%)
+            'country' => 5,
+            'bio' => 5,
+            'avatar' => 5,
+            
+            // Profession (35%)
+            'title' => 10,
+            'profession' => 5,
+            'description' => 5,
+            'skills' => 10,
+            'softwares' => 5,
+            
+            // Expérience (10%)
+            'years_of_experience' => 5,
+            'hourly_rate' => 5,
+            
+            // Services et disponibilité (10%)
+            'services_offered' => 5,
+            'availability_status' => 5,
+            
+            // Langues (5%)
+            'languages' => 5,
+            
+            // Portfolio (5%)
+            'portfolio' => 5,
+        ];
+        
+        $totalWeight = array_sum($fields);
+        $filledWeight = 0;
+        
+        foreach ($fields as $field => $weight) {
+            $value = $data[$field] ?? null;
+            if ($this->isFieldFilledForCompletion($value)) {
+                $filledWeight += $weight;
             }
         }
-
-        // Calculer le pourcentage
-        return (int) round(($filledFields / count($requiredFields)) * 100);
+        
+        return min(100, max(0, round(($filledWeight / $totalWeight) * 100)));
+    }
+    
+    /**
+     * Calcule le pourcentage de complétion pour un profil client.
+     */
+    private function calculateClientCompletion($profile, array $data): int
+    {
+        $fields = [
+            // Informations personnelles de base (35%)
+            'first_name' => 10,
+            'last_name' => 10,
+            'email' => 5,
+            'phone' => 5,
+            'address' => 5,
+            
+            // Localisation (15%)
+            'city' => 5,
+            'country' => 5,
+            'avatar' => 5,
+            
+            // Bio et présentation (15%)
+            'bio' => 10,
+            
+            // Entreprise (35%)
+            'company_name' => 15,
+            'industry' => 10,
+            'position' => 10,
+        ];
+        
+        $totalWeight = array_sum($fields);
+        $filledWeight = 0;
+        
+        foreach ($fields as $field => $weight) {
+            $value = $data[$field] ?? null;
+            if ($this->isFieldFilledForCompletion($value)) {
+                $filledWeight += $weight;
+            }
+        }
+        
+        return min(100, max(0, round(($filledWeight / $totalWeight) * 100)));
+    }
+    
+    /**
+     * Vérifie si un champ est considéré comme "rempli".
+     */
+    private function isFieldFilledForCompletion($value): bool
+    {
+        if ($value === null || $value === '' || $value === []) {
+            return false;
+        }
+        if (is_array($value) && count($value) === 0) {
+            return false;
+        }
+        return true;
     }
 
     public function updateProfile(UpdateProfileRequest $request): JsonResponse

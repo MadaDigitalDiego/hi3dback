@@ -33,7 +33,7 @@ class StoreOpenOfferRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Informations de base de l'offre
+            // Basic offer information
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'categories' => 'nullable|array',
@@ -43,21 +43,21 @@ class StoreOpenOfferRequest extends FormRequest
             'company' => 'nullable|string|max:255',
             'website' => 'nullable|url|max:255',
 
-            // Fichiers joints
+            // Attached files
             'files' => 'nullable|array',
-            'files.*' => 'file|max:5120', // 5MB max par fichier
+            'files.*' => 'file|max:5120', // 5MB max per file
 
-                // Liens d'attachements externes (ex: Google Drive, Dropbox)
-                'attachment_links' => 'nullable|array',
-                'attachment_links.*' => 'url|max:2048',
+            // External attachment links (e.g.: Google Drive, Dropbox)
+            'attachment_links' => 'nullable|array',
+            'attachment_links.*' => 'url|max:2048',
 
-            // Paramètres de recrutement
+            // Recruitment parameters
             'recruitment_type' => 'required|in:company,personal',
             'open_to_applications' => 'sometimes|boolean',
             'auto_invite' => 'sometimes|boolean',
             'status' => 'sometimes|in:pending,open,closed,in_progress,completed,invited',
 
-            // Critères de filtrage
+            // Filter criteria
             'filters' => 'nullable|array',
             'filters.skills' => 'nullable|array',
             'filters.skills.*' => 'string|max:255',
@@ -66,50 +66,50 @@ class StoreOpenOfferRequest extends FormRequest
             'filters.location' => 'nullable|string|max:255',
             'filters.experience_years' => 'nullable|integer|min:0',
             'filters.availability_status' => 'nullable|in:available,unavailable',
-            'filters.other_criteria' => 'nullable|array', // Pour d'éventuels critères supplémentaires
+            'filters.other_criteria' => 'nullable|array', // For potential additional criteria
         ];
     }
 
     /**
-     * Messages de validation personnalisés
+     * Custom validation messages
      *
      * @return array<string, string>
      */
     public function messages(): array
     {
         return [
-            // Messages pour les champs de base
-            'title.required' => 'Le titre de l\'offre est obligatoire.',
-            'title.max' => 'Le titre ne doit pas dépasser 255 caractères.',
-            'description.required' => 'La description est obligatoire.',
-            'categories.*.max' => 'Une catégorie ne doit pas dépasser 255 caractères.',
-            'budget.max' => 'Le budget ne doit pas dépasser 255 caractères.',
-            'deadline.date' => 'La date limite doit être valide.',
-            'company.max' => 'Le nom de l\'entreprise ne doit pas dépasser 255 caractères.',
-            'website.url' => 'L\'URL du site web doit être valide.',
-            'website.max' => 'L\'URL ne doit pas dépasser 255 caractères.',
+            // Messages for basic fields
+            'title.required' => 'The offer title is required.',
+            'title.max' => 'The title must not exceed 255 characters.',
+            'description.required' => 'The description is required.',
+            'categories.*.max' => 'A category must not exceed 255 characters.',
+            'budget.max' => 'The budget must not exceed 255 characters.',
+            'deadline.date' => 'The deadline must be a valid date.',
+            'company.max' => 'The company name must not exceed 255 characters.',
+            'website.url' => 'The website URL must be valid.',
+            'website.max' => 'The URL must not exceed 255 characters.',
 
-            // Messages pour les fichiers
-            'files.*.file' => 'Chaque fichier doit être valide.',
-            'files.*.max' => 'Chaque fichier ne doit pas dépasser 5 Mo.',
+            // Messages for files
+            'files.*.file' => 'Each file must be valid.',
+            'files.*.max' => 'Each file must not exceed 5 MB.',
 
-            // Messages pour le recrutement
-            'recruitment_type.required' => 'Le type de recrutement est obligatoire.',
-            'recruitment_type.in' => 'Le type de recrutement doit être "company" ou "personal".',
-            'status.in' => 'Statut invalide.',
+            // Messages for recruitment
+            'recruitment_type.required' => 'The recruitment type is required.',
+            'recruitment_type.in' => 'The recruitment type must be "company" or "personal".',
+            'status.in' => 'Invalid status.',
 
-            // Messages pour les filtres
-            'filters.skills.*.max' => 'Une compétence ne doit pas dépasser 255 caractères.',
-            'filters.languages.*.max' => 'Une langue ne doit pas dépasser 255 caractères.',
-            'filters.location.max' => 'La localisation ne doit pas dépasser 255 caractères.',
-            'filters.experience_years.integer' => 'L\'expérience doit être un nombre entier.',
-            'filters.experience_years.min' => 'L\'expérience ne peut pas être négative.',
-            'filters.availability_status.in' => 'Statut de disponibilité invalide.',
+            // Messages for filters
+            'filters.skills.*.max' => 'A skill must not exceed 255 characters.',
+            'filters.languages.*.max' => 'A language must not exceed 255 characters.',
+            'filters.location.max' => 'The location must not exceed 255 characters.',
+            'filters.experience_years.integer' => 'Experience must be a whole number.',
+            'filters.experience_years.min' => 'Experience cannot be negative.',
+            'filters.availability_status.in' => 'Invalid availability status.',
         ];
     }
 
     /**
-     * Gestion des erreurs de validation
+     * Handle validation errors
      */
     protected function failedValidation(Validator $validator)
     {
@@ -117,20 +117,20 @@ class StoreOpenOfferRequest extends FormRequest
             response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
-                'message' => 'Erreur de validation des données'
+                'message' => 'Data validation error'
             ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY)
         );
     }
 
     /**
-     * Gestion de l'échec d'autorisation (limites d'abonnement).
+     * Handle authorization failure (subscription limits).
      */
     protected function failedAuthorization()
     {
         throw new HttpResponseException(
             response()->json([
                 'success' => false,
-                'message' => 'Vous avez atteint la limite de création d\'offres ouvertes pour votre abonnement. Veuillez mettre à niveau votre plan.',
+                'message' => 'You have reached the limit for creating open offers for your subscription. Please upgrade your plan.',
             ], JsonResponse::HTTP_FORBIDDEN)
         );
     }

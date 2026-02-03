@@ -14,7 +14,7 @@ class ProjectRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Vous pouvez ajouter une logique d'autorisation plus précise ici si nécessaire
+        return true; // You can add more precise authorization logic here if needed
     }
 
     /**
@@ -31,22 +31,22 @@ class ProjectRequest extends FormRequest
     }
 
     /**
-     * Custom message for specific rules
+     * Custom validation messages
      *
      * @return array<string, string>
      */
     public function messages(): array
     {
         return [
-            'name.required' => 'Le nom du projet est obligatoire.',
-            'name.string' => 'Le nom du projet doit être une chaîne de caractères.',
-            'name.max' => 'Le nom du projet ne doit pas dépasser 255 caractères.',
-            'description.string' => 'La description doit être une chaîne de caractères.',
-            'image.image' => 'Le fichier doit être une image.',
-            'image.mimes' => 'L\'image doit être de type: jpeg, png, jpg, gif, svg.',
-            'image.max' => 'L\'image ne doit pas dépasser 5 Mo.',
-            'project_url.url' => 'L\'URL du projet doit être une URL valide.',
-            'project_url.max' => 'L\'URL du projet ne doit pas dépasser 255 caractères.',
+            'name.required' => 'The project name is required.',
+            'name.string' => 'The project name must be a string.',
+            'name.max' => 'The project name must not exceed 255 characters.',
+            'description.string' => 'The description must be a string.',
+            'image.image' => 'The file must be an image.',
+            'image.mimes' => 'The image must be of type: jpeg, png, jpg, gif, svg.',
+            'image.max' => 'The image must not exceed 5 MB.',
+            'project_url.url' => 'The project URL must be a valid URL.',
+            'project_url.max' => 'The project URL must not exceed 255 characters.',
         ];
     }
 

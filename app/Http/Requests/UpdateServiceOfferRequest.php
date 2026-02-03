@@ -13,7 +13,7 @@ class UpdateServiceOfferRequest extends FormRequest
      */
     // public function authorize()
     // {
-    //     // Vérifier si l'utilisateur est le propriétaire du service
+    //     // Check if the user is the owner of the service
     //     $serviceOffer = $this->route('service_offer');
     //     return $serviceOffer && $serviceOffer->user_id === auth()->id();
     // }
@@ -29,7 +29,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
-            'price_unit' => 'sometimes|string|in:par image,par m2,par projet',
+            'price_unit' => 'sometimes|string|in:per image,per m2,per project',
             'categories' => 'sometimes|array',
             'categories.*' => 'string|max:255',
             'execution_time' => 'sometimes|string',
@@ -55,20 +55,20 @@ class UpdateServiceOfferRequest extends FormRequest
     public function messages()
     {
         return [
-            'title.string' => 'Le titre de l\'offre de service doit être une chaîne de caractères.',
-            'title.max' => 'Le titre de l\'offre de service ne doit pas dépasser 255 caractères.',
-            'price.numeric' => 'Le prix doit être un nombre.',
-            'price.min' => 'Le prix doit être un nombre positif.',
-            'price_unit.in' => 'L\'unité de prix doit être "par image", "par m2" ou "par projet".',
-            'categories.array' => 'Les catégories doivent être un tableau.',
-            'categories.*.string' => 'Chaque catégorie doit être une chaîne de caractères.',
-            'execution_time.string' => 'Le délai d\'exécution doit être une chaîne de caractères.',
-            'concepts.string' => 'Le nombre de concepts doit être une chaîne de caractères.',
-            'revisions.string' => 'Le nombre de révisions doit être une chaîne de caractères.',
-            'status.in' => 'Le statut doit être "published", "draft" ou "pending".',
-            'files.*.image' => 'Chaque fichier doit être une image.',
-            'files.*.mimes' => 'Chaque image doit être de type: jpeg, png, jpg, gif, svg.',
-            'files.*.max' => 'Chaque image ne doit pas dépasser 5 Mo.',
+            'title.string' => 'The service offer title must be a string.',
+            'title.max' => 'The service offer title must not exceed 255 characters.',
+            'price.numeric' => 'The price must be a number.',
+            'price.min' => 'The price must be a positive number.',
+            'price_unit.in' => 'The price unit must be "per image", "per m2" or "per project".',
+            'categories.array' => 'Categories must be an array.',
+            'categories.*.string' => 'Each category must be a string.',
+            'execution_time.string' => 'The execution time must be a string.',
+            'concepts.string' => 'The number of concepts must be a string.',
+            'revisions.string' => 'The number of revisions must be a string.',
+            'status.in' => 'The status must be "published", "draft" or "pending".',
+            'files.*.image' => 'Each file must be an image.',
+            'files.*.mimes' => 'Each image must be of type: jpeg, png, jpg, gif, svg.',
+            'files.*.max' => 'Each image must not exceed 5 MB.',
         ];
     }
 }

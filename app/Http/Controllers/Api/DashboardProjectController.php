@@ -23,24 +23,24 @@ class DashboardProjectController extends Controller
             $user = $request->user();
             $profile = $user->professionalProfile;
             if (!$profile) {
-                return response()->json(['message' => 'Aucun profil professionnel trouvé pour cet utilisateur.'], 422);
+                return response()->json(['message' => 'No professional profile found for this user.'], 422);
             }
-            Log::info('Récupération des projets pour le profil professionnel: ' . $profile->id . ' - ' . $user->email);
+            Log::info('Retrieving projects for professional profile: ' . $profile->id . ' - ' . $user->email);
 
             $projects = Achievement::where('professional_profile_id', $profile->id)
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            Log::info('Projets récupérés: ' . $projects->count());
+            Log::info('Projects retrieved: ' . $projects->count());
 
             return response()->json([
                 'projects' => $projects,
-                'message' => 'Projets récupérés avec succès.'
+                'message' => 'Projects retrieved successfully.'
             ], 200);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la récupération des projets: ' . $e->getMessage());
+            Log::error('Error retrieving projects: ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
-            return response()->json(['message' => 'Erreur lors de la récupération des projets: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Error retrieving projects: ' . $e->getMessage()], 500);
         }
     }
 
@@ -50,8 +50,8 @@ class DashboardProjectController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            Log::info('Début de la méthode store pour la création de projet');
-            Log::info('Données reçues: ' . json_encode($request->all()));
+            Log::info('Starting store method for project creation');
+            Log::info('Received data: ' . json_encode($request->all()));
 
             $validator = Validator::make($request->all(), [
                 'title' => 'required|string|max:255',
@@ -64,30 +64,30 @@ class DashboardProjectController extends Controller
             ]);
 
             if ($validator->fails()) {
-                Log::error('Validation échouée: ' . json_encode($validator->errors()));
+                Log::error('Validation failed: ' . json_encode($validator->errors()));
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
             $user = $request->user();
             $profile = $user->professionalProfile;
             if (!$profile) {
-                return response()->json(['message' => 'Aucun profil professionnel trouvé pour cet utilisateur.'], 422);
+                return response()->json(['message' => 'No professional profile found for this user.'], 422);
             }
-            Log::info('Utilisateur authentifié: ' . $user->id . ' - ' . $user->email);
+            Log::info('Authenticated user: ' . $user->id . ' - ' . $user->email);
 
             $projectData = $validator->validated();
-            Log::info('Données validées: ' . json_encode($projectData));
+            Log::info('Validated data: ' . json_encode($projectData));
 
-            // Traitement de la photo de couverture
+            // Process cover photo
             $coverPhotoPath = $request->file('coverPhoto')->store('project_covers', 'public');
-            Log::info('Photo de couverture enregistrée: ' . $coverPhotoPath);
+            Log::info('Cover photo saved: ' . $coverPhotoPath);
 
-            // Traitement de la galerie
+            // Process gallery
             $galleryPhotoPaths = [];
             if ($request->hasFile('galleryPhotos')) {
-                Log::info('Fichiers de galerie détectés dans la requête');
+                Log::info('Gallery files detected in request');
                 foreach ($request->file('galleryPhotos') as $file) {
-                    Log::info('Traitement du fichier de galerie: ' . $file->getClientOriginalName());
+                    Log::info('Processing gallery file: ' . $file->getClientOriginalName());
                     $path = $file->store('project_galleries', 'public');
                     $galleryPhotoPaths[] = [
                         'name' => $file->getClientOriginalName(),
@@ -95,7 +95,7 @@ class DashboardProjectController extends Controller
                         'size' => $file->getSize(),
                         'type' => $file->getMimeType(),
                     ];
-                    Log::info('Fichier de galerie enregistré: ' . $path);
+                    Log::info('Gallery file saved: ' . $path);
                 }
             }
 
@@ -110,18 +110,18 @@ class DashboardProjectController extends Controller
                 'status' => 'open',
             ];
 
-            Log::info('Création du projet avec les données: ' . json_encode($newProject));
+            Log::info('Creating project with data: ' . json_encode($newProject));
             $project = Achievement::create($newProject);
-            Log::info('Projet créé avec succès, ID: ' . $project->id);
+            Log::info('Project created successfully, ID: ' . $project->id);
 
             return response()->json([
                 'project' => $project,
-                'message' => 'Projet créé avec succès.'
+                'message' => 'Project created successfully.'
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la création du projet: ' . $e->getMessage());
+            Log::error('Error creating project: ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
-            return response()->json(['message' => 'Erreur lors de la création du projet: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Error creating project: ' . $e->getMessage()], 500);
         }
     }
 
@@ -134,7 +134,7 @@ class DashboardProjectController extends Controller
             $user = $request->user();
             $profile = $user->professionalProfile;
             if (!$profile) {
-                return response()->json(['message' => 'Aucun profil professionnel trouvé pour cet utilisateur.'], 422);
+                return response()->json(['message' => 'No professional profile found for this user.'], 422);
             }
             $project = Achievement::where('id', $id)
                 ->where('professional_profile_id', $profile->id)
@@ -142,8 +142,8 @@ class DashboardProjectController extends Controller
 
             return response()->json(['project' => $project], 200);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la récupération du projet: ' . $e->getMessage());
-            return response()->json(['message' => 'Projet non trouvé.'], 404);
+            Log::error('Error retrieving project: ' . $e->getMessage());
+            return response()->json(['message' => 'Project not found.'], 404);
         }
     }
 
@@ -170,7 +170,7 @@ class DashboardProjectController extends Controller
             $user = $request->user();
             $profile = $user->professionalProfile;
             if (!$profile) {
-                return response()->json(['message' => 'Aucun profil professionnel trouvé pour cet utilisateur.'], 422);
+                return response()->json(['message' => 'No professional profile found for this user.'], 422);
             }
             $project = Achievement::where('id', $id)
                 ->where('professional_profile_id', $profile->id)
@@ -178,9 +178,9 @@ class DashboardProjectController extends Controller
 
             $projectData = $validator->validated();
 
-            // Mise à jour de la cover photo
+            // Update cover photo
             if ($request->hasFile('coverPhoto')) {
-                // Supprimer l'ancienne cover si elle existe
+                // Delete old cover if it exists
                 if ($project->cover_photo) {
                     \Storage::disk('public')->delete($project->cover_photo);
                 }
@@ -188,7 +188,7 @@ class DashboardProjectController extends Controller
                 $projectData['cover_photo'] = $coverPhotoPath;
             }
 
-            // Mise à jour de la galerie
+            // Update gallery
             if ($request->hasFile('galleryPhotos')) {
                 $galleryPhotoPaths = $project->gallery_photos ?? [];
                 foreach ($request->file('galleryPhotos') as $file) {
@@ -207,11 +207,11 @@ class DashboardProjectController extends Controller
 
             return response()->json([
                 'project' => $project,
-                'message' => 'Projet mis à jour avec succès.'
+                'message' => 'Project updated successfully.'
             ], 200);
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de la mise à jour du projet: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour du projet.'], 500);
+            \Log::error('Error updating project: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating project.'], 500);
         }
     }
 
@@ -224,13 +224,13 @@ class DashboardProjectController extends Controller
             $user = $request->user();
             $profile = $user->professionalProfile;
             if (!$profile) {
-                return response()->json(['message' => 'Aucun profil professionnel trouvé pour cet utilisateur.'], 422);
+                return response()->json(['message' => 'No professional profile found for this user.'], 422);
             }
             $project = Achievement::where('id', $id)
                 ->where('professional_profile_id', $profile->id)
                 ->firstOrFail();
 
-            // Supprimer les fichiers associés
+            // Delete associated files
             if ($project->cover_photo) {
                 \Storage::disk('public')->delete($project->cover_photo);
             }
@@ -244,10 +244,10 @@ class DashboardProjectController extends Controller
 
             $project->delete();
 
-            return response()->json(['message' => 'Projet supprimé avec succès.'], 200);
+            return response()->json(['message' => 'Project deleted successfully.'], 200);
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de la suppression du projet: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression du projet.'], 500);
+            \Log::error('Error deleting project: ' . $e->getMessage());
+            return response()->json(['message' => 'Error deleting project.'], 500);
         }
     }
 
@@ -267,28 +267,28 @@ class DashboardProjectController extends Controller
             if (isset($attachments[$attachmentIndex])) {
                 $attachment = $attachments[$attachmentIndex];
 
-                // Supprimer le fichier
+                // Delete the file
                 if (isset($attachment['path'])) {
                     Storage::disk('public')->delete($attachment['path']);
                 }
 
-                // Supprimer l'entrée du tableau
+                // Delete the entry from the array
                 array_splice($attachments, $attachmentIndex, 1);
 
-                // Mettre à jour le projet
+                // Update the project
                 $project->attachments = $attachments;
                 $project->save();
 
                 return response()->json([
-                    'message' => 'Pièce jointe supprimée avec succès.',
+                    'message' => 'Attachment deleted successfully.',
                     'project' => $project
                 ], 200);
             }
 
-            return response()->json(['message' => 'Pièce jointe non trouvée.'], 404);
+            return response()->json(['message' => 'Attachment not found.'], 404);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la suppression de la pièce jointe: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression de la pièce jointe.'], 500);
+            Log::error('Error deleting attachment: ' . $e->getMessage());
+            return response()->json(['message' => 'Error deleting attachment.'], 500);
         }
     }
     /**
@@ -302,7 +302,7 @@ class DashboardProjectController extends Controller
         try {
             $query = Achievement::query();
 
-            // Filtrage par recherche
+            // Filter by search
             if ($request->has('search') && !empty($request->input('search'))) {
                 $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
@@ -311,12 +311,12 @@ class DashboardProjectController extends Controller
                 });
             }
 
-            // Filtrage par catégorie
+            // Filter by category
             if ($request->has('category') && $request->input('category') !== 'all') {
                 $query->where('category', $request->input('category'));
             }
 
-            // Filtrage par compétences
+            // Filter by skills
             if ($request->has('skills') && !empty($request->input('skills'))) {
                 $skills = explode(',', $request->input('skills'));
                 foreach ($skills as $skill) {
@@ -324,7 +324,7 @@ class DashboardProjectController extends Controller
                 }
             }
 
-            // Tri des résultats
+            // Sort results
             if ($request->has('sort_by')) {
                 $sortBy = $request->input('sort_by');
                 switch ($sortBy) {
@@ -348,17 +348,17 @@ class DashboardProjectController extends Controller
                 $query->orderBy('created_at', 'desc');
             }
 
-            // Récupérer les projets filtrés
+            // Get filtered projects
             $projects = $query->get();
 
             return response()->json([
                 'success' => true,
                 'projects' => $projects,
-                'message' => 'Projets filtrés récupérés avec succès.'
+                'message' => 'Filtered projects retrieved successfully.'
             ], 200);
         } catch (\Exception $e) {
-            Log::error('Erreur lors du filtrage des projets: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du filtrage des projets.'], 500);
+            Log::error('Error filtering projects: ' . $e->getMessage());
+            return response()->json(['message' => 'Error filtering projects.'], 500);
         }
     }
 }

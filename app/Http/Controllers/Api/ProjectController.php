@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Experience;
-use App\Http\Requests\ProjectRequest; // Créez ce Form Request (voir point 3)
+use App\Http\Requests\ProjectRequest; // Create this Form Request (see point 3)
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 class ProjectController extends Controller
 {
     /**
-     * Display a listing of the resource. (Peut-être pas nécessaire pour les projets, car ils sont liés aux expériences)
+     * Display a listing of the resource. (May not be necessary for projects as they are linked to experiences)
      */
     // public function index() {}
 
@@ -26,9 +26,9 @@ class ProjectController extends Controller
         try {
             $projectData = $request->validated();
 
-            // Gestion de l'upload d'image
+            // Handle image upload
             if ($request->hasFile('image')) {
-                $path = $request->file('image')->store('project_images', 'public'); // Stockage dans storage/app/public/project_images
+                $path = $request->file('image')->store('project_images', 'public'); // Store in storage/app/public/project_images
                 $projectData['image_path'] = $path;
             }
 
@@ -36,10 +36,10 @@ class ProjectController extends Controller
             $project->experience_id = $experience->id;
             $project->save();
 
-            return response()->json(['project' => $project, 'message' => 'Projet ajouté avec succès.'], 201); // 201 Created
+            return response()->json(['project' => $project, 'message' => 'Project added successfully.'], 201); // 201 Created
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'ajout d\'un projet: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de l\'ajout du projet. Veuillez réessayer plus tard.'], 500);
+            Log::error('Error adding project: ' . $e->getMessage());
+            return response()->json(['message' => 'Error adding project. Please try again later.'], 500);
         }
     }
 
@@ -59,9 +59,9 @@ class ProjectController extends Controller
         try {
             $projectData = $request->validated();
 
-            // Gestion de la mise à jour de l'image (si un nouveau fichier est uploadé)
+            // Handle image update (if a new file is uploaded)
             if ($request->hasFile('image')) {
-                // Supprimer l'ancienne image si elle existe
+                // Delete old image if it exists
                 if ($project->image_path) {
                     Storage::disk('public')->delete($project->image_path);
                 }
@@ -70,10 +70,10 @@ class ProjectController extends Controller
             }
 
             $project->update($projectData);
-            return response()->json(['project' => $project, 'message' => 'Projet mis à jour avec succès.'], 200);
+            return response()->json(['project' => $project, 'message' => 'Project updated successfully.'], 200);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la mise à jour du projet: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour du projet. Veuillez réessayer plus tard.'], 500);
+            Log::error('Error updating project: ' . $e->getMessage());
+            return response()->json(['message' => 'Error updating project. Please try again later.'], 500);
         }
     }
 
@@ -83,15 +83,15 @@ class ProjectController extends Controller
     public function destroy(Project $project): JsonResponse
     {
         try {
-            // Supprimer l'image associée si elle existe
+            // Delete associated image if it exists
             if ($project->image_path) {
                 Storage::disk('public')->delete($project->image_path);
             }
             $project->delete();
-            return response()->json(['message' => 'Projet supprimé avec succès.'], 200);
+            return response()->json(['message' => 'Project deleted successfully.'], 200);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la suppression du projet: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression du projet. Veuillez réessayer plus tard.'], 500);
+            Log::error('Error deleting project: ' . $e->getMessage());
+            return response()->json(['message' => 'Error deleting project. Please try again later.'], 500);
         }
     }
 }

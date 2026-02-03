@@ -16,7 +16,11 @@ class ForgeIndexCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'forge:index {--check-health} {--force} {--notify=}';
+    protected $signature = 'forge:index 
+                            {--check-health : Check Meilisearch health before indexing}
+                            {--full : Perform full reindexation (clear and reindex all)}
+                            {--force : Force indexing even if health check fails}
+                            {--notify= : Webhook URL for notifications}';
 
     /**
      * The console command description.
@@ -31,6 +35,8 @@ class ForgeIndexCommand extends Command
     public function handle()
     {
         $this->info('🚀 Starting Forge indexation process...');
+        
+        $isFullReindex = $this->option('full');
 
         // Check Meilisearch health if requested
         if ($this->option('check-health')) {
@@ -60,9 +66,11 @@ class ForgeIndexCommand extends Command
                 $this->line("   Found {$count} records");
 
                 if ($count > 0) {
-                    // Clear existing index
-                    $modelClass::removeAllFromSearch();
-                    $this->line("   Cleared existing index");
+                    // Clear existing index only for full reindex
+                    if ($isFullReindex) {
+                        $modelClass::removeAllFromSearch();
+                        $this->line("   Cleared existing index");
+                    }
 
                     // Create progress bar
                     $bar = $this->output->createProgressBar($count);

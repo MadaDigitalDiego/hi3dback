@@ -136,11 +136,11 @@ class StoreOpenOfferRequest extends FormRequest
     }
 
     /**
-     * Préparation des données avant validation
+     * Prepare data before validation
      */
     protected function prepareForValidation()
     {
-        // Convertit les chaînes JSON en tableaux si nécessaire
+        // Convert JSON strings to arrays if necessary
         if ($this->has('filters') && is_string($this->filters)) {
             $this->merge([
                 'filters' => json_decode($this->filters, true)

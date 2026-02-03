@@ -42,7 +42,8 @@ class StoreServiceOfferRequest extends FormRequest
             'revisions' => 'required|string', // Expecting string for revisions
             'is_private' => 'boolean', // Expecting boolean for is_private
             'status' => 'required|string|in:published,draft,pending', // Status rule
-            'files' => 'nullable|array', // Files array - removed files.* validation since controller checks hasFile() before processing
+            'files' => 'nullable|array',
+            'files.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
             'associated_project' => 'nullable|string|max:255',
             'what_you_get' => 'nullable|string',
             'who_is_this_for' => 'nullable|string',
@@ -75,6 +76,9 @@ class StoreServiceOfferRequest extends FormRequest
             'revisions.required' => 'Le nombre de révisions est obligatoire.',
             'status.required' => 'Le statut est obligatoire.',
             'status.in' => 'Le statut doit être "published", "draft" ou "pending".',
+            'files.*.image' => 'Chaque fichier doit être une image.',
+            'files.*.mimes' => 'Chaque image doit être de type: jpeg, png, jpg, gif, svg.',
+            'files.*.max' => 'Chaque image ne doit pas dépasser 5 Mo.',
         ];
     }
 

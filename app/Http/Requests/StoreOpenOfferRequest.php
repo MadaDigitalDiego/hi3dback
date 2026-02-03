@@ -45,7 +45,7 @@ class StoreOpenOfferRequest extends FormRequest
 
             // Fichiers joints
             'files' => 'nullable|array',
-            'files.*' => 'file|max:10240', // 2MB max par fichier
+            'files.*' => 'file|max:5120', // 5MB max par fichier
 
                 // Liens d'attachements externes (ex: Google Drive, Dropbox)
                 'attachment_links' => 'nullable|array',
@@ -91,7 +91,7 @@ class StoreOpenOfferRequest extends FormRequest
 
             // Messages pour les fichiers
             'files.*.file' => 'Chaque fichier doit être valide.',
-            'files.*.max' => 'Chaque fichier ne doit pas dépasser 2 Mo.',
+            'files.*.max' => 'Chaque fichier ne doit pas dépasser 5 Mo.',
 
             // Messages pour le recrutement
             'recruitment_type.required' => 'Le type de recrutement est obligatoire.',

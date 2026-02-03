@@ -38,6 +38,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'is_private' => 'sometimes|boolean',
             'status' => 'sometimes|string|in:published,draft,pending',
             'files' => 'sometimes|array',
+            'files.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
             'associated_project' => 'sometimes|string|max:255',
             'what_you_get' => 'sometimes|string',
             'who_is_this_for' => 'sometimes|string',
@@ -65,6 +66,9 @@ class UpdateServiceOfferRequest extends FormRequest
             'concepts.string' => 'Le nombre de concepts doit être une chaîne de caractères.',
             'revisions.string' => 'Le nombre de révisions doit être une chaîne de caractères.',
             'status.in' => 'Le statut doit être "published", "draft" ou "pending".',
+            'files.*.image' => 'Chaque fichier doit être une image.',
+            'files.*.mimes' => 'Chaque image doit être de type: jpeg, png, jpg, gif, svg.',
+            'files.*.max' => 'Chaque image ne doit pas dépasser 5 Mo.',
         ];
     }
 }

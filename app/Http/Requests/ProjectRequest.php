@@ -25,7 +25,7 @@ class ProjectRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240', // Validation pour l'upload d'image
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120', // Validation pour l'upload d'image
             'project_url' => 'nullable|url|max:255',
         ];
     }
@@ -44,7 +44,7 @@ class ProjectRequest extends FormRequest
             'description.string' => 'La description doit être une chaîne de caractères.',
             'image.image' => 'Le fichier doit être une image.',
             'image.mimes' => 'L\'image doit être de type: jpeg, png, jpg, gif, svg.',
-            'image.max' => 'L\'image ne doit pas dépasser 2048 Ko.',
+            'image.max' => 'L\'image ne doit pas dépasser 5 Mo.',
             'project_url.url' => 'L\'URL du projet doit être une URL valide.',
             'project_url.max' => 'L\'URL du projet ne doit pas dépasser 255 caractères.',
         ];

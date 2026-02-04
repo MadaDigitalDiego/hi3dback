@@ -34,7 +34,7 @@ class SubscriptionInvoice extends Mailable
      */
     public function build()
     {
-        $email = $this->subject("Facture #{$this->invoice->invoice_number} - Votre abonnement")
+        $email = $this->subject("Invoice #{$this->invoice->invoice_number} - Your subscription")
                     ->view('emails.subscription-invoice')
                     ->with([
                         'user' => $this->user,

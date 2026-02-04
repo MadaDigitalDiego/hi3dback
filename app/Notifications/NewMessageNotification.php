@@ -47,7 +47,7 @@ class NewMessageNotification extends Notification
         // $url = 'http://localhost:3000/discussions/' . $offer->id; // Adjust the URL to the chat page
 
         return (new MailMessage)
-            ->subject('Nouveau Message Reçu dans l\'Offre d\'Appel d\'Offres: ' . $offer->title)
+            ->subject('New message received in the offer: ' . $offer->title)
             ->greeting('Bonjour ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',')
             ->line('Vous avez reçu un nouveau message de ' . $sender->first_name . ' ' . $sender->last_name . ' concernant l\'offre d\'appel d\'offres: **' . $offer->title . '**.')
             ->line('**Message:** ' . substr($this->message->message_text, 0, 200) . '...')

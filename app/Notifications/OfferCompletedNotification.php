@@ -30,7 +30,7 @@ class OfferCompletedNotification extends Notification
         $url = $frontendUrl . '/dashboard/offers/' . $this->offer->id;
 
         return (new MailMessage)
-            ->subject('Une offre à laquelle vous participez a été marquée comme complétée')
+            ->subject('An offer you participated in has been marked as completed')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
             ->line('L\'offre "' . $this->offer->title . '" à laquelle vous participez a été marquée comme complétée.')
             ->action('Voir l\'offre', $url)

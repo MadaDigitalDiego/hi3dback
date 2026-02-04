@@ -44,7 +44,7 @@ class NewOpenOfferNotification extends Notification
         // $url = 'http://localhost:3000/offre/' . $this->openOffer->id; // URL to the open offer details page, adjust as needed
 
         return (new MailMessage)
-            ->subject('Nouvelle Offre d\'Appel d\'Offres Disponible')
+            ->subject('New open offer available')
             ->greeting('Bonjour ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Assuming FreelanceProfile has first_name and last_name
             ->line('Une nouvelle offre d\'appel d\'offres correspondant à votre profil est disponible.')
             ->line('**Titre de l\'offre:** ' . $this->openOffer->title)

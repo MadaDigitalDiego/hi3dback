@@ -35,7 +35,7 @@ class InvoicePaymentFailedNotification extends Notification
         $currency = $this->invoice->currency ?? 'EUR';
 
         $mail = (new MailMessage)
-            ->subject('Problème lors du paiement de votre abonnement')
+            ->subject('Subscription payment failed')
             ->greeting('Bonjour ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
             ->line('Nous avons rencontré un problème lors du prélèvement de votre abonnement.')
             ->line('Montant concerné : ' . number_format((float) $amount, 2, ',', ' ') . ' ' . $currency)

@@ -33,7 +33,7 @@ class SubscriptionCancellation extends Mailable
      */
     public function build()
     {
-        return $this->subject('Confirmation d\'annulation de votre abonnement')
+        return $this->subject('Subscription Cancellation Confirmation')
                     ->view('emails.subscription-cancellation')
                     ->with([
                         'user' => $this->user,

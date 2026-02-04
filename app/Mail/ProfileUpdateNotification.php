@@ -27,7 +27,7 @@ class ProfileUpdateNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Mise à jour de votre profil',
+            subject: 'Profile Update',
         );
     }
 

@@ -44,7 +44,7 @@ class InvitationAcceptedNotification extends Notification
             : 'Un professionnel';
 
         return (new MailMessage)
-            ->subject('Invitation acceptée par un professionnel')
+            ->subject('Invitation accepted by a professional')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
             ->line($professionalName . ' a accepté votre invitation pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
             ->line('Vous pouvez maintenant discuter avec ce professionnel dans votre messagerie.')

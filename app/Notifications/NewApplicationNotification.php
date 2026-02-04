@@ -45,7 +45,7 @@ class NewApplicationNotification extends Notification
             : 'Un professionnel';
 
         $mail = (new MailMessage)
-            ->subject('Nouvelle candidature reçue pour votre offre')
+            ->subject('New application received for your offer')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
             ->line($applicantName . ' a soumis une nouvelle candidature pour votre offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.');
 

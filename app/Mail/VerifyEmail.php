@@ -31,7 +31,7 @@ class VerifyEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Vérifiez votre adresse e-mail - ' . config('app.name'),
+            subject: 'Verify your email address - ' . config('app.name'),
         );
     }
 

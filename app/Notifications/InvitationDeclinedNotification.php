@@ -44,7 +44,7 @@ class InvitationDeclinedNotification extends Notification
             : 'Un professionnel';
 
         return (new MailMessage)
-            ->subject('Invitation refusée par un professionnel')
+            ->subject('Invitation declined by a professional')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
             ->line($professionalName . ' a refusé votre invitation pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
             ->action('Voir l\'offre', $url)

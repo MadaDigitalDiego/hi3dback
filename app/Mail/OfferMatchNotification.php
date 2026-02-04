@@ -20,7 +20,7 @@ class OfferMatchNotification extends Mailable
 
     public function build()
     {
-        return $this->subject("Nouvelle offre correspondant à votre profil")
+        return $this->subject("New offer matching your profile")
                     ->view('emails.offer_match');
     }
 }

@@ -31,7 +31,7 @@ class SubscriptionConfirmation extends Mailable
      */
     public function build()
     {
-        return $this->subject('Confirmation de votre abonnement')
+        return $this->subject('Subscription Confirmation')
                     ->view('emails.subscription-confirmation')
                     ->with([
                         'user' => $this->user,

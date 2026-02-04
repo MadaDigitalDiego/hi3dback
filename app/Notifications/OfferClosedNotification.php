@@ -30,7 +30,7 @@ class OfferClosedNotification extends Notification
         $url = $frontendUrl . '/dashboard/offers/' . $this->offer->id;
 
         return (new MailMessage)
-            ->subject('Une offre à laquelle vous participez a été clôturée')
+            ->subject('An offer you\'re participating in has been closed')
             ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
             ->line('L\'offre "' . $this->offer->title . '" à laquelle vous participez a été mise en statut "clôturée".')
             ->line('Les professionnels ne peuvent plus y postuler.')

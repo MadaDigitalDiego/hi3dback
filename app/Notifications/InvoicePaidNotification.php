@@ -35,7 +35,7 @@ class InvoicePaidNotification extends Notification
         $currency = $this->invoice->currency ?? 'EUR';
 
         $mail = (new MailMessage)
-            ->subject('Votre paiement d\'abonnement a bien été reçu')
+            ->subject('Your subscription payment has been received')
             ->greeting('Bonjour ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
             ->line('Nous confirmons la bonne réception du paiement de votre abonnement.')
             ->line('Montant : ' . number_format((float) $amount, 2, ',', ' ') . ' ' . $currency);

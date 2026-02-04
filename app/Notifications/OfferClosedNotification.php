@@ -31,11 +31,11 @@ class OfferClosedNotification extends Notification
 
         return (new MailMessage)
             ->subject('An offer you\'re participating in has been closed')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('L\'offre "' . $this->offer->title . '" à laquelle vous participez a été mise en statut "clôturée".')
-            ->line('Les professionnels ne peuvent plus y postuler.')
-            ->action('Voir l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line('The offer "' . $this->offer->title . '" you are participating in has been set to "closed".')
+            ->line('Professionals can no longer apply to it.')
+            ->action('View offer', $url)
+            ->salutation('Best regards,')
             ->line(config('app.name'));
     }
 
@@ -44,7 +44,7 @@ class OfferClosedNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'status' => $this->offer->status,
-            'message' => 'Une offre à laquelle vous participez a été clôturée.',
+            'message' => 'An offer you are participating in has been closed.',
             'type' => 'offer_closed',
         ];
     }

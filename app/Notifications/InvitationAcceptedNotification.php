@@ -45,11 +45,11 @@ class InvitationAcceptedNotification extends Notification
 
         return (new MailMessage)
             ->subject('Invitation accepted by a professional')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line($professionalName . ' a accepté votre invitation pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
-            ->line('Vous pouvez maintenant discuter avec ce professionnel dans votre messagerie.')
-            ->action('Voir l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line($professionalName . ' has accepted your invitation for the offer ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
+            ->line('You can now message this professional through your inbox.')
+            ->action('View offer', $url)
+            ->salutation('Best regards,')
             ->line(config('app.name'));
     }
 
@@ -62,7 +62,7 @@ class InvitationAcceptedNotification extends Notification
             'application_id' => $this->application->id,
             'open_offer_id' => $this->application->open_offer_id,
             'status' => $this->application->status,
-            'message' => 'Un professionnel a accepté votre invitation pour cette offre.',
+            'message' => 'A professional has accepted your invitation for this offer.',
             'type' => 'invitation_accepted',
         ];
     }

@@ -45,13 +45,13 @@ class NewOpenOfferNotification extends Notification
 
         return (new MailMessage)
             ->subject('New open offer available')
-            ->greeting('Bonjour ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Assuming FreelanceProfile has first_name and last_name
-            ->line('Une nouvelle offre d\'appel d\'offres correspondant à votre profil est disponible.')
-            ->line('**Titre de l\'offre:** ' . $this->openOffer->title)
+            ->greeting('Hello ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Assuming FreelanceProfile has first_name and last_name
+            ->line('A new open offer matching your profile is available.')
+            ->line('**Offer title:** ' . $this->openOffer->title)
             ->line('**Description:** ' . substr(strip_tags($this->openOffer->description), 0, 200) . '...') // Shorten description for email
-            ->action('Voir l\'Offre', $url)
-            ->line('Ne manquez pas cette opportunité de projet !')
-            ->salutation('Cordialement,')
+            ->action('View offer', $url)
+            ->line('Don\'t miss this project opportunity!')
+            ->salutation('Best regards,')
             ->line(config('app.name'));
     }
 
@@ -64,7 +64,7 @@ class NewOpenOfferNotification extends Notification
     {
         return [
             // 'open_offer_id' => $this->openOffer->id, // Optional: Include offer ID in database notification
-            'message' => 'Une nouvelle offre d\'appel d\'offres est disponible: ' . $this->openOffer->title,
+            'message' => 'A new open offer is available: ' . $this->openOffer->title,
         ];
     }
 }

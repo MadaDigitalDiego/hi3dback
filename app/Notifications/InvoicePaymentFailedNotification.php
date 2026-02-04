@@ -36,18 +36,18 @@ class InvoicePaymentFailedNotification extends Notification
 
         $mail = (new MailMessage)
             ->subject('Subscription payment failed')
-            ->greeting('Bonjour ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
-            ->line('Nous avons rencontré un problème lors du prélèvement de votre abonnement.')
-            ->line('Montant concerné : ' . number_format((float) $amount, 2, ',', ' ') . ' ' . $currency)
-            ->line('Votre abonnement peut être suspendu si le paiement n\'est pas régularisé.');
+            ->greeting('Hello ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
+            ->line('We encountered an issue while charging your subscription.')
+            ->line('Amount: ' . number_format((float) $amount, 2, ',', ' ') . ' ' . $currency)
+            ->line('Your subscription may be suspended if the payment is not resolved.');
 
         if (!empty($this->invoice->invoice_number)) {
-            $mail->line('Référence interne de la facture : ' . $this->invoice->invoice_number);
+            $mail->line('Internal invoice reference: ' . $this->invoice->invoice_number);
         }
 
         return $mail
-            ->line('Merci de vérifier ou mettre à jour votre moyen de paiement depuis votre espace client.')
-            ->salutation('Cordialement,\n' . config('app.name'));
+            ->line('Please check or update your payment method from your account area.')
+            ->salutation('Best regards,\n' . config('app.name'));
     }
 }
 

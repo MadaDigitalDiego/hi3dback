@@ -45,10 +45,10 @@ class InvitationDeclinedNotification extends Notification
 
         return (new MailMessage)
             ->subject('Invitation declined by a professional')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line($professionalName . ' a refusé votre invitation pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
-            ->action('Voir l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line($professionalName . ' has declined your invitation for the offer ' . ($offer ? '"' . $offer->title . '"' : '') . '.')
+            ->action('View offer', $url)
+            ->salutation('Best regards,')
             ->line(config('app.name'));
     }
 
@@ -61,7 +61,7 @@ class InvitationDeclinedNotification extends Notification
             'application_id' => $this->application->id,
             'open_offer_id' => $this->application->open_offer_id,
             'status' => $this->application->status,
-            'message' => 'Un professionnel a refusé votre invitation pour cette offre.',
+            'message' => 'A professional has declined your invitation for this offer.',
             'type' => 'invitation_declined',
         ];
     }

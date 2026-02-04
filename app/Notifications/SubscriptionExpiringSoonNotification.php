@@ -37,15 +37,15 @@ class SubscriptionExpiringSoonNotification extends Notification
 
         $mail = (new MailMessage)
             ->subject('Your subscription is expiring soon')
-            ->greeting('Bonjour ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
-            ->line('Votre abonnement ' . ($plan->name ?? '') . ' arrive à échéance dans ' . $this->daysRemaining . ' jour' . ($this->daysRemaining > 1 ? 's' : '') . '.');
+            ->greeting('Hello ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
+            ->line('Your subscription ' . ($plan->name ?? '') . ' is expiring in ' . $this->daysRemaining . ' day' . ($this->daysRemaining > 1 ? 's' : '') . '.');
 
         if ($endDate) {
-            $mail->line('Date de fin de la période actuelle : ' . $endDate . '.');
+            $mail->line('Current period end date: ' . $endDate . '.');
         }
 
-        $mail->action('Gérer mon abonnement', $url)
-            ->salutation('Cordialement,')
+        $mail->action('Manage my subscription', $url)
+            ->salutation('Best regards,')
             ->line(config('app.name'));
 
         return $mail;

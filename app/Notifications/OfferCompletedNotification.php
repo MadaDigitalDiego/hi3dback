@@ -31,10 +31,10 @@ class OfferCompletedNotification extends Notification
 
         return (new MailMessage)
             ->subject('An offer you participated in has been marked as completed')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('L\'offre "' . $this->offer->title . '" à laquelle vous participez a été marquée comme complétée.')
-            ->action('Voir l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line('The offer "' . $this->offer->title . '" you participated in has been marked as completed.')
+            ->action('View offer', $url)
+            ->salutation('Best regards,')
             ->line(config('app.name'));
     }
 
@@ -43,7 +43,7 @@ class OfferCompletedNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'status' => $this->offer->status,
-            'message' => 'Une offre à laquelle vous participez a été marquée comme complétée.',
+            'message' => 'An offer you participated in has been marked as completed.',
             'type' => 'offer_completed',
         ];
     }

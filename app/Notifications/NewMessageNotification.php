@@ -48,12 +48,12 @@ class NewMessageNotification extends Notification
 
         return (new MailMessage)
             ->subject('New message received in the offer: ' . $offer->title)
-            ->greeting('Bonjour ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',')
-            ->line('Vous avez reçu un nouveau message de ' . $sender->first_name . ' ' . $sender->last_name . ' concernant l\'offre d\'appel d\'offres: **' . $offer->title . '**.')
+            ->greeting('Hello ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',')
+            ->line('You have received a new message from ' . $sender->first_name . ' ' . $sender->last_name . ' regarding the offer: **' . $offer->title . '**.')
             ->line('**Message:** ' . substr($this->message->message_text, 0, 200) . '...')
-            ->action('Voir le Chat', $url)
-            ->line('Répondez dès maintenant pour ne rien manquer !')
-            ->salutation('Cordialement,')
+            ->action('View Chat', $url)
+            ->line('Reply now so you don\'t miss anything!')
+            ->salutation('Best regards,')
             ->line(config('app.name'));
     }
 
@@ -69,7 +69,7 @@ class NewMessageNotification extends Notification
             'sender_id' => $this->message->sender->id,
             'sender_name' => $this->message->sender->first_name . ' ' . $this->message->sender->last_name,
             'message_text' => $this->message->message_text,
-            'message' => 'Nouveau message de ' . $this->message->sender->first_name . ' ' . $this->message->sender->last_name . ' pour l\'offre: ' . $this->message->openOffer->title,
+            'message' => 'New message from ' . $this->message->sender->first_name . ' ' . $this->message->sender->last_name . ' for the offer: ' . $this->message->openOffer->title,
         ];
     }
 }

@@ -36,21 +36,21 @@ class InvoicePaidNotification extends Notification
 
         $mail = (new MailMessage)
             ->subject('Your subscription payment has been received')
-            ->greeting('Bonjour ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
-            ->line('Nous confirmons la bonne réception du paiement de votre abonnement.')
-            ->line('Montant : ' . number_format((float) $amount, 2, ',', ' ') . ' ' . $currency);
+            ->greeting('Hello ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
+            ->line('We confirm receipt of your subscription payment.')
+            ->line('Amount: ' . number_format((float) $amount, 2, ',', ' ') . ' ' . $currency);
 
         if (!empty($this->invoice->invoice_number)) {
-            $mail->line('Numéro de facture interne : ' . $this->invoice->invoice_number);
+            $mail->line('Internal invoice number: ' . $this->invoice->invoice_number);
         }
 
         if (!empty($this->invoice->pdf_url)) {
-            $mail->action('Télécharger votre facture (PDF)', $this->invoice->pdf_url);
+            $mail->action('Download your invoice (PDF)', $this->invoice->pdf_url);
         }
 
         return $mail
-            ->line('Vous pouvez retrouver l\'historique complet de vos factures dans votre espace client.')
-            ->salutation('Cordialement,\n' . config('app.name'));
+            ->line('You can find the full history of your invoices in your account area.')
+            ->salutation('Best regards,\n' . config('app.name'));
     }
 }
 

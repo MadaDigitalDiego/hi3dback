@@ -46,17 +46,17 @@ class NewApplicationNotification extends Notification
 
         $mail = (new MailMessage)
             ->subject('New application received for your offer')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line($applicantName . ' a soumis une nouvelle candidature pour votre offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.');
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line($applicantName . ' has submitted a new application for your offer ' . ($offer ? '"' . $offer->title . '"' : '') . '.');
 
         if (!empty($this->application->proposal)) {
-            $mail->line('Extrait de sa proposition :')
+            $mail->line('Excerpt from the proposal:')
                 ->line(substr($this->application->proposal, 0, 200) . '...');
         }
 
-        $mail->action('Voir la candidature', $url)
-            ->line('Vous pouvez consulter les détails de la candidature depuis votre tableau de bord.')
-            ->salutation('Cordialement,')
+        $mail->action('View application', $url)
+            ->line('You can view the application details from your dashboard.')
+            ->salutation('Best regards,')
             ->line(config('app.name'));
 
         return $mail;
@@ -70,7 +70,7 @@ class NewApplicationNotification extends Notification
         return [
             'application_id' => $this->application->id,
             'open_offer_id' => $this->application->open_offer_id,
-            'message' => 'Nouvelle candidature reçue pour votre offre.',
+            'message' => 'New application received for your offer.',
             'type' => 'application_received',
         ];
     }

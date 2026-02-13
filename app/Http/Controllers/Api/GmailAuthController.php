@@ -317,10 +317,13 @@ class GmailAuthController extends Controller
     /**
      * Redirection Gmail pour le frontend (avec sessions)
      */
-    public function frontendRedirect(): RedirectResponse|JsonResponse
+    public function frontendRedirect(Request $request): RedirectResponse|JsonResponse
     {
         try {
             Log::info('Demande de redirection Gmail frontend (web)');
+
+            $frontendUrl = $this->resolveFrontendUrl($request);
+            session(['oauth_frontend_url' => $frontendUrl]);
 
             $config = GmailConfiguration::getActiveConfiguration();
 
@@ -388,7 +391,12 @@ class GmailAuthController extends Controller
             $result = $this->gmailAuthService->processGoogleUser($googleUser);
 
             // Construire l'URL de redirection vers le frontend
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = session('oauth_frontend_url');
+            if (!$this->isAllowedFrontendUrl($frontendUrl)) {
+                $frontendUrl = $this->resolveFrontendUrl($request);
+            }
+
+            session()->forget('oauth_frontend_url');
 
             if ($result['success']) {
                 // Succès - rediriger vers le frontend avec les données
@@ -420,7 +428,13 @@ class GmailAuthController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = session('oauth_frontend_url');
+            if (!$this->isAllowedFrontendUrl($frontendUrl)) {
+                $frontendUrl = $this->resolveFrontendUrl($request);
+            }
+
+            session()->forget('oauth_frontend_url');
+
             $queryParams = http_build_query([
                 'google_auth' => 'error',
                 'error_type' => 'server_error',
@@ -437,5 +451,80 @@ class GmailAuthController extends Controller
     private function toBase64Url(string $value): string
     {
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+    }
+
+    /**
+     * Résout l'URL frontend cible avec priorité: query -> origin/referer -> config.
+     */
+    private function resolveFrontendUrl(Request $request): string
+    {
+        $candidates = [
+            $request->query('frontend_url'),
+            $request->headers->get('origin'),
+            $this->extractOriginFromReferer($request->headers->get('referer')),
+            rtrim((string) env('FRONTEND_URL', 'https://dev2.hi-3d.com'), '/'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($this->isAllowedFrontendUrl($candidate)) {
+                return rtrim((string) $candidate, '/');
+            }
+        }
+
+        return 'https://dev2.hi-3d.com';
+    }
+
+    /**
+     * Vérifie qu'une URL frontend est autorisée pour éviter les open redirects.
+     */
+    private function isAllowedFrontendUrl(?string $url): bool
+    {
+        if (!$url) {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        if (!$parts || !isset($parts['scheme'], $parts['host'])) {
+            return false;
+        }
+
+        if (!in_array($parts['scheme'], ['http', 'https'], true)) {
+            return false;
+        }
+
+        $normalized = $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+
+        $envAllowed = array_values(array_filter(array_map(
+            static fn (string $origin) => rtrim(trim($origin), '/'),
+            explode(',', (string) env('FRONTEND_ALLOWED_ORIGINS', ''))
+        )));
+
+        $defaults = [
+            rtrim((string) env('FRONTEND_URL', 'https://dev2.hi-3d.com'), '/'),
+            'https://dev2.hi-3d.com',
+            'https://dev.hi-3d.com',
+            'http://localhost:3000',
+        ];
+
+        $allowedOrigins = array_unique(array_merge($defaults, $envAllowed));
+
+        return in_array($normalized, $allowedOrigins, true);
+    }
+
+    /**
+     * Extrait l'origine (scheme+host+port) depuis un referer complet.
+     */
+    private function extractOriginFromReferer(?string $referer): ?string
+    {
+        if (!$referer) {
+            return null;
+        }
+
+        $parts = parse_url($referer);
+        if (!$parts || !isset($parts['scheme'], $parts['host'])) {
+            return null;
+        }
+
+        return $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
     }
 }

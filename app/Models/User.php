@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Filament\Panel;
 use App\Models\ServiceOffer;
 use App\Models\ClientProfile;
 use App\Models\OfferEmailLog;
@@ -9,6 +10,7 @@ use App\Models\OpenOffer;
 use App\Models\OfferApplication;
 use App\Models\Message;
 use App\Models\File;
+use Filament\Models\Contracts\FilamentUser;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\ProfessionalProfile;
 use Overtrue\LaravelLike\Traits\Liker;
@@ -22,7 +24,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable, Liker;
 
@@ -105,6 +107,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return in_array($this->role, ['admin', 'super_admin']);
+    }
+
+    /**
+     * Filament admin access gate (required in non-local environments).
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        if ($panel->getId() !== 'admin') {
+            return false;
+        }
+
+        return $this->isAdmin() || (bool) $this->is_admin;
     }
 
     /**

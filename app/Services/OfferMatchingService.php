@@ -86,3 +86,5 @@ class OfferMatchingService
     protected function sendNotification(OpenOffer $offer, $user): void
     {
         \App\Jobs\NotifyOfferMatchJob::dispatch($offer->id, $user->id)->onQueue('emails');
+    }
+}

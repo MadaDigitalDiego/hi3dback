@@ -396,7 +396,7 @@ class GmailAuthController extends Controller
                 $queryParams = http_build_query([
                     'google_auth' => 'success',
                     'token' => $result['token'],
-                    'user' => base64_encode(json_encode($result['user'])),
+                    'user' => $this->toBase64Url(json_encode($result['user'])),
                     'message' => $result['message'],
                     'profile_completed' => isset($result['profile_completed']) && $result['profile_completed'] ? 'true' : 'false'
                 ]);
@@ -429,5 +429,13 @@ class GmailAuthController extends Controller
 
             return redirect($frontendUrl . '/login?' . $queryParams);
         }
+    }
+
+    /**
+     * Encode une chaîne en base64 URL-safe (sans +, /, =).
+     */
+    private function toBase64Url(string $value): string
+    {
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 }

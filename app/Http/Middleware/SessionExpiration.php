@@ -20,7 +20,7 @@ class SessionExpiration
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $timeoutMinutes = (int) config('session.timeout', 30);
+        $timeoutMinutes = (int) config('session.timeout', 10);
 
         if ($request->user()) {
             $token = $request->user()->currentAccessToken();

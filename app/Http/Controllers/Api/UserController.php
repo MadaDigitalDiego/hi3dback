@@ -230,8 +230,8 @@ class UserController extends Controller
                     'subscription' => $subscriptionData,
                     // Informations de session
                     'session' => [
-                        'timeout_minutes' => config('session.timeout', 30),
-                        'expires_at' => now()->addMinutes(config('session.timeout', 30))->toIso8601String(),
+                        'timeout_minutes' => config('session.timeout', 10),
+                        'expires_at' => now()->addMinutes(config('session.timeout', 10))->toIso8601String(),
                     ],
                 ]);
             } catch (\Exception $tokenException) {
@@ -297,7 +297,7 @@ class UserController extends Controller
                 ], 404);
             }
 
-            $timeoutMinutes = config('session.timeout', 30);
+            $timeoutMinutes = config('session.timeout', 10);
             $expiresAt = $session->last_activity_at->addMinutes($timeoutMinutes);
             $isExpired = $session->isExpired($timeoutMinutes);
 
@@ -361,7 +361,7 @@ class UserController extends Controller
             }
 
             // Vérifier si la session a expiré
-            $timeoutMinutes = config('session.timeout', 30);
+            $timeoutMinutes = config('session.timeout', 10);
             if ($session->isExpired($timeoutMinutes)) {
                 // Désactiver la session et supprimer le token
                 $session->deactivate();
@@ -379,7 +379,7 @@ class UserController extends Controller
 
             Log::info('Session renouvelée pour l\'utilisateur: ' . $user->email);
 
-            $timeoutMinutes = config('session.timeout', 30);
+            $timeoutMinutes = config('session.timeout', 10);
 
             return response()->json([
                 'message' => 'Session renouvelée avec succès.',
@@ -410,7 +410,7 @@ class UserController extends Controller
             $sessions = PersonalAccessSession::getActiveSessionsForUser($user->id);
 
             $sessionsData = $sessions->map(function ($session) use ($currentTokenId, $user) {
-                $timeoutMinutes = config('session.timeout', 30);
+                $timeoutMinutes = config('session.timeout', 10);
                 $isCurrent = $session->token_id === $currentTokenId;
                 $expiresAt = $session->last_activity_at->addMinutes($timeoutMinutes);
 
@@ -430,7 +430,7 @@ class UserController extends Controller
             return response()->json([
                 'sessions' => $sessionsData,
                 'current_session_id' => $currentTokenId,
-                'timeout_minutes' => config('session.timeout', 30),
+                'timeout_minutes' => config('session.timeout', 10),
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des sessions pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());

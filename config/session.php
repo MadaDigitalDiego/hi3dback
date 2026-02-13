@@ -44,11 +44,11 @@ return [
     | If the user is inactive for this duration, they will be automatically logged out.
     | This is used by the SessionExpiration middleware.
     |
-    | Default: 30 minutes
+    | Default: 10 minutes
     |
     */
 
-    'timeout' => env('SESSION_TIMEOUT', 30),
+    'timeout' => env('SESSION_TIMEOUT', 10),
 
     /*
     |--------------------------------------------------------------------------

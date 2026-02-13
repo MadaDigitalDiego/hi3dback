@@ -586,9 +586,10 @@ class UserController extends Controller
             );
 
             // Générer l'URL de réinitialisation pour l'application React
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
             $resetUrl = sprintf(
                 '%s/reset-password?token=%s&email=%s',
-                env('FRONTEND_URL', 'http://127.0.0.1:3000'), // URL de votre application React
+                $frontendUrl,
                 $token,
                 urlencode($request->email)
             );
@@ -745,26 +746,28 @@ class UserController extends Controller
 
     public function verifyEmail(Request $request): RedirectResponse
     {
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+
         try {
             $user = User::find($request->route('id'));
 
             if (!$user || !hash_equals((string) $request->route('hash'), sha1($user->email))) {
-                return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/error?message=Lien de vérification invalide.');
+                return redirect($frontendUrl . '/error?message=Lien de vérification invalide.');
             }
 
             if ($user->hasVerifiedEmail()) {
-                return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/error?message=Adresse e-mail déjà vérifiée.');
+                return redirect($frontendUrl . '/error?message=Adresse e-mail déjà vérifiée.');
             }
 
             $user->markEmailAsVerified();
             event(new Registered($user));
 
             // Récupérer l'URL de redirection depuis le paramètre `redirect`
-            $redirectUrl = urldecode($request->query('redirect', env('FRONTEND_URL', 'http://localhost:3000') . '/login?verified=true'));
+            $redirectUrl = urldecode($request->query('redirect', $frontendUrl . '/login?verified=true'));
             return redirect($redirectUrl);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la vérification de l\'email pour l\'utilisateur ID ' . $request->route('id') . ': ' . $e->getMessage());
-            return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/error?message=Erreur lors de la vérification de l\'email.'); // Redirection avec message d'erreur générique
+            return redirect($frontendUrl . '/error?message=Erreur lors de la vérification de l\'email.'); // Redirection avec message d'erreur générique
         }
     }
 

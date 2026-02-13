@@ -20,7 +20,7 @@ class EmailService
     {
         try {
             // URL de redirection vers le frontend
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
 
             // Construction de l'URL de vérification
             $verificationUrl = URL::temporarySignedRoute(

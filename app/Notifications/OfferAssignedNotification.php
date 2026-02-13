@@ -29,7 +29,7 @@ class OfferAssignedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
         $url = $frontendUrl . '/dashboard/offers/' . $this->offer->id;
 
         $clientUser = $this->offer->user;

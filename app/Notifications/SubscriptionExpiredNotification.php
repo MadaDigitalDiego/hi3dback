@@ -27,7 +27,7 @@ class SubscriptionExpiredNotification extends Notification
     {
         $plan = $this->subscription->plan;
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
         $url = $frontendUrl . '/subscription';
 
         $mail = (new MailMessage)

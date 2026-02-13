@@ -32,7 +32,7 @@ class SubscriptionExpiringSoonNotification extends Notification
             ? $this->subscription->current_period_end->format('d/m/Y')
             : null;
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
         $url = $frontendUrl . '/subscription';
 
         $mail = (new MailMessage)

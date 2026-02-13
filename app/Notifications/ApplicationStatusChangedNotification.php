@@ -29,7 +29,7 @@ class ApplicationStatusChangedNotification extends Notification
         $offer = $this->application->openOffer;
         $status = $this->application->status;
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
         $url = $offer
             ? $frontendUrl . '/dashboard/offers/' . $offer->id
             : $frontendUrl . '/dashboard/offers';

@@ -35,7 +35,7 @@ class NewApplicationNotification extends Notification
         $offer = $this->application->openOffer;
         $profile = $this->application->freelanceProfile;
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
         $url = $offer
             ? $frontendUrl . '/dashboard/offers/' . $offer->id
             : $frontendUrl . '/dashboard/offers';

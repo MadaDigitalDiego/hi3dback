@@ -40,7 +40,7 @@ class NewMessageNotification extends Notification
         $offer = $this->message->openOffer;
         $sender = $this->message->sender;
         // Récupérer l'URL du frontend depuis le fichier .env
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000'); // La valeur par défaut est 'http://localhost:3000' si FRONTEND_URL n'est pas défini
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
 
         // Construire l'URL complète pour l'offre
         $url = $frontendUrl . '/dashboard/offers/'. $offer->id;

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\GmailConfiguration;
 use App\Models\ClientProfile;
 use App\Models\ProfessionalProfile;
+use App\Models\PersonalAccessSession;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
@@ -160,8 +161,7 @@ class GmailAuthService
             ]);
         }
 
-        // Créer un token d'authentification
-        $token = $user->createToken('gmail-auth')->plainTextToken;
+        $token = $this->createAuthTokenWithSession($user, 'gmail-auth');
 
         Log::info('Connexion réussie via Gmail', ['user_id' => $user->id, 'email' => $user->email, 'profile_completed' => $profileCompleted]);
 
@@ -208,8 +208,7 @@ class GmailAuthService
                 'completion_percentage' => 30, // Un peu plus élevé car on a déjà quelques infos
             ]);
 
-            // Créer un token d'authentification
-            $token = $user->createToken('gmail-auth')->plainTextToken;
+            $token = $this->createAuthTokenWithSession($user, 'gmail-auth');
 
             Log::info('Nouvel utilisateur créé via Gmail', [
                 'user_id' => $user->id, 
@@ -382,5 +381,27 @@ class GmailAuthService
 
         // Vérifier le pourcentage de completion (minimum 60%)
         return $profile->completion_percentage >= 60;
+    }
+
+    /**
+     * Crée un token d'authentification et son enregistrement de session associé.
+     */
+    private function createAuthTokenWithSession(User $user, string $tokenName): string
+    {
+        // Session unique: invalider les anciens tokens (et sessions en cascade)
+        $user->tokens()->delete();
+
+        $accessToken = $user->createToken($tokenName);
+
+        PersonalAccessSession::create([
+            'user_id' => $user->id,
+            'token_id' => $accessToken->accessToken->id,
+            'last_activity_at' => now(),
+            'ip_address' => request()?->ip(),
+            'user_agent' => request()?->userAgent(),
+            'is_active' => true,
+        ]);
+
+        return $accessToken->plainTextToken;
     }
 }

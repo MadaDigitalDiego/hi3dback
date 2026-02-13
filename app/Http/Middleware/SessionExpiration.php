@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PersonalAccessSession;
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\PersonalAccessSession;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class SessionExpiration
 {
@@ -20,19 +20,16 @@ class SessionExpiration
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Get session timeout from config, default to 30 minutes
-        $timeoutMinutes = config('session.timeout', 30);
+        $timeoutMinutes = (int) config('session.timeout', 30);
 
         if ($request->user()) {
             $token = $request->user()->currentAccessToken();
 
             if ($token) {
-                // Find the session for this token
                 $session = PersonalAccessSession::where('token_id', $token->id)
                     ->where('user_id', $request->user()->id)
                     ->first();
 
-                // If session not found or inactive, force logout
                 if (!$session || !$session->is_active) {
                     Log::info('Session not found or inactive for user', [
                         'user_id' => $request->user()->id,
@@ -41,7 +38,6 @@ class SessionExpiration
                         'session_active' => $session?->is_active,
                     ]);
 
-                    // Delete the token
                     $request->user()->tokens()->where('id', $token->id)->delete();
 
                     return response()->json([
@@ -51,7 +47,6 @@ class SessionExpiration
                     ], 401);
                 }
 
-                // Check if session has expired due to inactivity
                 if ($session->isExpired($timeoutMinutes)) {
                     Log::info('Session expired due to inactivity', [
                         'user_id' => $request->user()->id,
@@ -60,16 +55,13 @@ class SessionExpiration
                         'timeout_minutes' => $timeoutMinutes,
                     ]);
 
-                    // Deactivate the session
                     $session->deactivate();
-
-                    // Delete the token
                     $request->user()->tokens()->where('id', $token->id)->delete();
 
                     return response()->json([
                         'message' => 'Session expirée par inactivité. Vous avez été automatiquement déconnecté.',
                         'session_expired' => true,
-                        'expired_at' => $session->last_activity_at->addMinutes($timeoutMinutes)->toIso8601String(),
+                        'expired_at' => $session->last_activity_at->copy()->addMinutes($timeoutMinutes)->toIso8601String(),
                         'timeout_minutes' => $timeoutMinutes,
                         'redirect_to' => '/login',
                     ], 401);
@@ -80,4 +72,3 @@ class SessionExpiration
         return $next($request);
     }
 }
-

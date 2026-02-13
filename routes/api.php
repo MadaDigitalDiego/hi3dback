@@ -68,7 +68,7 @@ Route::get('/email/verify/{id}/{hash}', [UserController::class, 'verifyEmail'])
     ->name('verification.verify');
 Route::get('/email/verify/resend', [UserController::class, 'resendVerificationEmail'])
     ->name('verification.resend')
-    ->middleware('auth:sanctum');
+    ->middleware(['auth:sanctum', 'session.expiration', 'session.activity']);
 Route::post('/email/verify/resend-public', [UserController::class, 'resendVerificationEmailPublic'])
     ->middleware('ip.ratelimit:3,1')
     ->name('verification.resend.public');
@@ -105,7 +105,7 @@ Route::get('/professionals/{id}/achievements', [AchievementController::class, 'g
 Route::get('/professionals/{id}/service-offers', [ServiceOfferController::class, 'getServiceOffersByProfessional']);
 
 // Routes protégées par authentification
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 'verified'])->group(function () {
     // Routes utilisateur
     Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/user', [UserController::class, 'user']);
@@ -294,7 +294,7 @@ Route::prefix('professionals/{professionalProfile}')->group(function () {
 });
 
 // Routes protégées pour les likes (nécessitent une authentification)
-Route::middleware('auth:sanctum')->prefix('professionals/{professionalProfile}')->group(function () {
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity'])->prefix('professionals/{professionalProfile}')->group(function () {
     Route::post('/like', [ProfessionalProfileLikeController::class, 'like']);
     Route::delete('/like', [ProfessionalProfileLikeController::class, 'unlike']);
     Route::post('/like/toggle', [ProfessionalProfileLikeController::class, 'toggle']);
@@ -309,7 +309,7 @@ Route::prefix('service-offers/{serviceOffer}')->group(function () {
 });
 
 // Routes protégées pour les likes des service offers (nécessitent une authentification)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity'])->group(function () {
     Route::prefix('service-offers/{serviceOffer}')->group(function () {
         Route::post('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'like']);
         Route::delete('/like', [App\Http\Controllers\Api\ServiceOfferLikeController::class, 'unlike']);
@@ -336,7 +336,7 @@ Route::prefix('search')->middleware('search.ratelimit:100,1')->group(function ()
 });
 
 // Routes pour la gestion des fichiers (protégées par authentification)
-Route::middleware(['auth:sanctum', 'verified'])->prefix('files')->group(function () {
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 'verified'])->prefix('files')->group(function () {
     // Upload de fichiers
     Route::post('/upload', [FileController::class, 'upload']);
 
@@ -354,12 +354,12 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('files')->group(function
 });
 
 // Routes administratives pour les images Hero (protégées par authentification)
-Route::middleware(['auth:sanctum', 'verified'])->prefix('admin/hero-images')->group(function () {
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 'verified'])->prefix('admin/hero-images')->group(function () {
     Route::get('/all', [HeroImageController::class, 'all']); // Toutes les images (actives et inactives)
 });
 
 // Routes administratives pour la configuration Stripe
-Route::middleware(['auth:sanctum', 'verified'])->prefix('admin/stripe-config')->group(function () {
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 'verified'])->prefix('admin/stripe-config')->group(function () {
     Route::get('/', [StripeConfigurationController::class, 'show']); // Récupère la config active
     Route::put('/', [StripeConfigurationController::class, 'update']); // Met à jour la config
 });

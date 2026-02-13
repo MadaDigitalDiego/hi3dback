@@ -593,8 +593,8 @@ class UserController extends Controller
                 urlencode($request->email)
             );
 
-            // Envoyer l'e-mail de réinitialisation
-            Mail::to($user->email)->send(new ResetPasswordMail($resetUrl));
+            // Envoyer l'e-mail de réinitialisation (queued)
+            Mail::to($user->email)->queue(new ResetPasswordMail($resetUrl));
 
             return response()->json(['message' => 'Un lien de réinitialisation de mot de passe a été envoyé à votre adresse e-mail.'], 200);
         } catch (\Exception $e) {

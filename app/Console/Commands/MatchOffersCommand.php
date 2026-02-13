@@ -13,12 +13,26 @@ class MatchOffersCommand extends Command
 
     public function handle()
     {
-        $offers = OpenOffer::where('status', 'open')->get();
+        $this->info('🚀 Starting offers matching (chunked & queued)...');
         $matchingService = new OfferMatchingService();
 
-        foreach ($offers as $offer) {
-            $count = $matchingService->matchAndNotify($offer);
-            $this->info("Matched {$count} profiles for offer #{$offer->id}");
-        }
+        // Process offers in small chunks to avoid large memory spikes
+        OpenOffer::where('status', 'open')->chunkById(10, function ($offers) use ($matchingService) {
+            foreach ($offers as $offer) {
+                $matched = 0;
+
+                // Use a query to iterate matching profiles in chunks and dispatch notification jobs
+                $matchingService->getMatchingProfilesQuery($offer)
+                    ->chunk(100, function ($profiles) use ($offer, &$matched) {
+                        foreach ($profiles as $profile) {
+                            \App\Jobs\NotifyOfferMatchJob::dispatch($offer->id, $profile->id)
+                                ->onQueue('emails');
+                            $matched++;
+                        }
+                    });
+
+                $this->info("Dispatched {$matched} notifications for offer #{$offer->id}");
+            }
+        });
     }
 }

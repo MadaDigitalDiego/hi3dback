@@ -1124,8 +1124,8 @@ class StripeService
             // Générer le PDF
             $pdfPath = $this->generateInvoicePdf($invoice, $user, $subscription);
             
-            // Envoyer l'email
-            \Mail::to($user->email)->send(new \App\Mail\SubscriptionInvoice(
+            // Envoyer l'email (queued)
+            \Mail::to($user->email)->queue(new \App\Mail\SubscriptionInvoice(
                 $user, 
                 $invoice, 
                 $subscription, 
@@ -1147,7 +1147,7 @@ class StripeService
     public function sendSubscriptionConfirmation(User $user, Subscription $subscription): bool
     {
         try {
-            \Mail::to($user->email)->send(new \App\Mail\SubscriptionConfirmation($user, $subscription));
+            \Mail::to($user->email)->queue(new \App\Mail\SubscriptionConfirmation($user, $subscription));
             
             Log::info('Subscription confirmation sent to user ' . $user->id);
             
@@ -1164,7 +1164,7 @@ class StripeService
     public function sendSubscriptionCancellation(User $user, Subscription $subscription): bool
     {
         try {
-            \Mail::to($user->email)->send(new \App\Mail\SubscriptionCancellation(
+            \Mail::to($user->email)->queue(new \App\Mail\SubscriptionCancellation(
                 $user, 
                 $subscription,
                 now()

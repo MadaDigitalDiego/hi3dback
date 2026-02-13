@@ -106,8 +106,8 @@ class NewProfileController extends Controller
             // Update the profile
             $profile = $this->profileService->updateProfile($user, $data);
 
-            // Send email notification
-            Mail::to($user->email)->send(new ProfileUpdateNotification());
+            // Send email notification (queued)
+            Mail::to($user->email)->queue(new ProfileUpdateNotification());
 
             // Prepare response data (similar to getProfile)
             $responseData = [

@@ -4,34 +4,36 @@ namespace App\Services;
 
 use App\Models\OpenOffer;
 use App\Models\ProfessionalProfile;
-use App\Models\OfferEmailLog;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\OfferMatchNotification;
 
 class OfferMatchingService
 {
     /**
-     * Trouve les profils correspondants et envoie les notifications
+     * Find matching profiles and dispatch notifications (chunked)
      */
     public function matchAndNotify(OpenOffer $offer): int
     {
-        $matchingProfiles = $this->findMatchingProfiles($offer);
+        $dispatched = 0;
 
-        foreach ($matchingProfiles as $profile) {
-            $this->sendNotification($offer, $profile->user);
-        }
+        $this->getMatchingProfilesQuery($offer)
+            ->chunk(100, function ($profiles) use (&$dispatched, $offer) {
+                foreach ($profiles as $profile) {
+                    \App\Jobs\NotifyOfferMatchJob::dispatch($offer->id, $profile->id)
+                        ->onQueue('emails');
+                    $dispatched++;
+                }
+            });
 
-        return $matchingProfiles->count();
+        return $dispatched;
     }
 
     /**
-     * Trouve les profils professionnels correspondant aux critères de l'offre
+     * Return the query builder for matching profiles so callers can chunk it.
      */
-    protected function findMatchingProfiles(OpenOffer $offer)
+    public function getMatchingProfilesQuery(OpenOffer $offer)
     {
         $filters = $this->parseFilters($offer->filters);
 
-        return ProfessionalProfile::query()
+        $query = ProfessionalProfile::query()
             ->where('availability_status', $filters['availability_status'] ?? 'available')
             ->where('years_of_experience', '>=', $filters['experience_years'] ?? 0)
             ->when(!empty($filters['skills']), function($query) use ($filters) {
@@ -41,8 +43,17 @@ class OfferMatchingService
                 $this->applyJsonContains($query, 'languages', $filters['languages']);
             })
             ->whereDoesntHave('emailLogs', fn($q) => $q->where('offer_id', $offer->id))
-            ->with('user')
-            ->get();
+            ->with('user');
+
+        return $query;
+    }
+
+    /**
+     * Trouve les profils professionnels correspondant aux critères de l'offre (retro-compat)
+     */
+    protected function findMatchingProfiles(OpenOffer $offer)
+    {
+        return $this->getMatchingProfilesQuery($offer)->get();
     }
 
     /**
@@ -70,22 +81,8 @@ class OfferMatchingService
     }
 
     /**
-     * Envoie la notification et log l'action
+     * Envoie la notification — dispatch to job
      */
     protected function sendNotification(OpenOffer $offer, $user): void
     {
-	        // Log de l'envoi avec date obligatoire (sent_at NOT NULL en base)
-	        OfferEmailLog::firstOrCreate(
-	            [
-	                'offer_id' => $offer->id,
-	                'user_id' => $user->id,
-	            ],
-	            [
-	                'sent_at' => now(),
-	            ]
-	        );
-
-	        // Envoi synchrone de l'email (pas de file d'attente)
-	        Mail::to($user->email)->send(new OfferMatchNotification($offer));
-    }
-}
+        \App\Jobs\NotifyOfferMatchJob::dispatch($offer->id, $user->id)->onQueue('emails');

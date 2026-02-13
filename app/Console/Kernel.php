@@ -13,7 +13,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Matching des offres - toutes les heures
-        $schedule->command('offers:match')->hourly();
+        $schedule->command('offers:match')
+                 ->hourly()
+                 ->withoutOverlapping()
+                 ->runInBackground();
 
         // Indexation complète quotidienne à 2h du matin
         $schedule->command('forge:index --full')

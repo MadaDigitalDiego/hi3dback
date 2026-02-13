@@ -107,7 +107,7 @@ class WebhookController extends Controller
                 if ($user) {
                     try {
                         Mail::to($user->email)
-                            ->send(new \App\Mail\SubscriptionConfirmation($user, $subscription));
+                            ->queue(new \App\Mail\SubscriptionConfirmation($user, $subscription));
                         Log::info('Subscription confirmation email sent after successful 3DS', [
                             'user_id' => $user->id,
                             'subscription_id' => $subscription->id,
@@ -155,17 +155,17 @@ class WebhookController extends Controller
 
             if ($user) {
                 try {
-                    // Send the cancellation email synchronously (no queue)
+                    // Queue the cancellation email to avoid blocking the webhook handler
                     Mail::to($user->email)
-                        ->send(new SubscriptionCancellation($user, $subscription, $endsAt));
+                        ->queue(new SubscriptionCancellation($user, $subscription, $endsAt));
 
-                    Log::info('Cancellation confirmation email sent from Stripe webhook', [
+                    Log::info('Cancellation confirmation email queued from Stripe webhook', [
                         'user_id' => $user->id,
                         'subscription_id' => $subscription->id,
                         'email' => $user->email,
                     ]);
                 } catch (\Throwable $e) {
-                    Log::error('Failed to send cancellation email from Stripe webhook', [
+                    Log::error('Failed to queue cancellation email from Stripe webhook', [
                         'subscription_id' => $subscription->id,
                         'user_id' => $user->id ?? null,
                         'error' => $e->getMessage(),

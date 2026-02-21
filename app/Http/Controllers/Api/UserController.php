@@ -679,6 +679,23 @@ class UserController extends Controller
 
             $targetIsProfessional = (bool) $data['is_professional'];
 
+            // Bloquer le passage pro -> client si l'utilisateur a déjà souscrit
+            // à un abonnement payant (historique inclus).
+            if ($user->is_professional && !$targetIsProfessional) {
+                $hasPaidSubscription = $user->subscriptions()
+                    ->whereHas('plan', function ($query) {
+                        $query->where('price', '>', 0)
+                            ->orWhere('yearly_price', '>', 0);
+                    })
+                    ->exists();
+
+                if ($hasPaidSubscription) {
+                    return response()->json([
+                        'message' => 'Impossible de passer en compte client : un abonnement payant a déjà été souscrit sur ce compte.'
+                    ], 403);
+                }
+            }
+
             // Si l'utilisateur devient professionnel, s'assurer qu'un profil professionnel existe
             if ($targetIsProfessional) {
                 if (!$user->professionalProfile) {

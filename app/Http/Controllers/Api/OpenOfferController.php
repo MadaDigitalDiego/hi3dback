@@ -713,11 +713,11 @@ class OpenOfferController extends Controller
                 return response()->json(['message' => 'Ce professionnel a déjà été invité ou a déjà postulé à cette offre.'], 409);
             }
 
-            // Create invitation as an OfferApplication with 'invited' status
+            // Create invitation as an OfferApplication with 'accepted' status
             $invitation = OfferApplication::create([
                 'open_offer_id' => $openOffer->id,
                 'professional_profile_id' => $professionalUser->professionalProfile->id,
-                'status' => 'invited', // Status to indicate it's an invitation
+                'status' => 'accepted',
                 'proposal' => '',
             ]);
             // Send notification to the invited professional

@@ -691,7 +691,7 @@ class UserController extends Controller
 
                 if ($hasPaidSubscription) {
                     return response()->json([
-                        'message' => 'Impossible de passer en compte client : un abonnement payant a déjà été souscrit sur ce compte.'
+                        'message' => 'Unable to switch to a client account: a paid subscription has already been purchased on this account.'
                     ], 403);
                 }
             }

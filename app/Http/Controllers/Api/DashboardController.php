@@ -141,6 +141,7 @@ class DashboardController extends Controller
                 'budget' => $offer->budget,
                 'deadline' => $offer->deadline,
                 'status' => $offer->status,
+                'created_at' => $offer->created_at,
                 'client' => [
                     'id' => $offer->user->id,
                     'name' => $offer->user->first_name . ' ' . $offer->user->last_name,
@@ -288,6 +289,7 @@ class DashboardController extends Controller
                 'budget' => $offer->budget,
                 'deadline' => $offer->deadline,
                 'status' => $offer->status,
+                'created_at' => $offer->created_at,
                 'professional' => $professional,
             ];
         }

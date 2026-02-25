@@ -1,7 +1,7 @@
 <?php
 
 if (env('APP_ENV') === 'production') {
-    $supportedCredentials = false;
+    $supportedCredentials = true;
 } else {
     $supportedCredentials =  true;
 }

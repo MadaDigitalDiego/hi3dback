@@ -137,6 +137,7 @@ class ExplorerController extends Controller
                 }
 
                 // Récupérer les professionnels paginés
+                /** @var \Illuminate\Pagination\LengthAwarePaginator $paginatedProfessionals */
                 $paginatedProfessionals = $query->paginate($perPage, ['*'], 'page', $page);
                 $professionals = $paginatedProfessionals->getCollection();
                 $total = $paginatedProfessionals->total();
@@ -503,6 +504,7 @@ class ExplorerController extends Controller
                 }
 
                 // Récupérer les services paginés
+                /** @var \Illuminate\Pagination\LengthAwarePaginator $paginatedServices */
                 $paginatedServices = $query->paginate($perPage, ['*'], 'page', $page);
                 $services = $paginatedServices->getCollection();
                 $total = $paginatedServices->total();
@@ -512,7 +514,7 @@ class ExplorerController extends Controller
             // Récupérer les professionnels pour chaque service
             $userIds = $services->pluck('user_id')->unique()->toArray();
             $professionals = ProfessionalProfile::whereIn('user_id', $userIds)
-                ->with('achievements')
+                ->with(['achievements', 'user.subscriptions.plan'])
                 ->get()
                 ->keyBy('user_id');
 
@@ -559,6 +561,26 @@ class ExplorerController extends Controller
                         'title' => $professional->title,
                         'rating' => $professional->rating,
                         'achievements_count' => $professional->achievements->count(),
+                        'subscription' => (function () use ($professional) {
+                            $user = $professional->user;
+                            $currentSubscription = $user ? $user->currentSubscription() : null;
+                            if (!$currentSubscription) return null;
+                            return [
+                                'id' => $currentSubscription->id,
+                                'plan_name' => $currentSubscription->plan ? $currentSubscription->plan->name : null,
+                                'plan_title' => $currentSubscription->plan ? $currentSubscription->plan->title : null,
+                                'plan_price' => $currentSubscription->plan ? (float) $currentSubscription->plan->price : null,
+                                'stripe_status' => $currentSubscription->stripe_status,
+                                'current_period_start' => $currentSubscription->current_period_start?->toISOString(),
+                                'current_period_end' => $currentSubscription->current_period_end?->toISOString(),
+                                'trial_ends_at' => $currentSubscription->trial_ends_at?->toISOString(),
+                                'ends_at' => $currentSubscription->ends_at?->toISOString(),
+                                'is_active' => $currentSubscription->isActive(),
+                                'is_on_trial' => $currentSubscription->isOnTrial(),
+                                'is_canceled' => $currentSubscription->isCanceled(),
+                                'is_past_due' => $currentSubscription->isPastDue(),
+                            ];
+                        })(),
                     ] : null,
                 ];
             });

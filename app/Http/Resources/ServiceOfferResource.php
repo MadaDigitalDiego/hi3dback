@@ -26,10 +26,31 @@ class ServiceOfferResource extends JsonResource
             }
         }
 
+        $subscriptionInfo = null;
+        if ($this->relationLoaded('user') && $this->user) {
+            $currentSubscription = $this->user->currentSubscription();
+
+            if ($currentSubscription) {
+                $subscriptionInfo = [
+                    'id' => $currentSubscription->id,
+                    'plan_name' => $currentSubscription->plan ? $currentSubscription->plan->name : null,
+                    'plan_title' => $currentSubscription->plan ? $currentSubscription->plan->title : null,
+                    'plan_price' => $currentSubscription->plan ? (float) $currentSubscription->plan->price : null,
+                    'stripe_status' => $currentSubscription->stripe_status,
+                ];
+            }
+        }
+
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'user' => $this->whenLoaded('user', function () {
+            'user' => $this->whenLoaded('user', function () use ($subscriptionInfo) {
+                $professionalDetails = $this->user->freelanceProfile;
+                $professionalDetailsArray = $professionalDetails ? $professionalDetails->toArray() : null;
+                if (is_array($professionalDetailsArray)) {
+                    $professionalDetailsArray['subscription'] = $subscriptionInfo;
+                }
+
                 return [
                     'id' => $this->user->id,
                     'first_name' => $this->user->first_name,
@@ -37,7 +58,7 @@ class ServiceOfferResource extends JsonResource
                     'email' => $this->user->email,
                     'avatar' => $this->user->avatar,
                     'is_professional' => $this->user->is_professional,
-                    'professional_details' => $this->user->freelanceProfile,
+                    'professional_details' => $professionalDetailsArray,
                 ];
             }),
             'title' => $this->title,

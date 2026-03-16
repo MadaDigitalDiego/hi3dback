@@ -48,6 +48,8 @@ class UpdateProfileRequest extends FormRequest
             'languages' => 'nullable',
             'services_offered' => 'nullable',
             'social_links' => 'nullable',
+            'website' => 'nullable|string|max:255',
+            'calendar_url' => 'nullable|string|max:255',
             'portfolio' => 'nullable',
             'availability_status' => 'nullable|string|in:available,unavailable,busy',
 

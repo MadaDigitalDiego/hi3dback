@@ -51,6 +51,8 @@ class ProfessionalProfile extends Model
         'services_offered',
         'rating',
         'social_links',
+        'website',
+        'calendar_url',
         'completion_percentage'
     ];
 

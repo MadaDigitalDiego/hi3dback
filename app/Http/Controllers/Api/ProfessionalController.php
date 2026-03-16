@@ -84,6 +84,8 @@ class ProfessionalController extends Controller
                     'review_count' => 0, // Valeur par défaut
                     'bio' => $profile->bio,
                     'title' => $profile->title,
+                    'website' => $profile->website,
+                    'calendar_url' => $profile->calendar_url,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
                     'languages' => $profile->languages,
@@ -301,6 +303,8 @@ class ProfessionalController extends Controller
                 'title' => $profile->title,
                 'phone' => $profile->phone,
                 'address' => $profile->address,
+                'website' => $profile->website,
+                'calendar_url' => $profile->calendar_url,
                 'languages' => $profile->languages,
                 'services_offered' => $profile->services_offered,
                 'portfolio' => $profile->portfolio,

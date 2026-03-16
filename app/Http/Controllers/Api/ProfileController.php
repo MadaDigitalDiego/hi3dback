@@ -718,7 +718,7 @@ class ProfileController extends Controller
                 // Remplir les champs simples
                 $profile->fill($request->only([
                     'first_name','last_name','title', 'hourly_rate', 'bio', 'phone',
-                    'address', 'city', 'country', 'profession'
+                    'address', 'city', 'country', 'profession', 'website', 'calendar_url'
                 ]));
 
                 // Gérer les champs de type tableau

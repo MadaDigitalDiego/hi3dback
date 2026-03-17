@@ -86,6 +86,8 @@ class ProfessionalController extends Controller
                     'title' => $profile->title,
                     'website' => $profile->website,
                     'calendar_url' => $profile->calendar_url,
+                    'other_mail' => $profile->other_mail,
+                    'other_phone' => $profile->other_phone,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
                     'languages' => $profile->languages,
@@ -302,6 +304,8 @@ class ProfessionalController extends Controller
                 'bio' => $profile->bio,
                 'title' => $profile->title,
                 'phone' => $profile->phone,
+                'other_mail' => $profile->other_mail,
+                'other_phone' => $profile->other_phone,
                 'address' => $profile->address,
                 'website' => $profile->website,
                 'calendar_url' => $profile->calendar_url,
@@ -460,6 +464,8 @@ class ProfessionalController extends Controller
                     'title' => $profile->title,
                     'achievements'=>$achievements,
                     'service_offer'=>$services,
+                    'other_mail' => $profile->other_mail,
+                    'other_phone' => $profile->other_phone,
                     'subscription' => $subscriptionInfo, // Ajout des informations d'abonnement
                     // Données de likes et views
                     'likes_count' => $profile->getTotalLikesAttribute(),

@@ -721,6 +721,11 @@ class ProfileController extends Controller
                     'address', 'city', 'country', 'profession', 'website', 'calendar_url'
                 ]));
 
+                $profile->fill($request->only([
+                    'other_mail',
+                    'other_phone',
+                ]));
+
                 // Gérer les champs de type tableau
 	                $arrayFields = ['skills', 'softwares', 'languages', 'services_offered', 'social_links'];
 

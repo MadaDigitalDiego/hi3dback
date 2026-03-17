@@ -53,6 +53,8 @@ class ProfessionalProfile extends Model
         'social_links',
         'website',
         'calendar_url',
+        'other_mail',
+        'other_phone',
         'completion_percentage'
     ];
 

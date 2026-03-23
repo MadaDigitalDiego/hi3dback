@@ -37,6 +37,7 @@ class ServiceOffer extends Model
         'who_is_this_for',
         'delivery_method',
         'why_choose_me',
+        'youtube_link',
     ];
 
     protected $casts = [
@@ -166,6 +167,7 @@ class ServiceOffer extends Model
             'who_is_this_for' => $this->who_is_this_for,
             'delivery_method' => $this->delivery_method,
             'why_choose_me' => $this->why_choose_me,
+            'youtube_link' => $this->youtube_link,
             'type' => 'service_offer',
         ];
     }

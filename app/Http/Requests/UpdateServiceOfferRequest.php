@@ -48,6 +48,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'who_is_this_for' => 'sometimes|string',
             'delivery_method' => 'sometimes|string',
             'why_choose_me' => 'sometimes|string',
+            'youtube_link' => 'sometimes|nullable|string|max:2048',
         ];
     }
 

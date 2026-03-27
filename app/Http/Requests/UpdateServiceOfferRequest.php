@@ -42,7 +42,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'is_private' => 'sometimes|boolean',
             'status' => 'sometimes|string|in:published,draft,pending',
             'files' => 'sometimes|array',
-            'files.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            'files.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:8192',
             'associated_project' => 'sometimes|string|max:255',
             'what_you_get' => 'sometimes|string',
             'who_is_this_for' => 'sometimes|string',
@@ -73,7 +73,7 @@ class UpdateServiceOfferRequest extends FormRequest
             'status.in' => 'The status must be "published", "draft" or "pending".',
             'files.*.image' => 'Each file must be an image.',
             'files.*.mimes' => 'Each image must be of type: jpeg, png, jpg, gif, svg.',
-            'files.*.max' => 'Each image must not exceed 5 MB.',
+            'files.*.max' => 'Each image must not exceed 8 MB.',
         ];
     }
 }

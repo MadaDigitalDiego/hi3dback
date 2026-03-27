@@ -58,9 +58,9 @@ class DashboardProjectController extends Controller
                 'title' => 'required|string|max:255',
                 'description' => 'required|string',
                 'category' => 'required|string',
-                'coverPhoto' => 'required|file|image|max:5120',
+                'coverPhoto' => 'required|file|image|max:8192',
                 'galleryPhotos' => 'nullable|array',
-                'galleryPhotos.*' => 'file|image|max:5120',
+                'galleryPhotos.*' => 'file|image|max:8192',
                 'youtubeLink' => 'nullable|string|max:255',
             ]);
 
@@ -158,9 +158,9 @@ class DashboardProjectController extends Controller
                 'title' => 'sometimes|required|string|max:255',
                 'description' => 'sometimes|required|string',
                 'category' => 'sometimes|required|string',
-                'coverPhoto' => 'sometimes|file|image|max:5120',
+                'coverPhoto' => 'sometimes|file|image|max:8192',
                 'galleryPhotos' => 'nullable|array',
-                'galleryPhotos.*' => 'file|image|max:5120',
+                'galleryPhotos.*' => 'file|image|max:8192',
                 'youtubeLink' => 'nullable|string|max:255',
             ]);
 

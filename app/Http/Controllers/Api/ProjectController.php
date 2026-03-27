@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageStorageService;
 
 class ProjectController extends Controller
 {
@@ -28,7 +29,7 @@ class ProjectController extends Controller
 
             // Handle image upload
             if ($request->hasFile('image')) {
-                $path = $request->file('image')->store('project_images', 'public'); // Store in storage/app/public/project_images
+                $path = app(ImageStorageService::class)->storeAsWebp($request->file('image'), 'project_images', 'public'); // Store in storage/app/public/project_images
                 $projectData['image_path'] = $path;
             }
 
@@ -65,7 +66,7 @@ class ProjectController extends Controller
                 if ($project->image_path) {
                     Storage::disk('public')->delete($project->image_path);
                 }
-                $path = $request->file('image')->store('project_images', 'public');
+                $path = app(ImageStorageService::class)->storeAsWebp($request->file('image'), 'project_images', 'public');
                 $projectData['image_path'] = $path;
             }
 

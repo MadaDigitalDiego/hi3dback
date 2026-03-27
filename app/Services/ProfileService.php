@@ -9,6 +9,7 @@ use App\Models\ClientDetail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageStorageService;
 
 class ProfileService
 {
@@ -131,8 +132,7 @@ class ProfileService
     {
         // If avatar is a file upload
         if (is_object($avatar) && method_exists($avatar, 'getClientOriginalName')) {
-            $filename = time() . '_' . $avatar->getClientOriginalName();
-            $path = $avatar->storeAs('avatars', $filename, 'public');
+            $path = app(ImageStorageService::class)->storeAsWebp($avatar, 'avatars', 'public');
             $profile->update(['avatar' => '/storage/' . $path]);
         } 
         // If avatar is a string (URL or path)
@@ -151,8 +151,7 @@ class ProfileService
         
         foreach ($portfolioItems as $item) {
             if (is_object($item) && method_exists($item, 'getClientOriginalName')) {
-                $filename = time() . '_' . $item->getClientOriginalName();
-                $path = $item->storeAs('portfolio', $filename, 'public');
+                $path = app(ImageStorageService::class)->storeAsWebp($item, 'portfolio', 'public');
                 
                 $newPortfolioItems[] = [
                     'id' => uniqid(),

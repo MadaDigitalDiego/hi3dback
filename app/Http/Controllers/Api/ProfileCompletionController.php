@@ -7,11 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use App\Models\FreelanceProfile;
-use App\Models\CompanyProfile;
+use App\Models\ProfessionalProfile;
+use App\Models\ClientProfile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageStorageService;
 
 class ProfileCompletionController extends Controller
 {
@@ -39,14 +40,14 @@ class ProfileCompletionController extends Controller
             if (!$profile) {
                 // Si le profil n'existe pas, créons-en un nouveau
                 if ($user->is_professional) {
-                    $profile = new FreelanceProfile();
+                    $profile = new ProfessionalProfile();
                     $profile->user_id = $user->id;
                     $profile->first_name = $user->first_name;
                     $profile->last_name = $user->last_name;
                     $profile->save();
                     $profileType = 'freelance';
                 } else {
-                    $profile = new CompanyProfile();
+                    $profile = new ClientProfile();
                     $profile->user_id = $user->id;
                     $profile->first_name = $user->first_name;
                     $profile->last_name = $user->last_name;
@@ -405,7 +406,7 @@ class ProfileCompletionController extends Controller
     {
         try {
             // Récupérer toutes les freelanceProfiles avec les utilisateurs associés
-            $freelanceProfiles = FreelanceProfile::with('user')->get();
+            $freelanceProfiles = ProfessionalProfile::with('user')->get();
 
             // Retourner les données en JSON
             return response()->json([
@@ -528,7 +529,7 @@ class ProfileCompletionController extends Controller
 
             // Gestion de l'upload de la photo de profil
             if ($request->hasFile('profile_picture')) {
-                $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+                $path = app(ImageStorageService::class)->storeAsWebp($request->file('profile_picture'), 'profile_pictures', 'public');
                 $profile->avatar = '/storage/' . $path;
                 Log::info('Avatar enregistré avec le chemin: /storage/' . $path);
             }
@@ -537,7 +538,7 @@ class ProfileCompletionController extends Controller
             if ($user->is_professional && $request->hasFile('portfolio')) {
                 $portfolioFiles = [];
                 foreach ($request->file('portfolio') as $file) {
-                    $path = $file->store('portfolio', 'public');
+                    $path = app(ImageStorageService::class)->storeAsWebp($file, 'portfolio', 'public');
                     $portfolioFiles[] = [
                         'path' => $path,
                         'name' => $file->getClientOriginalName(),
@@ -601,7 +602,7 @@ class ProfileCompletionController extends Controller
 
             // Téléchargement du fichier
             $file = $request->file('file');
-            $path = $file->store('portfolio', 'public');
+            $path = app(ImageStorageService::class)->storeAsWebp($file, 'portfolio', 'public');
 
             // Ajouter le fichier au portfolio existant
             $portfolio = $profile->portfolio ?? [];

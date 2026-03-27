@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use App\Services\ImageStorageService;
 
 class DashboardProjectController extends Controller
 {
@@ -79,7 +80,7 @@ class DashboardProjectController extends Controller
             Log::info('Validated data: ' . json_encode($projectData));
 
             // Process cover photo
-            $coverPhotoPath = $request->file('coverPhoto')->store('project_covers', 'public');
+            $coverPhotoPath = app(ImageStorageService::class)->storeAsWebp($request->file('coverPhoto'), 'project_covers', 'public');
             Log::info('Cover photo saved: ' . $coverPhotoPath);
 
             // Process gallery
@@ -88,7 +89,7 @@ class DashboardProjectController extends Controller
                 Log::info('Gallery files detected in request');
                 foreach ($request->file('galleryPhotos') as $file) {
                     Log::info('Processing gallery file: ' . $file->getClientOriginalName());
-                    $path = $file->store('project_galleries', 'public');
+                    $path = app(ImageStorageService::class)->storeAsWebp($file, 'project_galleries', 'public');
                     $galleryPhotoPaths[] = [
                         'name' => $file->getClientOriginalName(),
                         'path' => $path,
@@ -184,7 +185,7 @@ class DashboardProjectController extends Controller
                 if ($project->cover_photo) {
                     \Storage::disk('public')->delete($project->cover_photo);
                 }
-                $coverPhotoPath = $request->file('coverPhoto')->store('project_covers', 'public');
+                $coverPhotoPath = app(ImageStorageService::class)->storeAsWebp($request->file('coverPhoto'), 'project_covers', 'public');
                 $projectData['cover_photo'] = $coverPhotoPath;
             }
 
@@ -192,7 +193,7 @@ class DashboardProjectController extends Controller
             if ($request->hasFile('galleryPhotos')) {
                 $galleryPhotoPaths = $project->gallery_photos ?? [];
                 foreach ($request->file('galleryPhotos') as $file) {
-                    $path = $file->store('project_galleries', 'public');
+                    $path = app(ImageStorageService::class)->storeAsWebp($file, 'project_galleries', 'public');
                     $galleryPhotoPaths[] = [
                         'name' => $file->getClientOriginalName(),
                         'path' => $path,

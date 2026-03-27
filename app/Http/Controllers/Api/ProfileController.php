@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\UpdateAvailabilityRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageStorageService;
 
 /**
  * @OA\Info(
@@ -170,8 +171,7 @@ class ProfileController extends Controller
             if ($request->hasFile('avatar')) {
                 Log::info('Avatar présent dans la requête');
                 $avatar = $request->file('avatar');
-                $filename = time() . '_' . $avatar->getClientOriginalName();
-                $path = $avatar->storeAs('avatars', $filename, 'public');
+                $path = app(ImageStorageService::class)->storeAsWebp($avatar, 'avatars', 'public');
                 $request->merge(['avatar' => '/storage/' . $path]);
                 Log::info('Avatar enregistré: ' . $path);
             } else {
@@ -376,8 +376,7 @@ class ProfileController extends Controller
             // Traiter l'upload de l'avatar si présent
             if ($request->hasFile('avatar')) {
                 $avatar = $request->file('avatar');
-                $filename = time() . '_' . $avatar->getClientOriginalName();
-                $path = $avatar->storeAs('avatars', $filename, 'public');
+                $path = app(ImageStorageService::class)->storeAsWebp($avatar, 'avatars', 'public');
                 $request->merge(['avatar' => '/storage/' . $path]);
             }
 
@@ -1036,8 +1035,7 @@ class ProfileController extends Controller
 
             // Upload new avatar
             $avatar = $request->file('avatar');
-            $filename = time() . '_' . $avatar->getClientOriginalName();
-            $path = $avatar->storeAs('avatars', $filename, 'public');
+            $path = app(ImageStorageService::class)->storeAsWebp($avatar, 'avatars', 'public');
             $avatarPath = '/storage/' . $path;
             Log::info('New avatar saved: ' . $avatarPath);
 
@@ -1095,8 +1093,7 @@ class ProfileController extends Controller
 
             // Upload new avatar
             $cover_photo = $request->file('cover_photo');
-            $filename = time() . '_' . $cover_photo->getClientOriginalName();
-            $path = $cover_photo->storeAs('cover_photo', $filename, 'public');
+            $path = app(ImageStorageService::class)->storeAsWebp($cover_photo, 'cover_photo', 'public');
             $cover_photoPath = '/storage/' . $path;
             Log::info('New cover photo saved: ' . $cover_photoPath);
 
@@ -1214,8 +1211,7 @@ class ProfileController extends Controller
             if ($request->hasFile('avatar')) {
                 Log::info('Avatar présent dans la requête');
                 $avatar = $request->file('avatar');
-                $filename = time() . '_' . $avatar->getClientOriginalName();
-                $path = $avatar->storeAs('avatars', $filename, 'public');
+                $path = app(ImageStorageService::class)->storeAsWebp($avatar, 'avatars', 'public');
                 $avatarPath = '/storage/' . $path;
                 $request->merge(['avatar' => $avatarPath]);
                 Log::info('Avatar enregistré: ' . $avatarPath);
@@ -1269,8 +1265,7 @@ class ProfileController extends Controller
                 $portfolioData = [];
 
                 foreach ($portfolioItems as $index => $file) {
-                    $filename = time() . '_' . $file->getClientOriginalName();
-                    $path = $file->storeAs('portfolio', $filename, 'public');
+                    $path = app(ImageStorageService::class)->storeAsWebp($file, 'portfolio', 'public');
                     $portfolioData[] = [
                         'id' => uniqid(),
                         'path' => '/storage/' . $path,

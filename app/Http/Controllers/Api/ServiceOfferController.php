@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ImageStorageService;
 
 class ServiceOfferController extends Controller
 {
@@ -43,7 +44,7 @@ class ServiceOfferController extends Controller
             if ($request->hasFile('files')) {
                 foreach ($request->file('files') as $file) {
                     try {
-                        $path = $file->store('service_offer_files', 'public');
+                        $path = app(ImageStorageService::class)->storeAsWebp($file, 'service_offer_files', 'public');
                         $filePaths[] = [
                             'path' => $path,
                             'original_name' => $file->getClientOriginalName(),
@@ -149,7 +150,7 @@ class ServiceOfferController extends Controller
                 // Upload des nouveaux fichiers
                 foreach ($request->file('files') as $file) {
                     try {
-                        $path = $file->store('service_offer_files', 'public');
+                        $path = app(ImageStorageService::class)->storeAsWebp($file, 'service_offer_files', 'public');
                         $filePaths[] = [
                             'path' => $path,
                             'original_name' => $file->getClientOriginalName(),

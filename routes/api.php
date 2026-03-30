@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\UsageController;
 use App\Http\Controllers\Api\StripeConfigurationController;
+use App\Http\Controllers\Api\NavigationController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -41,6 +42,9 @@ Route::get('/ping', function (Request $request) {
 Route::get('/health-check', function () {
     return response()->json(['message' => 'API is working', 'status' => 'success'], 200);
 });
+
+// Route publique pour le header/navigation (pour WordPress blog)
+Route::get('/navigation', [NavigationController::class, 'show']);
 
 // Route pour les webhooks Stripe (sans authentification)
 Route::post('/webhooks/stripe', [WebhookController::class, 'handleWebhook']);

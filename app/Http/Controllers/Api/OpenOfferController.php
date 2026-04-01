@@ -18,6 +18,7 @@ use App\Notifications\DirectOfferInvitationNotification;
 use App\Notifications\NewApplicationNotification;
 use App\Notifications\ApplicationStatusChangedNotification;
 use App\Notifications\OfferAssignedNotification;
+use App\Notifications\OfferNotSelectedNotification;
 use App\Notifications\OfferClosedNotification;
 use App\Notifications\OfferCompletedNotification;
 use App\Notifications\OfferReactivatedWithProfessionalNotification;
@@ -468,6 +469,13 @@ class OpenOfferController extends Controller
                 return response()->json(['message' => 'Seules les candidatures acceptées peuvent être attribuées.'], 400);
             }
 
+            // Collecter les candidatures qui seront automatiquement rejetées afin de notifier leurs professionnels
+            $applicationsToReject = OfferApplication::where('open_offer_id', $openOffer->id)
+                ->where('id', '!=', $chosenApplication->id)
+                ->whereIn('status', ['accepted', 'pending', 'invited'])
+                ->with('freelanceProfile.user')
+                ->get();
+
             // Passer l'offre en statut "in_progress"
             $openOffer->status = 'in_progress';
             $openOffer->save();
@@ -488,6 +496,14 @@ class OpenOfferController extends Controller
                 ->where('id', '!=', $chosenApplication->id)
                 ->whereIn('status', ['accepted', 'pending', 'invited'])
                 ->update(['status' => 'rejected']);
+
+            // Notifier les professionnels non retenus
+            foreach ($applicationsToReject as $application) {
+                $rejectedProfessional = $application->freelanceProfile ? $application->freelanceProfile->user : null;
+                if ($rejectedProfessional) {
+                    Notification::send($rejectedProfessional, new OfferNotSelectedNotification($openOffer, $application));
+                }
+            }
 
             // Recharger l'offre avec ses relations
             $openOffer->load(['applications.freelanceProfile.user']);

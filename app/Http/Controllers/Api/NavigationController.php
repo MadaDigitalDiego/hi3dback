@@ -33,7 +33,10 @@ class NavigationController extends Controller
         $html = view('navigation.header')->render();
 
         return response()->json([
-            'html' => $html
-        ])->header('Cache-Control', 'public, max-age=300');
+            'html' => $html,
+        ], 200, [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'public, max-age=300',
+        ]);
     }
 }

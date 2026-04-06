@@ -114,33 +114,38 @@ class UserController extends Controller
             ]);
 
             // Créer automatiquement un profil client ou professionnel
-            if ($request->is_professional) {
-                // Créer un profil professionnel avec des valeurs par défaut pour tous les champs obligatoires
-                ProfessionalProfile::create([
-                    'user_id' => $user->id,
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'email' => $request->email,
-                    'profession' => 'Non spécifié',
-                    'years_of_experience' => 0,
-                    'hourly_rate' => 0.00,
-                    'availability_status' => 'available',
-                    'rating' => 0.0,
-                    'completion_percentage' => 20,
-                    'skills' => json_encode([]),
-                    'languages' => json_encode([]),
-                    'services_offered' => json_encode([]),
-                    'social_links' => json_encode([]),
-                ]);
-            } else {
-                // Créer un profil client
-                ClientProfile::create([
-                    'user_id' => $user->id,
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'email' => $request->email,
-                    'completion_percentage' => 20, // Pourcentage initial de complétion
-                ]);
+            try {
+                if ($request->is_professional) {
+                    // Créer un profil professionnel avec des valeurs par défaut pour tous les champs obligatoires
+                    ProfessionalProfile::create([
+                        'user_id' => $user->id,
+                        'first_name' => $request->first_name,
+                        'last_name' => $request->last_name,
+                        'email' => $request->email,
+                        'profession' => 'Non spécifié',
+                        'years_of_experience' => 0,
+                        'hourly_rate' => 0.00,
+                        'availability_status' => 'available',
+                        'rating' => 0.0,
+                        'completion_percentage' => 20,
+                        'skills' => json_encode([]),
+                        'languages' => json_encode([]),
+                        'services_offered' => json_encode([]),
+                        'social_links' => json_encode([]),
+                    ]);
+                } else {
+                    // Créer un profil client
+                    ClientProfile::create([
+                        'user_id' => $user->id,
+                        'first_name' => $request->first_name,
+                        'last_name' => $request->last_name,
+                        'email' => $request->email,
+                        'completion_percentage' => 20,
+                    ]);
+                }
+            } catch (\Exception $profileException) {
+                Log::warning('Erreur lors de la création du profil pour ' . $user->email . ': ' . $profileException->getMessage());
+                // Continue without profile creation - user is still registered
             }
 
             // Utiliser le service d'e-mail pour envoyer l'e-mail de vérification
@@ -155,16 +160,11 @@ class UserController extends Controller
             Log::error('Erreur lors de l\'enregistrement de l\'utilisateur ' . $request->email . ': ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
 
-            // En mode debug, renvoyer plus de détails sur l'erreur
-            if (env('APP_DEBUG', false)) {
-                return response()->json([
-                    'message' => 'Erreur lors de l\'inscription de l\'utilisateur.',
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ], 500);
-            }
-
-            return response()->json(['message' => 'Erreur lors de l\'inscription de l\'utilisateur.'], 500);
+            return response()->json([
+                'message' => 'Erreur lors de l\'inscription de l\'utilisateur.',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
     }
 

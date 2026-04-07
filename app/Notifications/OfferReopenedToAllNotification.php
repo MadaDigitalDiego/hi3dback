@@ -29,12 +29,12 @@ class OfferReopenedToAllNotification extends Notification
         $url = $frontendUrl . '/dashboard/offers/' . $this->offer->id;
 
         return (new MailMessage)
-            ->subject('Une offre à laquelle vous participiez a été rouverte à tous')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('L\'offre "' . $this->offer->title . '" à laquelle vous participiez a été réactivée et est désormais ouverte à tous les professionnels.')
-            ->line('Votre mission actuelle est considérée comme terminée pour cette offre. Vous pouvez toutefois continuer à postuler à d\'autres opportunités sur la plateforme.')
-            ->action('Voir l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->subject('An offer you participated in has been reopened to all professionals')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line('The offer "' . $this->offer->title . '" you participated in has been reactivated and is now open to all professionals.')
+            ->line('Your current assignment is considered completed for this offer. You can continue applying to other opportunities on the platform.')
+            ->action('View offer', $url)
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
     }
 
@@ -43,7 +43,7 @@ class OfferReopenedToAllNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'status' => $this->offer->status,
-            'message' => 'Une offre à laquelle vous participiez a été rouverte à tous les professionnels.',
+            'message' => 'An offer you participated in has been reopened to all professionals.',
             'type' => 'offer_reopened_to_all',
         ];
     }

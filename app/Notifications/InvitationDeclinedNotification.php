@@ -41,7 +41,7 @@ class InvitationDeclinedNotification extends Notification
 
         $professionalName = $profile
             ? trim(($profile->first_name ?? '') . ' ' . ($profile->last_name ?? ''))
-            : 'Un professionnel';
+            : 'A professional';
 
         return (new MailMessage)
             ->subject('Invitation declined by a professional')

@@ -29,17 +29,17 @@ class OfferNotSelectedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
-        $url = $frontendUrl . '/dashboard/offers';
+        $url = $frontendUrl . '/dashboard/profile';
 
         return (new MailMessage)
-            ->subject('Mise à jour de votre candidature')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('Merci d\'avoir postulé à l\'offre suivante :')
-            ->line('Titre de l\'offre : ' . ($this->offer->title ?? 'Offre'))
-            ->line('Le client a finalement sélectionné un autre professionnel pour ce projet.')
-            ->line('Votre profil a été apprécié — n\'hésitez pas à postuler à d\'autres offres, votre prochaine opportunité est peut‑être juste là.')
-            ->action('Voir les offres disponibles', $url)
-            ->salutation('Cordialement,')
+            ->subject('Update on your application')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line('Thank you for applying to the following offer:')
+            ->line('Offer title: ' . ($this->offer->title ?? 'Offer'))
+            ->line('The client has selected another professional for this project.')
+            ->line('We appreciated your profile — feel free to apply to other offers. Your next opportunity may be just around the corner.')
+            ->action('View your profile', $url)
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
     }
 
@@ -48,7 +48,7 @@ class OfferNotSelectedNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'application_id' => $this->application->id,
-            'message' => 'Le client a sélectionné un autre professionnel pour cette offre. Merci pour votre candidature.',
+            'message' => 'The client selected another professional for this offer. Thank you for your application.',
             'type' => 'offer_not_selected',
         ];
     }

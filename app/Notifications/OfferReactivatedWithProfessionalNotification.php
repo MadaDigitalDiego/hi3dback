@@ -29,12 +29,12 @@ class OfferReactivatedWithProfessionalNotification extends Notification
         $url = $frontendUrl . '/dashboard/offers/' . $this->offer->id;
 
         return (new MailMessage)
-            ->subject('Une offre à laquelle vous participez a été réactivée')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('L\'offre "' . $this->offer->title . '" à laquelle vous étiez attribué·e a été réactivée par le client.')
-            ->line('Vous restez le ou la professionnel·le en charge de cette mission. N\'hésitez pas à reprendre contact avec le client si nécessaire.')
-            ->action('Voir l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->subject('An offer assigned to you has been reactivated')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line('The offer "' . $this->offer->title . '" assigned to you has been reactivated by the client.')
+            ->line('You remain the professional in charge of this project. Feel free to contact the client again if needed.')
+            ->action('View offer', $url)
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
     }
 
@@ -43,7 +43,7 @@ class OfferReactivatedWithProfessionalNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'status' => $this->offer->status,
-            'message' => 'Une offre à laquelle vous étiez attribué·e a été réactivée.',
+            'message' => 'An offer assigned to you has been reactivated.',
             'type' => 'offer_reactivated_with_professional',
         ];
     }

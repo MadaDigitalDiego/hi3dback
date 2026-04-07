@@ -31,13 +31,13 @@ class SubscriptionExpiredNotification extends Notification
         $url = $frontendUrl . '/subscription';
 
         $mail = (new MailMessage)
-            ->subject('Votre abonnement a expiré')
-            ->greeting('Bonjour ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
-            ->line('Votre abonnement ' . ($plan->name ?? '') . ' est arrivé à expiration.')
-            ->line('Certaines fonctionnalités premium peuvent ne plus être disponibles.');
+            ->subject('Your subscription has expired')
+            ->greeting('Hello ' . trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) . ',')
+            ->line('Your ' . ($plan->name ?? '') . ' subscription has expired.')
+            ->line('Some premium features may no longer be available.');
 
-        $mail->action('Renouveler mon abonnement', $url)
-            ->salutation('Cordialement,')
+        $mail->action('Renew my subscription', $url)
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
 
         return $mail;

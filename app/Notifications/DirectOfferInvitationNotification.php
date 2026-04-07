@@ -48,14 +48,14 @@ class DirectOfferInvitationNotification extends Notification
         // $url = 'http://localhost:3000/offre/' . $this->openOffer->id; // URL to the open offer details page
 
         return (new MailMessage)
-            ->subject('Invitation Directe à un Appel d\'Offres')
-            ->greeting('Bonjour ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Using User model properties
-            ->line('Vous avez été directement invité à rejoindre un appel d\'offres par ' . $this->clientUser->clientProfile->company_name . '.') // Use client's company name
-            ->line('**Titre de l\'offre:** ' . $this->openOffer->title)
-            ->line('**Description:** ' . substr(strip_tags($this->openOffer->description), 0, 200) . '...') // Shorten description for email
-            ->action('Voir l\'Offre', $url)
-            ->line('Vous pouvez consulter les détails de l\'offre et décider d\'y participer.')
-            ->salutation('Cordialement,')
+            ->subject('Direct invitation to an offer')
+            ->greeting('Hello ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Using User model properties
+            ->line('You have been directly invited to an offer by ' . $this->clientUser->clientProfile->company_name . '.') // Use client's company name
+            ->line('Offer title: ' . $this->openOffer->title)
+            ->line('Description: ' . substr(strip_tags($this->openOffer->description), 0, 200) . '...') // Shorten description for email
+            ->action('View offer', $url)
+            ->line('You can review the offer details and decide whether to participate.')
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
     }
 
@@ -69,7 +69,7 @@ class DirectOfferInvitationNotification extends Notification
     {
         return [
             'open_offer_id' => $this->openOffer->id,
-            'message' => 'Vous avez été invité à rejoindre l\'offre d\'appel d\'offres: ' . $this->openOffer->title . ' par ' . $this->clientUser->clientProfile->company_name . '.',
+            'message' => 'You have been invited to the offer: ' . $this->openOffer->title . ' by ' . $this->clientUser->clientProfile->company_name . '.',
             'type' => 'offer_invitation', // Indicate notification type for frontend handling
         ];
     }

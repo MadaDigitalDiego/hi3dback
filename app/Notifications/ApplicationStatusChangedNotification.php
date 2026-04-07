@@ -35,22 +35,22 @@ class ApplicationStatusChangedNotification extends Notification
             : $frontendUrl . '/dashboard/offers';
 
         if ($status === 'accepted') {
-            $subject = 'Votre candidature a été acceptée';
-            $firstLine = 'Bonne nouvelle ! Votre candidature a été acceptée pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . '.';
+            $subject = 'Your application has been accepted';
+            $firstLine = 'Good news! Your application has been accepted for the offer ' . ($offer ? '"' . $offer->title . '"' : '') . '.';
         } elseif ($status === 'rejected') {
-            $subject = 'Votre candidature a été refusée';
-            $firstLine = 'Votre candidature pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . ' a été refusée.';
+            $subject = 'Your application was not selected';
+            $firstLine = 'Your application for the offer ' . ($offer ? '"' . $offer->title . '"' : '') . ' was not selected.';
         } else {
-            $subject = 'Statut de votre candidature mis à jour';
-            $firstLine = 'Le statut de votre candidature pour l\'offre ' . ($offer ? '"' . $offer->title . '"' : '') . ' a été mis à jour à : ' . $status . '.';
+            $subject = 'Your application status has been updated';
+            $firstLine = 'The status of your application for the offer ' . ($offer ? '"' . $offer->title . '"' : '') . ' has been updated to: ' . $status . '.';
         }
 
         return (new MailMessage)
             ->subject($subject)
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
             ->line($firstLine)
-            ->action('Voir les détails de l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->action('View offer details', $url)
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
     }
 
@@ -60,7 +60,7 @@ class ApplicationStatusChangedNotification extends Notification
             'application_id' => $this->application->id,
             'open_offer_id' => $this->application->open_offer_id,
             'status' => $this->application->status,
-            'message' => 'Statut de votre candidature mis à jour.',
+            'message' => 'Your application status has been updated.',
             'type' => 'application_status_changed',
         ];
     }

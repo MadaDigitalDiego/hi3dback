@@ -1,12 +1,12 @@
 <x-mail::message>
-# Introduction
+# Invoice
 
-The body of your message.
+Please find your invoice details below.
 
 <x-mail::button :url="''">
-Button Text
+View invoice
 </x-mail::button>
 
-Thanks,<br>
+Thank you,<br>
 {{ config('app.name') }}
 </x-mail::message>

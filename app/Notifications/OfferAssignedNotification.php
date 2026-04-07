@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\HtmlString;
 
 class OfferAssignedNotification extends Notification
 {
@@ -35,16 +36,16 @@ class OfferAssignedNotification extends Notification
         $clientUser = $this->offer->user;
         $companyName = ($clientUser && $clientUser->clientProfile && $clientUser->clientProfile->company_name)
             ? $clientUser->clientProfile->company_name
-            : 'un client';
+            : 'a client';
 
         return (new MailMessage)
-            ->subject('Une offre vous a été attribuée')
-            ->greeting('Bonjour ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
-            ->line('Félicitations ! Vous avez été choisi pour réaliser l\'offre d\'appel d\'offres suivante :')
-            ->line('Titre de l\'offre : ' . $this->offer->title)
-            ->line('Client : ' . $companyName)
-            ->action('Voir les détails de l\'offre', $url)
-            ->salutation('Cordialement,')
+            ->subject('An offer has been assigned to you')
+            ->greeting('Hello ' . ($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '') . ',')
+            ->line('Congratulations! You have been selected for the following offer:')
+            ->line(new HtmlString('<strong>Offer title:</strong><br>' . e($this->offer->title)))
+            ->line(new HtmlString('<strong>Client:</strong><br>' . e($companyName)))
+            ->action('View offer details', $url)
+            ->salutation('Kind regards,')
             ->line(config('app.name'));
     }
 
@@ -53,7 +54,7 @@ class OfferAssignedNotification extends Notification
         return [
             'open_offer_id' => $this->offer->id,
             'application_id' => $this->application->id,
-            'message' => 'Une offre vous a été attribuée.',
+            'message' => 'An offer has been assigned to you.',
             'type' => 'offer_assigned',
         ];
     }

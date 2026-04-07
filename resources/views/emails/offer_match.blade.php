@@ -1,6 +1,6 @@
 <!-- resources/views/emails/offer_match.blade.php -->
 @component('mail::message')
-# New offer matching your profile
+# New Offer Matching Your Profile
 
 **{{ $offer->title }}**
 {{ $offer->description }}
@@ -9,6 +9,6 @@
 View Offer
 @endcomponent
 
-Thanks,
+Thank you,
 {{ config('app.name') }}
 @endcomponent

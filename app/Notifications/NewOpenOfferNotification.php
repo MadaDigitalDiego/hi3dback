@@ -47,8 +47,8 @@ class NewOpenOfferNotification extends Notification
             ->subject('New open offer available')
             ->greeting('Hello ' . $notifiable->first_name . ' ' . $notifiable->last_name . ',') // Assuming FreelanceProfile has first_name and last_name
             ->line('A new open offer matching your profile is available.')
-            ->line('**Offer title:** ' . $this->openOffer->title)
-            ->line('**Description:** ' . substr(strip_tags($this->openOffer->description), 0, 200) . '...') // Shorten description for email
+            ->line('Offer title: ' . $this->openOffer->title)
+            ->line('Description: ' . substr(strip_tags($this->openOffer->description), 0, 200) . '...') // Shorten description for email
             ->action('View offer', $url)
             ->line('Don\'t miss this project opportunity!')
             ->salutation('Best regards,')

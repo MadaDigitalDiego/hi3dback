@@ -42,7 +42,7 @@ class NewApplicationNotification extends Notification
 
         $applicantName = $profile
             ? trim(($profile->first_name ?? '') . ' ' . ($profile->last_name ?? ''))
-            : 'Un professionnel';
+            : 'A professional';
 
         $mail = (new MailMessage)
             ->subject('New application received for your offer')

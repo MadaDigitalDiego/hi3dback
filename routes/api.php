@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\UsageController;
 use App\Http\Controllers\Api\StripeConfigurationController;
 use App\Http\Controllers\Api\NavigationController;
+use App\Http\Controllers\Api\ContactFormController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -51,6 +52,9 @@ Route::post('/webhooks/stripe', [WebhookController::class, 'handleWebhook']);
 
 // Routes publiques pour les plans (sans authentification)
 Route::get('/subscriptions/plans/public', [SubscriptionController::class, 'getPublicPlans']);
+
+// Public contact form (no authentication)
+Route::post('/contact-form', [ContactFormController::class, 'submit'])->middleware('ip.ratelimit:5,1');
 
 // Routes d'authentification
 Route::post('/register', [UserController::class, 'register']);

@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\UsageController;
 use App\Http\Controllers\Api\StripeConfigurationController;
 use App\Http\Controllers\Api\NavigationController;
+use App\Http\Controllers\ActiveCampaignController;
 
 // Routes de test et de santé
 Route::get('/ping', function (Request $request) {
@@ -366,6 +367,12 @@ Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 've
 Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 'verified'])->prefix('admin/stripe-config')->group(function () {
     Route::get('/', [StripeConfigurationController::class, 'show']); // Récupère la config active
     Route::put('/', [StripeConfigurationController::class, 'update']); // Met à jour la config
+});
+
+// ActiveCampaign sync endpoints (examples)
+Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 'verified'])->group(function () {
+    Route::post('/admin/activecampaign/sync-now', [ActiveCampaignController::class, 'syncNow']);
+    Route::post('/admin/activecampaign/sync-queued', [ActiveCampaignController::class, 'syncQueued']);
 });
 
 // Route publique pour récupérer la clé publique Stripe (pour le frontend)

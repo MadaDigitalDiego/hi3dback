@@ -502,6 +502,16 @@ class ActiveCampaignService
         return $this->mapping;
     }
 
+    /**
+     * Return whether the integration is enabled.
+     */
+    public function isEnabled(): bool
+    {
+        $this->loadConfiguration();
+
+        return (bool) ($this->isEnabled ?? false);
+    }
+
     public function getMappedTag(string $key): ?string
     {
         return $this->mapping['tags'][$key] ?? null;

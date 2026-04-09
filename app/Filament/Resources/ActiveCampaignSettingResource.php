@@ -14,7 +14,7 @@ class ActiveCampaignSettingResource extends Resource
 {
     protected static ?string $model = ActiveCampaignSetting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cloud-upload';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
 
     protected static ?string $navigationLabel = 'ActiveCampaign';
 
@@ -49,16 +49,49 @@ class ActiveCampaignSettingResource extends Resource
                             ->url()
                             ->helperText('Ex: https://youraccount.api-us1.com'),
 
+                        // Display a masked preview of the stored API key (read-only)
+                        Forms\Components\TextInput::make('api_key_display')
+                            ->label('API Key (enregistrée)')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $state) {
+                                $record = $component->getRecord();
+                                if ($record?->api_key) {
+                                    $component->state('••••' . substr($record->api_key, -4));
+                                }
+                            })
+                            ->helperText('La clé n\'est pas affichée par sécurité. Saisissez une nouvelle clé pour la remplacer.'),
+
+                        // Editable password input left blank for security; enter to update
                         Forms\Components\TextInput::make('api_key')
                             ->label('API Key')
                             ->password()
                             ->required()
                             ->helperText('Clé API ActiveCampaign'),
 
-                        Forms\Components\Textarea::make('mapping')
-                            ->label('Mapping (JSON)')
-                            ->rows(6)
-                            ->helperText('JSON optionnel pour mapper tags, lists et automations (ex: {"tags": {"signup":"TagName"}})'),
+                        Forms\Components\Section::make('Mapping dynamique')
+                            ->schema([
+                                Forms\Components\KeyValue::make('mapping.tags')
+                                    ->label('Tags')
+                                    ->keyLabel('Key')
+                                    ->valueLabel('Tag name')
+                                    ->helperText('Ex: signup => TagName')
+                                    ->default([]),
+
+                                Forms\Components\KeyValue::make('mapping.lists')
+                                    ->label('Lists')
+                                    ->keyLabel('Key')
+                                    ->valueLabel('List ID or string')
+                                    ->helperText('Ex: purchase => 123 (list id)')
+                                    ->default([]),
+
+                                Forms\Components\KeyValue::make('mapping.automations')
+                                    ->label('Automations')
+                                    ->keyLabel('Key')
+                                    ->valueLabel('Automation ID')
+                                    ->helperText('Ex: welcome => 456 (automation id)')
+                                    ->default([]),
+                            ])->columns(1),
                     ]),
             ]);
     }

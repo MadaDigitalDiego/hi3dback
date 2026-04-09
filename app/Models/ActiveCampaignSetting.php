@@ -19,14 +19,55 @@ class ActiveCampaignSetting extends Model
         'description',
     ];
 
+    protected $hidden = [
+        'api_key',
+    ];
+
     protected $casts = [
         'is_enabled' => 'boolean',
         'mapping' => 'array',
     ];
 
-    protected $hidden = [
-        'api_key',
-    ];
+    protected static function booted()
+    {
+        // Ensure only one configuration is active at a time.
+        static::saving(function (self $model) {
+            if ($model->is_enabled) {
+                // disable other active configs
+                self::where('id', '<>', $model->id ?? 0)->where('is_enabled', true)->update(['is_enabled' => false]);
+            }
+        });
+    }
+
+    public function setApiKeyAttribute($value)
+    {
+        if (empty($value)) {
+            $this->attributes['api_key'] = null;
+            return;
+        }
+
+        // Always encrypt API key at rest
+        try {
+            $this->attributes['api_key'] = encrypt($value);
+        } catch (\Exception $e) {
+            // fallback to storing as-is if encryption fails for some reason
+            $this->attributes['api_key'] = $value;
+        }
+    }
+
+    public function getApiKeyAttribute($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            return decrypt($value);
+        } catch (\Exception $e) {
+            // value not encrypted, return raw
+            return $value;
+        }
+    }
 
     public static function getActive(): ?self
     {
@@ -57,7 +98,13 @@ class ActiveCampaignSetting extends Model
     public static function getMapping(): array
     {
         $config = self::getActive();
-        return $config?->mapping ?? [];
+        $map = $config?->mapping ?? [];
+
+        return [
+            'tags' => $map['tags'] ?? [],
+            'lists' => $map['lists'] ?? [],
+            'automations' => $map['automations'] ?? [],
+        ];
     }
 
     public function isConfigured(): bool

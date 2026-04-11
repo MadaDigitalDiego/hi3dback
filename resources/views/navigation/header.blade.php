@@ -232,8 +232,8 @@ $authUser = $authUser ?? null;
       return;
     }
     
-    var endpoint = currentType === 'Services' ? '/api/search/services' : '/api/search/professionals';
-    var url = apiBaseUrl + endpoint + '?q=' + encodeURIComponent(query) + '&limit=5';
+    var searchType = currentType === 'Services' ? 'service_offers' : 'professional_profiles';
+    var url = apiBaseUrl + '/api/search?q=' + encodeURIComponent(query) + '&types[]=' + searchType + '&per_page=5';
     
     fetch(url, {
       headers: {
@@ -243,21 +243,22 @@ $authUser = $authUser ?? null;
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      var results = data.results || data.data || data;
+      var results = data.data?.data || data.data || [];
       if (!results || !results.length) {
         suggestionsList.innerHTML = '<p class="p-4 text-gray-500">No results</p>';
       } else {
         var html = '';
         results.forEach(function(item) {
-          var name = item.name || item.title || 'Untitled';
-          var href = currentType === 'Services' ? appUrl + '/service/' + item.slug : appUrl + '/professional/' + item.slug;
+          var name = item.name || item.title || item.professional?.name || 'Untitled';
+          var href = item.service_slug ? appUrl + '/service/' + item.service_slug : appUrl + '/professional/' + item.slug;
           html += '<a href="' + href + '" class="block p-3 hover:bg-gray-50 border-b border-gray-100">' + name + '</a>';
         });
         suggestionsList.innerHTML = html;
       }
       suggestions.classList.remove('hidden');
     })
-    .catch(function() {
+    .catch(function(err) {
+      console.error('Search suggestions error:', err);
       suggestionsList.innerHTML = '<p class="p-4 text-gray-500">Error loading suggestions</p>';
       suggestions.classList.remove('hidden');
     });

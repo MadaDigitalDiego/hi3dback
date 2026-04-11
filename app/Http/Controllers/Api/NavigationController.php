@@ -56,12 +56,14 @@ class NavigationController extends Controller
 
         $appUrl = config('app.url', request()->getSchemeAndHttpHost());
         $apiBaseUrl = config('app.api_base_url', $appUrl);
+        $backendUrl = env('BACKEND_URL', $apiBaseUrl);
 
         $html = view('navigation.header', [
             'isAuthenticated' => $isAuthenticated,
             'authUser' => $authUser,
             'appUrl' => $appUrl,
             'apiBaseUrl' => $apiBaseUrl,
+            'backendUrl' => $backendUrl,
         ])->render();
 
         return response()->json([
@@ -70,6 +72,7 @@ class NavigationController extends Controller
             'user' => $authUser,
             'appUrl' => $appUrl,
             'apiBaseUrl' => $apiBaseUrl,
+            'backendUrl' => $backendUrl,
         ], 200, [
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'public, max-age=300',

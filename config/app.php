@@ -59,6 +59,8 @@ return [
 
     'frontend_url' => env('FRONTEND_URL'),
 
+    'backend_url' => env('BACKEND_URL'),
+
     'asset_url' => env('ASSET_URL'),
 
     /*

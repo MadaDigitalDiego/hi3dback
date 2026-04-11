@@ -191,11 +191,15 @@ $authUser = $authUser ?? null;
   var currentType = 'Services';
   var appUrl = '{{ $appUrl ?? config("app.url", "") }}';
   var apiBaseUrl = '{{ $apiBaseUrl ?? config("app.api_base_url", "") }}';
+  var backendUrl = '{{ $backendUrl ?? $apiBaseUrl ?? config("app.backend_url", "") }}';
   if (apiBaseUrl && apiBaseUrl.indexOf('//') === -1) {
     apiBaseUrl = window.location.protocol + '//' + window.location.host;
   }
   if (appUrl && appUrl.indexOf('//') === -1) {
     appUrl = window.location.protocol + '//' + window.location.host;
+  }
+  if (backendUrl && backendUrl.indexOf('//') === -1) {
+    backendUrl = window.location.protocol + '//' + window.location.host;
   }
 
   function openMobileMenu() {
@@ -233,7 +237,7 @@ $authUser = $authUser ?? null;
     }
     
     var searchType = currentType === 'Services' ? 'service_offers' : 'professional_profiles';
-    var url = apiBaseUrl + '/api/search?q=' + encodeURIComponent(query) + '&types[]=' + searchType + '&per_page=5';
+    var url = backendUrl + '/api/search?q=' + encodeURIComponent(query) + '&types[]=' + searchType + '&per_page=5';
     
     fetch(url, {
       headers: {

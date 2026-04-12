@@ -1,6 +1,11 @@
 @php
 $isAuthenticated = $isAuthenticated ?? false;
 $authUser = $authUser ?? null;
+$frontendUrl = $frontendUrl ?? rtrim(config('app.frontend_url', config('app.url')), '/');
+$backendUrl = $backendUrl ?? rtrim(config('app.backend_url', config('app.url')), '/');
+$apiBaseUrl = $apiBaseUrl ?? rtrim(config('app.api_base_url', $frontendUrl), '/');
+$blogUrl = isset($blogUrl) ? rtrim($blogUrl, '/') : $frontendUrl;
+$context = $context ?? 'default';
 @endphp
 
 {{-- Header principal - visible sur desktop --}}
@@ -8,7 +13,7 @@ $authUser = $authUser ?? null;
   <div class="w-full flex flex-wrap items-center justify-between gap-3 min-h-[60px] px-[10px] md:px-[40px] lg:h-[60px]">
     {{-- Partie gauche - Logo --}}
     <div class="flex items-center gap-3 lg:gap-4 flex-shrink-0">
-      <a href="{{ $appUrl ?? '/' }}" class="cursor-pointer m-0 p-0 leading-none">
+      <a href="{{ $frontendUrl ?? '/' }}" class="cursor-pointer m-0 p-0 leading-none">
         <img src="/img/logo.svg" alt="Hi3D Logo" class="m-0 p-0 block" style="width: 32px; height: 24px;" />
       </a>
     </div>
@@ -78,20 +83,20 @@ $authUser = $authUser ?? null;
             </svg>
           </button>
           {{-- Favoris --}}
-          <a href="{{ $appUrl ?? '/' }}/favorite" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <a href="{{ $frontendUrl ?? '/' }}/favorite" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12.9375 2.25H5.0625C4.76413 2.25 4.47798 2.36853 4.267 2.5795C4.05603 2.79048 3.9375 3.07663 3.9375 3.375V15.75C3.93755 15.8504 3.96446 15.9489 4.01545 16.0354C4.06643 16.1219 4.13963 16.1931 4.22744 16.2418C4.31525 16.2904 4.41448 16.3147 4.51483 16.312C4.61519 16.3094 4.713 16.2799 4.79812 16.2267L9 13.6005L13.2026 16.2267C13.2877 16.2797 13.3854 16.309 13.4857 16.3116C13.5859 16.3142 13.685 16.2899 13.7727 16.2412C13.8604 16.1926 13.9335 16.1214 13.9845 16.0351C14.0354 15.9487 14.0624 15.8503 14.0625 15.75V3.375C14.0625 3.07663 13.944 2.79048 13.733 2.5795C13.522 2.36853 13.2359 2.25 12.9375 2.25Z" fill="black"/>
             </svg>
           </a>
           {{-- Messages --}}
-          <a href="{{ $appUrl ?? '/' }}/messages" class="relative flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <a href="{{ $frontendUrl ?? '/' }}/messages" class="relative flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="18 12 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19.9603 24.0235H30.0398C30.6375 24.0235 31 23.727 31 23.2762C31 22.6587 30.3514 22.1028 29.8045 21.5532C29.3847 21.1271 29.2703 20.2501 29.2194 19.5399C29.1749 17.1684 28.5262 15.538 26.8347 14.9451C26.593 14.1361 25.938 13.5 24.9968 13.5C24.062 13.5 23.4006 14.1361 23.1654 14.9451C21.4738 15.538 20.8251 17.1684 20.7806 19.5399C20.7297 20.2501 20.6153 21.1271 20.1955 21.5532C19.6423 22.1028 19 22.6587 19 23.2762C19 23.727 19.3561 24.0235 19.9603 24.0235Z" fill="#0D0D0D"/>
             </svg>
             <span id="hi3dUnreadBadge" class="hidden absolute top-1 right-1 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full flex items-center justify-center" style="width: 16px; height: 16px;">0</span>
           </a>
           {{-- Profile --}}
-          <a href="{{ $appUrl ?? '/' }}/dashboard/profile" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <a href="{{ $frontendUrl ?? '/' }}/dashboard/profile" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="15" height="12" viewBox="0 0 15 12" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13.5937 2H7.96873L6.09374 0H1.40625C0.629589 0 0 0.671559 0 1.5V10.5C0 11.3285 0.629589 12 1.40625 12H13.5937C14.3704 12 15 11.3285 15 10.5V3.50002C15 2.67157 14.3704 2 13.5937 2Z" fill="#0D0D0D"/>
             </svg>
@@ -125,7 +130,7 @@ $authUser = $authUser ?? null;
 
 {{-- Become a Pro - Fixed bottom right --}}
 <div class="fixed bottom-2 right-4 md:right-10 z-40">
-  <a href="{{ $appUrl ?? '/' }}/subscription" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-full shadow-lg transition-colors" style="background: #000000;">
+  <a href="{{ $frontendUrl ?? '/' }}/subscription" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-full shadow-lg transition-colors" style="background: #000000;">
     Become a Pro
   </a>
 </div>
@@ -156,9 +161,9 @@ $authUser = $authUser ?? null;
             <p class="text-sm text-gray-500">{{ $authUser['email'] ?? '' }}</p>
           </div>
         </div>
-        <a href="{{ $appUrl ?? '/' }}/favorite" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Favorites</a>
-        <a href="{{ $appUrl ?? '/' }}/messages" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Messages</a>
-        <a href="{{ $appUrl ?? '/' }}/dashboard/profile" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Profile</a>
+        <a href="{{ $frontendUrl ?? '/' }}/favorite" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Favorites</a>
+        <a href="{{ $frontendUrl ?? '/' }}/messages" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Messages</a>
+        <a href="{{ $frontendUrl ?? '/' }}/dashboard/profile" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Profile</a>
         <button type="button" id="hi3dMobileLogoutBtn" class="w-full py-3 px-4 text-center font-medium text-red-600 border border-red-600 rounded-lg hover:bg-red-50">Logout</button>
       @else
         <button type="button" id="hi3dMobileLoginBtn" class="w-full py-3 text-center font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Log in</button>
@@ -189,18 +194,23 @@ $authUser = $authUser ?? null;
   var mobileLogoutBtn = document.getElementById('hi3dMobileLogoutBtn');
   
   var currentType = 'Services';
-  var appUrl = '{{ $appUrl ?? config("app.url", "") }}';
-  var apiBaseUrl = '{{ $apiBaseUrl ?? config("app.api_base_url", "") }}';
-  var backendUrl = '{{ $backendUrl ?? $apiBaseUrl ?? config("app.backend_url", "") }}';
-  if (apiBaseUrl && apiBaseUrl.indexOf('//') === -1) {
-    apiBaseUrl = window.location.protocol + '//' + window.location.host;
+  var frontendUrl = '{{ $frontendUrl ?? "" }}';
+  var backendUrl = '{{ $backendUrl ?? "" }}';
+  var apiBaseUrl = '{{ $apiBaseUrl ?? "" }}';
+  var blogUrl = '{{ $blogUrl ?? $frontendUrl ?? "" }}';
+  var context = '{{ $context ?? "default" }}';
+
+  function normalizeUrl(url) {
+    if (url && url.indexOf('//') === -1) {
+      return window.location.protocol + '//' + window.location.host;
+    }
+    return url;
   }
-  if (appUrl && appUrl.indexOf('//') === -1) {
-    appUrl = window.location.protocol + '//' + window.location.host;
-  }
-  if (backendUrl && backendUrl.indexOf('//') === -1) {
-    backendUrl = window.location.protocol + '//' + window.location.host;
-  }
+
+  frontendUrl = normalizeUrl(frontendUrl);
+  backendUrl = normalizeUrl(backendUrl);
+  apiBaseUrl = normalizeUrl(apiBaseUrl);
+  blogUrl = normalizeUrl(blogUrl);
 
   function openMobileMenu() {
     mobileOverlay.classList.remove('hidden');
@@ -223,11 +233,16 @@ $authUser = $authUser ?? null;
   function performSearch() {
     var term = searchInput ? searchInput.value.trim() : '';
     if (!term) return;
-    var url = appUrl + '/search-global?search=' + encodeURIComponent(term);
-    if (currentType) {
-      url += '&type=' + encodeURIComponent(currentType);
+    
+    if (context === 'blog' && blogUrl) {
+      window.location.href = blogUrl + '/?s=' + encodeURIComponent(term);
+    } else {
+      var url = (frontendUrl || window.location.origin) + '/search-global?search=' + encodeURIComponent(term);
+      if (currentType) {
+        url += '&type=' + encodeURIComponent(currentType);
+      }
+      window.location.href = url;
     }
-    window.location.href = url;
   }
 
   function fetchSuggestions(query) {
@@ -237,9 +252,9 @@ $authUser = $authUser ?? null;
     }
     
     var searchType = currentType === 'Services' ? 'service_offers' : 'professional_profiles';
-    var url = backendUrl + '/api/search?q=' + encodeURIComponent(query) + '&types[]=' + searchType + '&per_page=5';
+    var searchUrl = (backendUrl || window.location.origin) + '/api/search?q=' + encodeURIComponent(query) + '&types[]=' + searchType + '&per_page=5';
     
-    fetch(url, {
+    fetch(searchUrl, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -254,7 +269,7 @@ $authUser = $authUser ?? null;
         var html = '';
         results.forEach(function(item) {
           var name = item.name || item.title || item.professional?.name || 'Untitled';
-          var href = item.service_slug ? appUrl + '/service/' + item.service_slug : appUrl + '/professional/' + item.slug;
+          var href = item.service_slug ? (frontendUrl || window.location.origin) + '/service/' + item.service_slug : (frontendUrl || window.location.origin) + '/professional/' + item.slug;
           html += '<a href="' + href + '" class="block p-3 hover:bg-gray-50 border-b border-gray-100">' + name + '</a>';
         });
         suggestionsList.innerHTML = html;
@@ -271,15 +286,15 @@ $authUser = $authUser ?? null;
   function handleLogoutClick() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = appUrl + '/';
+    window.location.href = (frontendUrl || window.location.origin) + '/';
   }
 
   function handleLoginClick() {
-    window.location.href = appUrl + '/login';
+    window.location.href = (frontendUrl || window.location.origin) + '/login';
   }
 
   function handleRegisterClick() {
-    window.location.href = appUrl + '/register';
+    window.location.href = (frontendUrl || window.location.origin) + '/register';
   }
 
   if (typeServices) typeServices.addEventListener('click', function() { setActiveType('Services'); });
@@ -319,9 +334,5 @@ $authUser = $authUser ?? null;
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeMobileMenu();
   });
-
-  if (apiBaseUrl && apiBaseUrl.indexOf('//') === -1) {
-    apiBaseUrl = window.location.protocol + '//' + window.location.host;
-  }
 })();
 </script>

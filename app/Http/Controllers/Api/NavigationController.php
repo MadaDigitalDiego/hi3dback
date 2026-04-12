@@ -54,25 +54,31 @@ class NavigationController extends Controller
             }
         }
 
-        $appUrl = config('app.url', request()->getSchemeAndHttpHost());
-        $apiBaseUrl = config('app.api_base_url', $appUrl);
-        $backendUrl = env('BACKEND_URL', $apiBaseUrl);
+        $frontendUrl = config('app.frontend_url', config('app.url'));
+        $backendUrl = config('app.backend_url', config('app.url'));
+        $apiBaseUrl = config('app.api_base_url', $frontendUrl);
+
+        $context = request()->header('X-Navigation-Context', 'default');
+        $blogUrl = request()->header('X-Blog-Url');
 
         $html = view('navigation.header', [
             'isAuthenticated' => $isAuthenticated,
             'authUser' => $authUser,
-            'appUrl' => $appUrl,
-            'apiBaseUrl' => $apiBaseUrl,
+            'frontendUrl' => $frontendUrl,
             'backendUrl' => $backendUrl,
+            'apiBaseUrl' => $apiBaseUrl,
+            'blogUrl' => $blogUrl,
+            'context' => $context,
         ])->render();
 
         return response()->json([
             'html' => $html,
             'authenticated' => $isAuthenticated,
             'user' => $authUser,
-            'appUrl' => $appUrl,
-            'apiBaseUrl' => $apiBaseUrl,
+            'frontendUrl' => $frontendUrl,
             'backendUrl' => $backendUrl,
+            'apiBaseUrl' => $apiBaseUrl,
+            'blogUrl' => $blogUrl,
         ], 200, [
             'Content-Type' => 'application/json; charset=utf-8',
             'Cache-Control' => 'public, max-age=300',

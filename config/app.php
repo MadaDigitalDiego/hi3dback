@@ -57,9 +57,11 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'frontend_url' => env('FRONTEND_URL'),
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL')),
 
-    'backend_url' => env('BACKEND_URL'),
+    'backend_url' => env('BACKEND_URL', env('APP_URL')),
+
+    'api_base_url' => env('API_BASE_URL', env('BACKEND_URL', env('APP_URL'))),
 
     'asset_url' => env('ASSET_URL'),
 

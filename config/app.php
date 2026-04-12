@@ -63,6 +63,8 @@ return [
 
     'api_base_url' => env('API_BASE_URL', env('BACKEND_URL', env('APP_URL'))),
 
+    'blog_url' => env('BLOG_URL', ''),
+
     'asset_url' => env('ASSET_URL'),
 
     /*

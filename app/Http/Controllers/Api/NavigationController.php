@@ -56,10 +56,20 @@ class NavigationController extends Controller
 
         $frontendUrl = config('app.frontend_url', config('app.url'));
         $backendUrl = config('app.backend_url', config('app.url'));
-        $apiBaseUrl = config('app.api_base_url', $frontendUrl);
+        $apiBaseUrl = config('app.api_base_url', $backendUrl);
 
         $context = request()->header('X-Navigation-Context', 'default');
-        $blogUrl = request()->header('X-Blog-Url');
+        $blogUrlHeader = request()->header('X-Blog-Url');
+        $blogUrl = !empty($blogUrlHeader) ? $blogUrlHeader : null;
+
+        if (!$blogUrl) {
+            $referer = request()->header('referer') ?: request()->header('origin');
+            if ($referer && str_contains($referer, 'blog')) {
+                $blogUrl = $referer;
+            } else {
+                $blogUrl = config('app.blog_url', '');
+            }
+        }
 
         $html = view('navigation.header', [
             'isAuthenticated' => $isAuthenticated,

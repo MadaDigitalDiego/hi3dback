@@ -3,8 +3,8 @@ $isAuthenticated = $isAuthenticated ?? false;
 $authUser = $authUser ?? null;
 $frontendUrl = $frontendUrl ?? rtrim(config('app.frontend_url', config('app.url')), '/');
 $backendUrl = $backendUrl ?? rtrim(config('app.backend_url', config('app.url')), '/');
-$apiBaseUrl = $apiBaseUrl ?? rtrim(config('app.api_base_url', $frontendUrl), '/');
-$blogUrl = isset($blogUrl) ? rtrim($blogUrl, '/') : $frontendUrl;
+$apiBaseUrl = $apiBaseUrl ?? rtrim(config('app.api_base_url', $backendUrl), '/');
+$blogUrl = !empty($blogUrl) ? rtrim($blogUrl, '/') : rtrim(config('app.blog_url', ''), '/');
 $context = $context ?? 'default';
 @endphp
 
@@ -197,7 +197,7 @@ $context = $context ?? 'default';
   var frontendUrl = '{{ $frontendUrl ?? "" }}';
   var backendUrl = '{{ $backendUrl ?? "" }}';
   var apiBaseUrl = '{{ $apiBaseUrl ?? "" }}';
-  var blogUrl = '{{ $blogUrl ?? $frontendUrl ?? "" }}';
+  var blogUrl = '{{ $blogUrl ?? "" }}';
   var context = '{{ $context ?? "default" }}';
 
   function normalizeUrl(url) {
@@ -211,6 +211,20 @@ $context = $context ?? 'default';
   backendUrl = normalizeUrl(backendUrl);
   apiBaseUrl = normalizeUrl(apiBaseUrl);
   blogUrl = normalizeUrl(blogUrl);
+
+  function detectBlogContext() {
+    if (context === 'blog') return true;
+    var path = window.location.pathname;
+    if (path.indexOf('/blog') !== -1 || path.indexOf('/wp-') !== -1 || path.indexOf('/wordpress') !== -1) return true;
+    if (blogUrl && blogUrl.indexOf(window.location.hostname) !== -1) return true;
+    return false;
+  }
+
+  var isBlogContext = detectBlogContext();
+  
+  if (isBlogContext && !blogUrl) {
+    blogUrl = window.location.origin;
+  }
 
   function openMobileMenu() {
     mobileOverlay.classList.remove('hidden');
@@ -234,7 +248,7 @@ $context = $context ?? 'default';
     var term = searchInput ? searchInput.value.trim() : '';
     if (!term) return;
     
-    if (context === 'blog' && blogUrl) {
+    if (isBlogContext && blogUrl) {
       window.location.href = blogUrl + '/?s=' + encodeURIComponent(term);
     } else {
       var url = (frontendUrl || window.location.origin) + '/search-global?search=' + encodeURIComponent(term);

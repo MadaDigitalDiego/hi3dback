@@ -126,6 +126,33 @@ $context = $context ?? 'default';
   </div>
 </header>
 
+{{-- Mobile Search Modal - Appears when clicking loupe --}}
+<div class="fixed inset-0 px-3 pt-3 bg-black bg-opacity-50 flex flex-col items-center hidden" id="hi3dMobileSearchModal" style="z-index: 2147483647; height: 100dvh; overflow: hidden;">
+  <div class="w-full max-w-[480px] flex flex-col flex-1 min-h-0">
+    <form id="hi3dMobileSearchForm" class="relative w-full flex flex-col flex-1 min-h-0">
+      <div class="flex flex-col bg-white rounded-xl px-2 py-2" style="box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.28);">
+        <div class="flex items-center gap-0">
+          <button type="button" id="hi3dMobileSearchCloseBtn" class="flex items-center justify-center w-6 h-6 bg-transparent flex-shrink-0 mr-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 20 20" fill="none">
+              <path d="M13 5L5 10L13 15V5Z" fill="#4A4A4A"/>
+            </svg>
+          </button>
+          <div class="relative flex-1 min-w-0">
+            <input type="text" id="hi3dMobileSearchInput" placeholder="Search" class="w-full bg-[#E6E6E6] rounded-md pl-4 pr-10 text-[16px] placeholder:text-[#8E8E8E] text-[#0D0C22] focus:outline-none" style="font-family: Inter, sans-serif; font-weight: 400; line-height: 20px; height: 40px;" />
+          </div>
+        </div>
+        <div class="flex items-center justify-end pt-2">
+          <div class="flex items-center bg-white rounded-md border border-[#E5E5E5] p-1">
+            <button type="button" id="hi3dTypeServicesMobile" class="px-3 py-1 rounded-md text-[12px] font-medium bg-[#EDEDED] text-[#333333]">Services</button>
+            <button type="button" id="hi3dTypeArtistsMobile" class="px-3 py-1 rounded-md text-[12px] font-medium bg-transparent text-[#8E8E8E]">Artists</button>
+          </div>
+        </div>
+      </div>
+      <div id="hi3dMobileSearchResults" class="relative w-full flex-1 min-h-0 overflow-y-auto mt-2"></div>
+    </form>
+  </div>
+</div>
+
 {{-- Menu hamburger - Fixed bottom left - visible sur desktop et mobile --}}
 <div class="fixed bottom-2 left-4 md:left-10 z-40" id="hi3dMobileMenuBtn">
   <button class="p-3 bg-white rounded-lg shadow-lg text-gray-600 hover:text-gray-900" style="width: 50px; height: 40px;" aria-label="Menu">
@@ -496,8 +523,116 @@ $context = $context ?? 'default';
     scrollDownBtn.addEventListener('click', handleScrollDown);
   }
 
+  // Mobile Search Modal
+  var searchOpenBtn = document.getElementById('hi3dSearchOpenBtn');
+  var mobileSearchModal = document.getElementById('hi3dMobileSearchModal');
+  var mobileSearchInput = document.getElementById('hi3dMobileSearchInput');
+  var mobileSearchCloseBtn = document.getElementById('hi3dMobileSearchCloseBtn');
+  var mobileSearchResults = document.getElementById('hi3dMobileSearchResults');
+  var typeServicesMobile = document.getElementById('hi3dTypeServicesMobile');
+  var typeArtistsMobile = document.getElementById('hi3dTypeArtistsMobile');
+  var mobileSearchType = 'Services';
+
+  function openMobileSearch() {
+    mobileSearchModal.classList.remove('hidden');
+    setTimeout(function() {
+      if (mobileSearchInput) mobileSearchInput.focus();
+    }, 100);
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMobileSearch() {
+    mobileSearchModal.classList.add('hidden');
+    document.body.style.overflow = '';
+    if (mobileSearchInput) mobileSearchInput.value = '';
+    if (mobileSearchResults) mobileSearchResults.innerHTML = '';
+  }
+
+  function setMobileSearchType(type) {
+    mobileSearchType = type;
+    if (typeServicesMobile && typeArtistsMobile) {
+      if (type === 'Services') {
+        typeServicesMobile.style.background = '#EDEDED';
+        typeServicesMobile.style.color = '#333333';
+        typeArtistsMobile.style.background = 'transparent';
+        typeArtistsMobile.style.color = '#8E8E8E';
+      } else {
+        typeServicesMobile.style.background = 'transparent';
+        typeServicesMobile.style.color = '#8E8E8E';
+        typeArtistsMobile.style.background = '#EDEDED';
+        typeArtistsMobile.style.color = '#333333';
+      }
+    }
+  }
+
+  function performMobileSearch() {
+    var term = mobileSearchInput ? mobileSearchInput.value.trim() : '';
+    if (!term) return;
+    
+    var url = frontendUrl + '/search-global?search=' + encodeURIComponent(term);
+    if (mobileSearchType) {
+      url += '&type=' + encodeURIComponent(mobileSearchType === 'Services' ? 'Services' : 'Artist 3D');
+    }
+    window.location.href = url;
+  }
+
+  function fetchMobileSearchSuggestions(query) {
+    if (!query || query.length < 2) {
+      if (mobileSearchResults) mobileSearchResults.innerHTML = '';
+      return;
+    }
+    
+    var searchType = mobileSearchType === 'Services' ? 'service_offers' : 'professional_profiles';
+    var searchUrl = (backendUrl || window.location.origin) + '/api/search?q=' + encodeURIComponent(query) + '&types[]=' + searchType + '&per_page=10';
+    
+    fetch(searchUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var results = data.data?.data || data.data || [];
+      if (!results || !results.length) {
+        mobileSearchResults.innerHTML = '<p class="p-4 text-gray-500">No results</p>';
+      } else {
+        var html = '';
+        results.forEach(function(item) {
+          var name = item.name || item.title || item.professional?.name || 'Untitled';
+          var href = item.service_slug ? (frontendUrl || window.location.origin) + '/service/' + item.service_slug : (frontendUrl || window.location.origin) + '/professional/' + item.slug;
+          html += '<a href="' + href + '" class="block p-3 hover:bg-gray-50 border-b border-gray-100">' + name + '</a>';
+        });
+        mobileSearchResults.innerHTML = html;
+      }
+    })
+    .catch(function(err) {
+      console.error('Mobile search error:', err);
+      mobileSearchResults.innerHTML = '<p class="p-4 text-gray-500">Error loading suggestions</p>';
+    });
+  }
+
+  if (searchOpenBtn) searchOpenBtn.addEventListener('click', openMobileSearch);
+  if (mobileSearchCloseBtn) mobileSearchCloseBtn.addEventListener('click', closeMobileSearch);
+  if (mobileSearchInput) {
+    mobileSearchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performMobileSearch();
+      }
+    });
+    mobileSearchInput.addEventListener('input', function() {
+      fetchMobileSearchSuggestions(this.value);
+    });
+  }
+  if (typeServicesMobile) typeServicesMobile.addEventListener('click', function() { setMobileSearchType('Services'); });
+  if (typeArtistsMobile) typeArtistsMobile.addEventListener('click', function() { setMobileSearchType('Artists'); });
+
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeMobileMenu();
+    if (e.key === 'Escape') {
+      closeMobileMenu();
+      closeMobileSearch();
+    }
   });
 })();
 </script>

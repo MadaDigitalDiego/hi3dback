@@ -124,13 +124,6 @@ $context = $context ?? 'default';
       @endif
     </div>
   </div>
-
-  {{-- Mobile: Menu hamburger dans header (caché sur desktop) --}}
-  <button class="lg:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 absolute right-4 top-1/2 -translate-y-1/2" id="hi3dHamburger" aria-label="Menu" style="transform: translateY(-50%);">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-    </svg>
-  </button>
 </header>
 
 {{-- Menu hamburger - Fixed bottom left - visible sur desktop et mobile --}}
@@ -339,7 +332,6 @@ $context = $context ?? 'default';
   var suggestions = document.getElementById('hi3dSuggestions');
   var suggestionsList = document.getElementById('hi3dSuggestionsList');
   var loginBtn = document.getElementById('hi3dLoginBtn');
-  var hamburger = document.getElementById('hi3dHamburger');
   var mobileMenuBtn = document.getElementById('hi3dMobileMenuBtn');
   var mobileOverlay = document.getElementById('hi3dMobileOverlay');
   var mobilePanel = document.getElementById('hi3dMobilePanel');
@@ -492,7 +484,6 @@ $context = $context ?? 'default';
   }
 
   if (loginBtn) loginBtn.addEventListener('click', handleLoginClick);
-  if (hamburger) hamburger.addEventListener('click', openMobileMenu);
   if (mobileMenuBtn) mobileMenuBtn.querySelector('button').addEventListener('click', openMobileMenu);
   if (mobileCloseBtn) mobileCloseBtn.addEventListener('click', closeMobileMenu);
   if (mobileClose) mobileClose.addEventListener('click', closeMobileMenu);

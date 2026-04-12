@@ -103,10 +103,10 @@ $context = $context ?? 'default';
           </a>
         </div>
       @else
-        {{-- Utilisateur non connecté - avec loupe de recherche et login --}}
+        {{-- Utilisateur non connecté - loupe (mobile only) + login --}}
         <div class="flex items-center gap-3">
-          {{-- Bouton loupe pour ouvrir recherche --}}
-          <button type="button" id="hi3dSearchOpenBtn" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          {{-- Bouton loupe - visible sur mobile seulement --}}
+          <button type="button" id="hi3dSearchOpenBtn" class="lg:hidden flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g clip-path="url(#hi3dClipSearchBtn)">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M13.5304 11.16L18 15.6937L15.75 18L11.1656 13.527C10.0094 14.2465 8.67434 14.627 7.3125 14.625C3.27375 14.625 0 11.3434 0 7.3125C0 3.27375 3.28163 0 7.3125 0C11.3512 0 14.625 3.28163 14.625 7.3125C14.627 8.67212 14.2478 10.0051 13.5304 11.16ZM2.24662 7.2585C2.24662 10.0485 4.51238 12.321 7.30913 12.321C10.0991 12.321 12.3716 10.0541 12.3716 7.2585C12.3716 4.4685 10.1047 2.196 7.30913 2.196C4.51912 2.196 2.24662 4.46175 2.24662 7.2585Z" fill="black"/>

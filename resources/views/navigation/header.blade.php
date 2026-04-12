@@ -120,8 +120,8 @@ $context = $context ?? 'default';
 </header>
 
 {{-- Menu hamburger mobile - Fixed bottom left --}}
-<div class="fixed bottom-2 left-4 md:left-10 z-40" id="hi3dMobileMenuBtn">
-  <button class="lg:hidden p-3 bg-white rounded-full shadow-lg text-gray-600 hover:text-gray-900" aria-label="Menu">
+<div class="fixed bottom-2 left-4 md:left-10" id="hi3dMobileMenuBtn">
+  <button class="lg:hidden p-3 bg-white rounded-full shadow-lg text-gray-600 hover:text-gray-900" style="z-index: 40;" aria-label="Menu">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
     </svg>
@@ -136,21 +136,53 @@ $context = $context ?? 'default';
 </div>
 
 {{-- Mobile menu overlay --}}
-<div class="fixed inset-0 z-50 hidden" id="hi3dMobileOverlay">
-  <div class="absolute inset-0 bg-black/50" id="hi3dMobileClose"></div>
-  <div class="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-xl p-6 transform transition-transform" id="hi3dMobilePanel" style="transform: translateX(-100%);">
-    <div class="flex justify-end mb-4">
-      <button class="p-2 text-gray-500 hover:text-gray-700" id="hi3dMobileCloseBtn">
+<div class="fixed inset-0 hidden" id="hi3dMobileOverlay" style="z-index: 99999;">
+  <div class="absolute inset-0 bg-black bg-opacity-50" id="hi3dMobileClose"></div>
+  <div class="absolute right-0 top-0 bottom-0 w-full max-w-xs bg-white shadow-xl flex flex-col transform transition-transform" id="hi3dMobilePanel" style="z-index: 100000; transform: translateX(100%);">
+    <div class="flex items-center justify-between p-4 border-b">
+      <h2 class="font-semibold text-lg">Menu</h2>
+      <button class="p-2 rounded-full hover:bg-neutral-100" id="hi3dMobileCloseBtn">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
     </div>
-    
-    {{-- Menu mobile content - selon auth状态 --}}
-    <div class="flex flex-col gap-4" id="hi3dMobileMenuContent">
+
+    <div class="flex-1 overflow-y-auto">
+      <nav class="px-4 py-2">
+        <ul class="space-y-1" id="hi3dMobileNav">
+          <li>
+            <a href="{{ $frontendUrl ?? '/' }}" class="block py-3 px-2 rounded-md hover:bg-neutral-100">Home</a>
+          </li>
+          <li>
+            <a href="{{ $frontendUrl ?? '/' }}/offers" class="block py-3 px-2 rounded-md hover:bg-neutral-100">Services</a>
+          </li>
+          <li>
+            <button class="flex items-center justify-between w-full py-3 px-2 rounded-md hover:bg-neutral-100 hi3d-submenu-btn" data-submenu="professionals">
+              <span>Professionals</span>
+              <svg class="w-5 h-5 hi3d-chevron transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+            <ul class="pl-4 py-2 space-y-1 hidden hi3d-submenu" id="submenu-professionals">
+              <li><a href="{{ $frontendUrl ?? '/' }}/all-professionals" class="block py-2 px-3 rounded-md hover:bg-neutral-100">All Professionals</a></li>
+              <li><a href="{{ $frontendUrl ?? '/' }}/subscription" class="block py-2 px-3 rounded-md hover:bg-neutral-100">Become a Pro</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="{{ $frontendUrl ?? '/' }}/about" class="block py-3 px-2 rounded-md hover:bg-neutral-100">About</a>
+          </li>
+          <li>
+            <a href="{{ $frontendUrl ?? '/' }}/contact" class="block py-3 px-2 rounded-md hover:bg-neutral-100">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    {{-- Auth buttons --}}
+    <div class="p-4 border-t" id="hi3dMobileMenuContent">
       @if($isAuthenticated && $authUser)
-        <div class="flex items-center gap-3 pb-4 border-b border-gray-200">
+        <div class="flex items-center gap-3 pb-4 border-b border-gray-200 mb-4">
           <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 15 12" fill="#666">
               <path d="M13.5937 2H7.96873L6.09374 0H1.40625C0.629589 0 0 0.671559 0 1.5V10.5C0 11.3285 0.629589 12 1.40625 12H13.5937C14.3704 12 15 11.3285 15 10.5V3.50002C15 2.67157 14.3704 2 13.5937 2Z"/>
@@ -161,13 +193,15 @@ $context = $context ?? 'default';
             <p class="text-sm text-gray-500">{{ $authUser['email'] ?? '' }}</p>
           </div>
         </div>
-        <a href="{{ $frontendUrl ?? '/' }}/favorite" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Favorites</a>
-        <a href="{{ $frontendUrl ?? '/' }}/messages" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Messages</a>
-        <a href="{{ $frontendUrl ?? '/' }}/dashboard/profile" class="w-full py-3 px-4 text-center font-medium text-gray-700 rounded-lg hover:bg-gray-50">Profile</a>
-        <button type="button" id="hi3dMobileLogoutBtn" class="w-full py-3 px-4 text-center font-medium text-red-600 border border-red-600 rounded-lg hover:bg-red-50">Logout</button>
+        <a href="{{ $frontendUrl ?? '/' }}/favorite" class="block w-full py-3 px-4 text-center font-medium text-gray-700 rounded-md hover:bg-neutral-100">Favorites</a>
+        <a href="{{ $frontendUrl ?? '/' }}/messages" class="block w-full py-3 px-4 text-center font-medium text-gray-700 rounded-md hover:bg-neutral-100">Messages</a>
+        <a href="{{ $frontendUrl ?? '/' }}/dashboard/profile" class="block w-full py-3 px-4 text-center font-medium text-gray-700 rounded-md hover:bg-neutral-100">Profile</a>
+        <button type="button" id="hi3dMobileLogoutBtn" class="w-full py-3 px-4 text-center font-medium text-red-600 border border-red-600 rounded-md hover:bg-red-50 mt-2">Logout</button>
       @else
-        <button type="button" id="hi3dMobileLoginBtn" class="w-full py-3 text-center font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Log in</button>
-        <button type="button" id="hi3dMobileRegisterBtn" class="w-full py-3 text-center font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Sign up</button>
+        <div class="flex flex-col space-y-3">
+          <button type="button" id="hi3dMobileLoginBtn" class="w-full px-4 py-2 rounded-full bg-white text-neutral-900 font-medium">Log in</button>
+          <button type="button" id="hi3dMobileRegisterBtn" class="w-full px-4 py-2 rounded-full border border-white text-white font-medium" style="background: #006EFF;">Sign up</button>
+        </div>
       @endif
     </div>
   </div>
@@ -192,6 +226,7 @@ $context = $context ?? 'default';
   var mobileLoginBtn = document.getElementById('hi3dMobileLoginBtn');
   var mobileRegisterBtn = document.getElementById('hi3dMobileRegisterBtn');
   var mobileLogoutBtn = document.getElementById('hi3dMobileLogoutBtn');
+  var submenuBtns = document.querySelectorAll('.hi3d-submenu-btn');
   
   var currentType = 'Services';
   var frontendUrl = '{{ $frontendUrl ?? "" }}';
@@ -215,12 +250,35 @@ $context = $context ?? 'default';
   function openMobileMenu() {
     mobileOverlay.classList.remove('hidden');
     mobilePanel.style.transform = 'translateX(0)';
+    document.body.style.overflow = 'hidden';
   }
   
   function closeMobileMenu() {
     mobileOverlay.classList.add('hidden');
-    mobilePanel.style.transform = 'translateX(-100%)';
+    mobilePanel.style.transform = 'translateX(100%)';
+    document.body.style.overflow = '';
   }
+
+  function toggleSubmenu(btn) {
+    var submenuId = btn.getAttribute('data-submenu');
+    var submenu = document.getElementById('submenu-' + submenuId);
+    var chevron = btn.querySelector('.hi3d-chevron');
+    
+    if (submenu.classList.contains('hidden')) {
+      submenu.classList.remove('hidden');
+      chevron.classList.add('rotate-90');
+    } else {
+      submenu.classList.add('hidden');
+      chevron.classList.remove('rotate-90');
+    }
+  }
+
+  submenuBtns.forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      toggleSubmenu(this);
+    });
+  });
 
   function setActiveType(type) {
     currentType = type;

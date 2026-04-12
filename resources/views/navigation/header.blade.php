@@ -197,11 +197,8 @@ $context = $context ?? 'default';
   var frontendUrl = '{{ $frontendUrl ?? "" }}';
   var backendUrl = '{{ $backendUrl ?? "" }}';
   var apiBaseUrl = '{{ $apiBaseUrl ?? "" }}';
-  var blogUrl = '{{ $blogUrl ?? "" }}';
-  var context = '{{ $context ?? "default" }}';
-  var isBlogMode = '{{ $blogUrl ?? "" }}'.indexOf(window.location.hostname) !== -1;
 
-  console.log('[Nav] frontendUrl:', frontendUrl, 'backendUrl:', backendUrl, 'blogUrl:', blogUrl, 'context:', context, 'isBlogMode:', isBlogMode);
+  console.log('[Nav] frontendUrl:', frontendUrl, 'backendUrl:', backendUrl);
 
   function normalizeUrl(url) {
     if (!url) return '';
@@ -212,9 +209,8 @@ $context = $context ?? 'default';
   }
 
   frontendUrl = frontendUrl || window.location.origin;
-  backendUrl = normalizeUrl(backendUrl);
-  apiBaseUrl = normalizeUrl(apiBaseUrl);
-  blogUrl = normalizeUrl(blogUrl);
+  backendUrl = backendUrl || window.location.origin;
+  apiBaseUrl = apiBaseUrl || window.location.origin;
 
   function openMobileMenu() {
     mobileOverlay.classList.remove('hidden');
@@ -238,20 +234,12 @@ $context = $context ?? 'default';
     var term = searchInput ? searchInput.value.trim() : '';
     if (!term) return;
     
-    console.log('[Nav] performSearch isBlogMode:', isBlogMode, 'blogUrl:', blogUrl);
-    
-    if (isBlogMode && blogUrl) {
-      var searchUrl = blogUrl + '/?s=' + encodeURIComponent(term);
-      console.log('[Nav] Redirecting to WordPress search:', searchUrl);
-      window.location.href = searchUrl;
-    } else {
-      var url = frontendUrl + '/search-global?search=' + encodeURIComponent(term);
-      if (currentType) {
-        url += '&type=' + encodeURIComponent(currentType);
-      }
-      console.log('[Nav] Redirecting to frontend search:', url);
-      window.location.href = url;
+    var url = frontendUrl + '/search-global?search=' + encodeURIComponent(term);
+    if (currentType) {
+      url += '&type=' + encodeURIComponent(currentType);
     }
+    console.log('[Nav] Redirecting to search:', url);
+    window.location.href = url;
   }
 
   function fetchSuggestions(query) {

@@ -63,11 +63,13 @@ class NavigationController extends Controller
         $blogUrl = !empty($blogUrlHeader) ? $blogUrlHeader : null;
 
         if (!$blogUrl) {
-            $referer = request()->header('referer') ?: request()->header('origin');
-            if ($referer && str_contains($referer, 'blog')) {
-                $blogUrl = $referer;
+            $origin = request()->header('origin') ?: request()->header('referer');
+            if ($origin && str_contains($origin, 'blog')) {
+                $blogUrl = $origin;
+            } elseif (!empty(config('app.blog_url'))) {
+                $blogUrl = config('app.blog_url');
             } else {
-                $blogUrl = config('app.blog_url', '');
+                $blogUrl = $frontendUrl . '/blog';
             }
         }
 

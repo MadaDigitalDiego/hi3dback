@@ -199,32 +199,22 @@ $context = $context ?? 'default';
   var apiBaseUrl = '{{ $apiBaseUrl ?? "" }}';
   var blogUrl = '{{ $blogUrl ?? "" }}';
   var context = '{{ $context ?? "default" }}';
+  var isBlogMode = '{{ $blogUrl ?? "" }}'.indexOf(window.location.hostname) !== -1;
+
+  console.log('[Nav] frontendUrl:', frontendUrl, 'backendUrl:', backendUrl, 'blogUrl:', blogUrl, 'context:', context, 'isBlogMode:', isBlogMode);
 
   function normalizeUrl(url) {
-    if (url && url.indexOf('//') === -1) {
+    if (!url) return '';
+    if (url.indexOf('//') === -1) {
       return window.location.protocol + '//' + window.location.host;
     }
     return url;
   }
 
-  frontendUrl = normalizeUrl(frontendUrl);
+  frontendUrl = frontendUrl || window.location.origin;
   backendUrl = normalizeUrl(backendUrl);
   apiBaseUrl = normalizeUrl(apiBaseUrl);
   blogUrl = normalizeUrl(blogUrl);
-
-  function detectBlogContext() {
-    if (context === 'blog') return true;
-    var path = window.location.pathname;
-    if (path.indexOf('/blog') !== -1 || path.indexOf('/wp-') !== -1 || path.indexOf('/wordpress') !== -1) return true;
-    if (blogUrl && blogUrl.indexOf(window.location.hostname) !== -1) return true;
-    return false;
-  }
-
-  var isBlogContext = detectBlogContext();
-  
-  if (isBlogContext && !blogUrl) {
-    blogUrl = window.location.origin;
-  }
 
   function openMobileMenu() {
     mobileOverlay.classList.remove('hidden');
@@ -248,13 +238,18 @@ $context = $context ?? 'default';
     var term = searchInput ? searchInput.value.trim() : '';
     if (!term) return;
     
-    if (isBlogContext && blogUrl) {
-      window.location.href = blogUrl + '/?s=' + encodeURIComponent(term);
+    console.log('[Nav] performSearch isBlogMode:', isBlogMode, 'blogUrl:', blogUrl);
+    
+    if (isBlogMode && blogUrl) {
+      var searchUrl = blogUrl + '/?s=' + encodeURIComponent(term);
+      console.log('[Nav] Redirecting to WordPress search:', searchUrl);
+      window.location.href = searchUrl;
     } else {
-      var url = (frontendUrl || window.location.origin) + '/search-global?search=' + encodeURIComponent(term);
+      var url = frontendUrl + '/search-global?search=' + encodeURIComponent(term);
       if (currentType) {
         url += '&type=' + encodeURIComponent(currentType);
       }
+      console.log('[Nav] Redirecting to frontend search:', url);
       window.location.href = url;
     }
   }

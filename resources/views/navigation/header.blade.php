@@ -164,7 +164,7 @@ $context = $context ?? 'default';
 
 {{-- Become a Pro - Fixed bottom right --}}
 <div class="fixed bottom-2 right-4 md:right-10 z-40">
-  <a href="{{ $frontendUrl ?? '/' }}/subscription" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-full shadow-lg transition-colors" style="background: #000000;">
+  <a href="{{ $frontendUrl ?? '/' }}/subscription" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg shadow-lg transition-colors" style="background: #000000; border-radius: 8px;">
     Become a Pro
   </a>
 </div>
@@ -172,7 +172,7 @@ $context = $context ?? 'default';
 {{-- Mobile menu overlay - SidebarMenu (glisse depuis la gauche) --}}
 <div class="fixed inset-0 hidden" id="hi3dMobileOverlay" style="z-index: 99999;">
   <div class="absolute inset-0 bg-black bg-opacity-50" id="hi3dMobileClose"></div>
-  <div class="absolute left-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-xl flex flex-col transform transition-transform" id="hi3dMobilePanel" style="z-index: 100000; max-width: 380px; transform: translateX(-100%);">
+  <div class="absolute left-0 top-0 bottom-0 w-full max-w-sm bg-gray-100 shadow-xl flex flex-col transform transition-transform" id="hi3dMobilePanel" style="z-index: 100000; max-width: 380px; transform: translateX(-100%);">
     
     {{-- Header avec user info ou close button --}}
     <div class="p-4 border-b">

@@ -36,6 +36,8 @@ return [
         'https://dev2.hi-3d.com',
         'http://localhost:3000',
         'http://localhost:3001',
+        'https://hi-3d.com',
+        'https://prodback.hi-3d.com',
     ],
 
     'allowed_origins_patterns' => [

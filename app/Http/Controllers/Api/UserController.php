@@ -48,7 +48,7 @@ class UserController extends Controller
             return response()->json(['users' => $users]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des utilisateurs professionnels: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des utilisateurs.'], 500);
+            return response()->json(['message' => 'Error while retrieving users.'], 500);
         }
     }
 
@@ -64,7 +64,7 @@ class UserController extends Controller
             $user = User::find($id); // Recherche un utilisateur par son ID
 
             if (!$user) {
-                return response()->json(['message' => 'Utilisateur non trouvé.'], 404); // Retourne une erreur 404 si l'utilisateur n'est pas trouvé
+                return response()->json(['message' => 'User not found.'], 404); // Retourne une erreur 404 si l'utilisateur n'est pas trouvé
             }
 
             $profile = null;
@@ -87,7 +87,7 @@ class UserController extends Controller
             // return response()->json(['user' => $user]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage des détails de l\'utilisateur ID ' . $id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des détails de l\'utilisateur.'], 500);
+            return response()->json(['message' => 'Error while retrieving user details.'], 500);
         }
     }
 
@@ -155,13 +155,13 @@ class UserController extends Controller
                 Log::warning('Impossible d\'envoyer l\'e-mail de vérification à ' . $user->email . '. L\'inscription continue quand même.');
             }
 
-            return response()->json(['message' => 'Inscription réussie. Veuillez vérifier votre e-mail pour confirmer votre compte.'], 201);
+            return response()->json(['message' => 'Registration successful. Please check your email to confirm your account.'], 201);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'enregistrement de l\'utilisateur ' . $request->email . ': ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
 
             return response()->json([
-                'message' => 'Erreur lors de l\'inscription de l\'utilisateur.',
+                'message' => 'Error while registering the user.',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ], 500);
@@ -180,19 +180,19 @@ class UserController extends Controller
             // Vérification des identifiants
             if (!$user) {
                 Log::warning('Tentative de connexion avec un email inexistant: ' . $request->email);
-                return response()->json(['message' => 'Utilisateur n\'est pas encore inscrit.'], 401);
+                return response()->json(['message' => 'User is not registered yet.'], 401);
             }
 
             if (!Hash::check($request->password, $user->password)) {
                 Log::warning('Tentative de connexion avec un mot de passe incorrect pour: ' . $request->email);
-                return response()->json(['message' => 'Le mot de passe est incorrect.'], 401);
+                return response()->json(['message' => 'The password is incorrect.'], 401);
             }
 
             // Vérification de l'email
             if (!$user->hasVerifiedEmail()) {
                 Log::info('Tentative de connexion avec un email non vérifié: ' . $request->email);
                 return response()->json([
-                    'message' => 'Votre e-mail n\'est pas vérifié. Veuillez vérifier votre boîte de réception ou demander un nouveau lien de vérification.',
+                    'message' => 'Your email address is not verified. Please check your inbox or request a new verification link.',
                     'email_not_verified' => true,
                     'email' => $user->email,
                 ], 403);
@@ -242,7 +242,7 @@ class UserController extends Controller
             Log::error('Erreur lors de la connexion de l\'utilisateur ' . $request->email . ': ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
             return response()->json([
-                'message' => 'Erreur lors de la connexion.',
+                'message' => 'Error during login.',
                 'error' => $e->getMessage(),
                 'status' => 500
             ], 500);
@@ -263,10 +263,10 @@ class UserController extends Controller
             
             Log::info('Déconnexion réussie pour l\'utilisateur: ' . $user->email);
             
-            return response()->json(['message' => 'Déconnexion réussie.']);
+            return response()->json(['message' => 'Logged out successfully.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la déconnexion de l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la déconnexion.'], 500);
+            return response()->json(['message' => 'Error during logout.'], 500);
         }
     }
 
@@ -283,7 +283,7 @@ class UserController extends Controller
             $token = $user->currentAccessToken();
             
             if (!$token) {
-                return response()->json(['message' => 'Token non trouvé.'], 404);
+                return response()->json(['message' => 'Token not found.'], 404);
             }
 
             $session = PersonalAccessSession::where('token_id', $token->id)
@@ -292,7 +292,7 @@ class UserController extends Controller
 
             if (!$session) {
                 return response()->json([
-                    'message' => 'Session non trouvée.',
+                    'message' => 'Session not found.',
                     'session_expired' => true,
                 ], 404);
             }
@@ -316,7 +316,7 @@ class UserController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des informations de session pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des informations de session.'], 500);
+            return response()->json(['message' => 'Error while retrieving session information.'], 500);
         }
     }
 
@@ -333,7 +333,7 @@ class UserController extends Controller
             $token = $user->currentAccessToken();
             
             if (!$token) {
-                return response()->json(['message' => 'Token non trouvé.'], 404);
+                return response()->json(['message' => 'Token not found.'], 404);
             }
 
             $session = PersonalAccessSession::where('token_id', $token->id)
@@ -342,7 +342,7 @@ class UserController extends Controller
 
             if (!$session) {
                 return response()->json([
-                    'message' => 'Session non trouvée.',
+                    'message' => 'Session not found.',
                     'session_expired' => true,
                     'redirect_to' => '/login',
                 ], 401);
@@ -354,7 +354,7 @@ class UserController extends Controller
                 $user->tokens()->delete();
                 
                 return response()->json([
-                    'message' => 'Session inactive. Veuillez vous reconnecter.',
+                    'message' => 'Inactive session. Please log in again.',
                     'session_expired' => true,
                     'redirect_to' => '/login',
                 ], 401);
@@ -368,7 +368,7 @@ class UserController extends Controller
                 $user->tokens()->delete();
                 
                 return response()->json([
-                    'message' => 'Session expirée par inactivité.',
+                    'message' => 'Session expired due to inactivity.',
                     'session_expired' => true,
                     'redirect_to' => '/login',
                 ], 401);
@@ -382,7 +382,7 @@ class UserController extends Controller
             $timeoutMinutes = config('session.timeout', 10);
 
             return response()->json([
-                'message' => 'Session renouvelée avec succès.',
+                'message' => 'Session refreshed successfully.',
                 'session' => [
                     'last_activity_at' => $session->last_activity_at->toIso8601String(),
                     'expires_at' => $session->last_activity_at->addMinutes($timeoutMinutes)->toIso8601String(),
@@ -391,7 +391,7 @@ class UserController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors du renouvellement de session pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du renouvellement de session.'], 500);
+            return response()->json(['message' => 'Error while refreshing the session.'], 500);
         }
     }
 
@@ -434,7 +434,7 @@ class UserController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des sessions pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des sessions.'], 500);
+            return response()->json(['message' => 'Error while retrieving sessions.'], 500);
         }
     }
 
@@ -456,12 +456,12 @@ class UserController extends Controller
                 ->first();
 
             if (!$session) {
-                return response()->json(['message' => 'Session non trouvée.'], 404);
+                return response()->json(['message' => 'Session not found.'], 404);
             }
 
             // Ne pas permettre de supprimer la session courante via cette route
             if ($session->token_id === $currentTokenId) {
-                return response()->json(['message' => 'Impossible de supprimer la session courante. Utilisez logout pour vous déconnecter.'], 400);
+                return response()->json(['message' => 'Unable to delete the current session. Use logout to sign out.'], 400);
             }
 
             // Supprimer le token associé à la session
@@ -472,10 +472,10 @@ class UserController extends Controller
 
             Log::info('Session supprimée pour l\'utilisateur: ' . $user->email, ['session_id' => $sessionId]);
 
-            return response()->json(['message' => 'Session supprimée avec succès.']);
+            return response()->json(['message' => 'Session deleted successfully.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression de la session pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression de la session.'], 500);
+            return response()->json(['message' => 'Error while deleting the session.'], 500);
         }
     }
 
@@ -509,12 +509,12 @@ class UserController extends Controller
             Log::info('Toutes les autres sessions supprimées pour l\'utilisateur: ' . $user->email);
 
             return response()->json([
-                'message' => 'Toutes les autres sessions ont été supprimées.',
+                'message' => 'All other sessions have been deleted.',
                 'sessions_removed' => $otherSessions->count(),
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression des autres sessions pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression des sessions.'], 500);
+            return response()->json(['message' => 'Error while deleting sessions.'], 500);
         }
     }
 
@@ -575,7 +575,7 @@ class UserController extends Controller
             $user = User::where('email', $request->email)->first();
 
             if (!$user) {
-                return response()->json(['message' => 'Aucun utilisateur trouvé avec cette adresse e-mail.'], 404);
+                return response()->json(['message' => 'No user found with this email address.'], 404);
             }
 
             // Générer un token de réinitialisation unique
@@ -597,10 +597,10 @@ class UserController extends Controller
             // Envoyer l'e-mail de réinitialisation (queued)
             Mail::to($user->email)->queue(new ResetPasswordMail($resetUrl));
 
-            return response()->json(['message' => 'Un lien de réinitialisation de mot de passe a été envoyé à votre adresse e-mail.'], 200);
+            return response()->json(['message' => 'A password reset link has been sent to your email address.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la demande de mot de passe oublié pour l\'email ' . $request->email . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la demande de réinitialisation du mot de passe.'], 500);
+            return response()->json(['message' => 'Error while requesting a password reset.'], 500);
         }
     }
 
@@ -612,7 +612,7 @@ class UserController extends Controller
                 ->first();
 
             if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
-                return response()->json(['message' => 'Token de réinitialisation invalide.'], 400);
+                return response()->json(['message' => 'Invalid reset token.'], 400);
             }
 
             $user = User::where('email', $request->email)->first();
@@ -621,10 +621,10 @@ class UserController extends Controller
 
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
-            return response()->json(['message' => 'Mot de passe réinitialisé avec succès.'], 200);
+            return response()->json(['message' => 'Password reset successfully.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la réinitialisation du mot de passe pour l\'email ' . $request->email . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la réinitialisation du mot de passe.'], 500);
+            return response()->json(['message' => 'Error while resetting the password.'], 500);
         }
     }
 
@@ -634,10 +634,10 @@ class UserController extends Controller
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ], [
-            'current_password.required' => 'L\'ancien mot de passe est requis.',
-            'password.required' => 'Le nouveau mot de passe est requis.',
-            'password.min' => 'Le nouveau mot de passe doit contenir au moins 8 caractères.',
-            'password.confirmed' => 'La confirmation du nouveau mot de passe ne correspond pas.',
+            'current_password.required' => 'Current password is required.',
+            'password.required' => 'New password is required.',
+            'password.min' => 'New password must be at least 8 characters long.',
+            'password.confirmed' => 'New password confirmation does not match.',
         ]);
 
         try {
@@ -646,9 +646,9 @@ class UserController extends Controller
             // Vérifier si l'ancien mot de passe est correct
             if (!Hash::check($validated['current_password'], $user->password)) {
                 return response()->json([
-                    'message' => 'L\'ancien mot de passe est incorrect.',
+                    'message' => 'Current password is incorrect.',
                     'errors' => [
-                        'current_password' => ['L\'ancien mot de passe est incorrect.']
+                        'current_password' => ['Current password is incorrect.']
                     ]
                 ], 422);
             }
@@ -656,10 +656,10 @@ class UserController extends Controller
             $user->password = Hash::make($validated['password']);
             $user->save();
 
-            return response()->json(['message' => 'Mot de passe mis à jour avec succès.'], 200);
+            return response()->json(['message' => 'Password updated successfully.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour du mot de passe pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour du mot de passe.'], 500);
+            return response()->json(['message' => 'Error while updating the password.'], 500);
         }
     }
 
@@ -674,7 +674,7 @@ class UserController extends Controller
             $user = $request->user();
 
             if (!$user) {
-                return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+                return response()->json(['message' => 'User not authenticated.'], 401);
             }
 
             $targetIsProfessional = (bool) $data['is_professional'];
@@ -740,14 +740,14 @@ class UserController extends Controller
             $profileData = $user->is_professional ? $user->professionalProfile : $user->clientProfile;
 
             return response()->json([
-                'message' => 'Type de compte mis à jour avec succès.',
+                'message' => 'Account type updated successfully.',
                 'user' => $user,
                 'profile_type' => $profileType,
                 'profile_data' => $profileData,
             ], 200);
         } catch (\Exception $e) {
             Log::error("Erreur lors du changement de type de compte pour l'utilisateur ID " . optional($request->user())->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du changement de type de compte.'], 500);
+            return response()->json(['message' => 'Error while changing account type.'], 500);
         }
     }
 
@@ -757,7 +757,7 @@ class UserController extends Controller
             return response()->json($request->user());
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des informations de l\'utilisateur authentifié ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des informations de l\'utilisateur.'], 500);
+            return response()->json(['message' => 'Error while retrieving user information.'], 500);
         }
     }
 
@@ -769,11 +769,11 @@ class UserController extends Controller
             $user = User::find($request->route('id'));
 
             if (!$user || !hash_equals((string) $request->route('hash'), sha1($user->email))) {
-                return redirect($frontendUrl . '/error?message=Lien de vérification invalide.');
+                return redirect($frontendUrl . '/error?message=Invalid verification link.');
             }
 
             if ($user->hasVerifiedEmail()) {
-                return redirect($frontendUrl . '/error?message=Adresse e-mail déjà vérifiée.');
+                return redirect($frontendUrl . '/error?message=Email address already verified.');
             }
 
             $user->markEmailAsVerified();
@@ -784,7 +784,7 @@ class UserController extends Controller
             return redirect($redirectUrl);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la vérification de l\'email pour l\'utilisateur ID ' . $request->route('id') . ': ' . $e->getMessage());
-            return redirect($frontendUrl . '/error?message=Erreur lors de la vérification de l\'email.'); // Redirection avec message d'erreur générique
+            return redirect($frontendUrl . '/error?message=Error while verifying email.'); // Redirection avec message d'erreur générique
         }
     }
 
@@ -792,7 +792,7 @@ class UserController extends Controller
     {
         try {
             if ($request->user()->hasVerifiedEmail()) {
-                return response()->json(['message' => 'Adresse e-mail déjà vérifiée.'], 400);
+                return response()->json(['message' => 'Email address already verified.'], 400);
             }
 
             // Utiliser le service d'e-mail pour envoyer l'e-mail de vérification
@@ -800,13 +800,13 @@ class UserController extends Controller
 
             if (!$emailSent) {
                 Log::warning('Impossible d\'envoyer l\'e-mail de vérification à ' . $request->user()->email . '.');
-                return response()->json(['message' => 'Erreur lors de l\'envoi de l\'e-mail de vérification. Veuillez réessayer plus tard.'], 500);
+                return response()->json(['message' => 'Error while sending the verification email. Please try again later.'], 500);
             }
 
-            return response()->json(['message' => 'Un nouveau lien de vérification a été envoyé à votre adresse e-mail.'], 200);
+            return response()->json(['message' => 'A new verification link has been sent to your email address.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors du renvoi de l\'email de vérification pour l\'utilisateur ID ' . $request->user()->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du renvoi de l\'email de vérification.'], 500);
+            return response()->json(['message' => 'Error while resending the verification email.'], 500);
         }
     }
 
@@ -820,11 +820,11 @@ class UserController extends Controller
             $user = User::where('email', $request->email)->first();
 
             if (!$user) {
-                return response()->json(['message' => 'Aucun utilisateur trouvé avec cette adresse e-mail.'], 404);
+                return response()->json(['message' => 'No user found with this email address.'], 404);
             }
 
             if ($user->hasVerifiedEmail()) {
-                return response()->json(['message' => 'Adresse e-mail déjà vérifiée.'], 400);
+                return response()->json(['message' => 'Email address already verified.'], 400);
             }
 
             // Utiliser le service d'e-mail pour envoyer l'e-mail de vérification
@@ -832,13 +832,13 @@ class UserController extends Controller
 
             if (!$emailSent) {
                 Log::warning('Impossible d\'envoyer l\'e-mail de vérification à ' . $user->email . '.');
-                return response()->json(['message' => 'Erreur lors de l\'envoi de l\'e-mail de vérification. Veuillez réessayer plus tard.'], 500);
+                return response()->json(['message' => 'Error while sending the verification email. Please try again later.'], 500);
             }
 
-            return response()->json(['message' => 'Un nouveau lien de vérification a été envoyé à votre adresse e-mail.'], 200);
+            return response()->json(['message' => 'A new verification link has been sent to your email address.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors du renvoi public de l\'email de vérification pour ' . $request->email . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du renvoi de l\'email de vérification.'], 500);
+            return response()->json(['message' => 'Error while resending the verification email.'], 500);
         }
     }
 }

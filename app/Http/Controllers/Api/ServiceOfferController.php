@@ -26,7 +26,7 @@ class ServiceOfferController extends Controller
             return response()->json(ServiceOfferResource::collection($serviceOffers));
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la liste des offres de service: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des offres de service.'], 500);
+            return response()->json(['message' => 'Error while retrieving service offers.'], 500);
         }
     }
 
@@ -53,7 +53,7 @@ class ServiceOfferController extends Controller
                         ];
                     } catch (\Exception $e) {
                         Log::error('Erreur lors de l\'upload du fichier: ' . $e->getMessage());
-                        return response()->json(['message' => 'Erreur lors de l\'upload d\'un fichier.'], 500);
+                        return response()->json(['message' => 'Error while uploading a file.'], 500);
                     }
                 }
                 $validatedData['files'] = $filePaths;
@@ -69,7 +69,7 @@ class ServiceOfferController extends Controller
             return response()->json(new ServiceOfferResource($serviceOffer), 201);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la création de l\'offre de service: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la création de l\'offre de service.'], 500);
+            return response()->json(['message' => 'Error while creating the service offer.'], 500);
         }
     }
 
@@ -82,7 +82,7 @@ class ServiceOfferController extends Controller
             return response()->json(new ServiceOfferResource($serviceOffer));
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage de l\'offre de service ID ' . $serviceOffer->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération de l\'offre de service.'], 500);
+            return response()->json(['message' => 'Error while retrieving the service offer.'], 500);
         }
     }
 
@@ -112,7 +112,7 @@ class ServiceOfferController extends Controller
             return response()->json(new ServiceOfferResource($serviceOffer));
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage public de l\'offre de service ID ' . $id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération de l\'offre de service: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Error while retrieving the service offer: ' . $e->getMessage()], 500);
         }
     }
 
@@ -129,7 +129,7 @@ class ServiceOfferController extends Controller
 
             // Vérification d'autorisation
             if ($serviceOffer->user_id != auth()->id()) {
-                return response()->json(['message' => 'Non autorisé à modifier cette offre de service.'], 403);
+                return response()->json(['message' => 'Not authorized to update this service offer.'], 403);
             }
 
             $validatedData = $request->validated();
@@ -159,7 +159,7 @@ class ServiceOfferController extends Controller
                         ];
                     } catch (\Exception $e) {
                         Log::error('Erreur lors de l\'upload du fichier (mise à jour): ' . $e->getMessage());
-                        return response()->json(['message' => 'Erreur lors de l\'upload d\'un fichier pendant la mise à jour.'], 500);
+                        return response()->json(['message' => 'Error while uploading a file during update.'], 500);
                     }
                 }
                 $validatedData['files'] = $filePaths;
@@ -176,12 +176,12 @@ class ServiceOfferController extends Controller
             return response()->json(new ServiceOfferResource($serviceOffer), 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Offre de service non trouvée.'], 404);
+            return response()->json(['message' => 'Service offer not found.'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour de l\'offre de service ID ' . $id . ': ' . $e->getMessage());
             Log::error($e->getTraceAsString());
             return response()->json([
-                'message' => 'Erreur lors de la mise à jour de l\'offre de service.',
+                'message' => 'Error while updating the service offer.',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ], 500);
@@ -199,7 +199,7 @@ class ServiceOfferController extends Controller
 
             // Vérifier si l'utilisateur est autorisé à supprimer cette offre
             if ($serviceOffer->user_id != auth()->id()) {
-                return response()->json(['message' => 'Non autorisé à supprimer cette offre de service.'], 403);
+                return response()->json(['message' => 'Not authorized to delete this service offer.'], 403);
             }
 
             // Supprimer les fichiers associés s'ils existent
@@ -214,12 +214,12 @@ class ServiceOfferController extends Controller
             // Supprimer l'offre de service
             $serviceOffer->delete();
 
-            return response()->json(['message' => 'Offre de service supprimée avec succès.'], 200);
+            return response()->json(['message' => 'Service offer deleted successfully.'], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Offre de service non trouvée.'], 404);
+            return response()->json(['message' => 'Service offer not found.'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression de l\'offre de service ID ' . $id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression de l\'offre de service.'], 500);
+            return response()->json(['message' => 'Error while deleting the service offer.'], 500);
         }
     }
 
@@ -239,7 +239,7 @@ class ServiceOfferController extends Controller
             return response()->json(ServiceOfferResource::collection($serviceOffers));
         } catch (\Exception $e) {
             Log::error('Erreur lors de la recherche des offres de service avec la requête "' . $request->input('query') . '": ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la recherche des offres de service.'], 500);
+            return response()->json(['message' => 'Error while searching service offers.'], 500);
         }
     }
 
@@ -257,13 +257,13 @@ class ServiceOfferController extends Controller
             $fileIndex = $request->query('file_index', 0);
 
             if (!$serviceOffer->files || !is_array($serviceOffer->files) || !isset($serviceOffer->files[$fileIndex])) {
-                return response()->json(['message' => 'Fichier non trouvé pour cette offre de service.'], 404);
+                return response()->json(['message' => 'File not found for this service offer.'], 404);
             }
 
             $file = $serviceOffer->files[$fileIndex];
 
             if (!isset($file['path']) || !Storage::disk('public')->exists($file['path'])) {
-                return response()->json(['message' => 'Le fichier demandé n\'existe pas ou a été supprimé.'], 404);
+                return response()->json(['message' => 'The requested file does not exist or has been deleted.'], 404);
             }
 
             $fileContent = Storage::disk('public')->get($file['path']);
@@ -275,7 +275,7 @@ class ServiceOfferController extends Controller
                 ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
         } catch (\Exception $e) {
             Log::error('Erreur lors du téléchargement du fichier pour l\'offre de service ID ' . $serviceOffer->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du téléchargement du fichier.'], 500);
+            return response()->json(['message' => 'Error while downloading the file.'], 500);
         }
     }
 
@@ -301,7 +301,7 @@ class ServiceOfferController extends Controller
                     // (pour la compatibilité avec les données existantes)
                     Log::info('Utilisateur trouvé mais non marqué comme professionnel: ' . $id);
                 } else {
-                    return response()->json(['message' => 'Professionnel non trouvé.'], 404);
+                    return response()->json(['message' => 'Professional not found.'], 404);
                 }
             }
 
@@ -317,7 +317,7 @@ class ServiceOfferController extends Controller
             return response()->json(ServiceOfferResource::collection($serviceOffers));
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des services du professionnel ID ' . $id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des services du professionnel.'], 500);
+            return response()->json(['message' => 'Error while retrieving professional services.'], 500);
         }
     }
     /**
@@ -407,7 +407,7 @@ class ServiceOfferController extends Controller
             return response()->json(ServiceOfferResource::collection($serviceOffers));
         } catch (\Exception $e) {
             Log::error('Erreur lors du filtrage des offres de service: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du filtrage des offres de service.'], 500);
+            return response()->json(['message' => 'Error while filtering service offers.'], 500);
         }
     }
 }

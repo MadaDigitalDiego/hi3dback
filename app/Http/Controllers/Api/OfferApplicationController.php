@@ -26,14 +26,14 @@ class OfferApplicationController extends Controller
             $user = $request->user();
 
             if (!$user->is_professional) {
-                return response()->json(['message' => 'Seuls les professionnels peuvent voir les offres reçues.'], 403);
+                return response()->json(['message' => 'Only professionals can view received offers.'], 403);
             }
 
             // Vérifier si l'utilisateur a un profil professionnel
             $profile = $user->freelanceProfile;
 
             if (!$profile) {
-                return response()->json(['message' => 'Profil professionnel non trouvé.'], 404);
+                return response()->json(['message' => 'Professional profile not found.'], 404);
             }
 
             // Récupérer les candidatures de l'utilisateur
@@ -69,7 +69,7 @@ class OfferApplicationController extends Controller
             return response()->json(['offers' => $offers]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des offres reçues: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des offres reçues.'], 500);
+            return response()->json(['message' => 'Error while retrieving received offers.'], 500);
         }
     }
 
@@ -85,14 +85,14 @@ class OfferApplicationController extends Controller
         $user = $request->user();
 
         if (!$user->is_professional) {
-            return response()->json(['message' => 'Seuls les professionnels peuvent accepter des offres.'], 403);
+            return response()->json(['message' => 'Only professionals can accept offers.'], 403);
         }
 
         $application = OfferApplication::findOrFail($id);
 
         // Vérifier que l'application appartient à l'utilisateur connecté
         if (!$application->freelanceProfile || $application->freelanceProfile->user_id !== $user->id) {
-            return response()->json(['message' => 'Non autorisé à accepter cette offre.'], 403);
+            return response()->json(['message' => 'Not authorized to accept this offer.'], 403);
         }
 
         // Appliquer la même logique de quota que pour OpenOfferController::apply
@@ -108,8 +108,8 @@ class OfferApplicationController extends Controller
             if ($limit === 0) {
                 $subscription = $user->currentSubscription();
                 $message = $subscription
-                    ? 'Votre abonnement ne permet pas de postuler aux offres.'
-                    : 'Plan Free actif. Un abonnement est requis pour postuler aux offres.';
+                    ? 'Your subscription does not allow applying to offers.'
+                    : 'Free plan active. A subscription is required to apply to offers.';
 
                 return response()->json(['message' => $message], 403);
             }
@@ -119,8 +119,8 @@ class OfferApplicationController extends Controller
             if ($used >= $limit && $application->status !== 'invited') {
                 $subscription = $user->currentSubscription();
                 $message = $subscription
-                    ? 'Vous avez atteint la limite de candidatures pour votre abonnement. Veuillez mettre à niveau votre plan.'
-                    : 'Plan Free actif. Un abonnement est requis pour accéder à toutes les fonctionnalités.';
+                    ? 'You have reached the application limit for your subscription. Please upgrade your plan.'
+                    : 'Free plan active. A subscription is required to access all features.';
 
                 return response()->json(['message' => $message], 403);
             }
@@ -139,7 +139,7 @@ class OfferApplicationController extends Controller
             Log::error('Erreur lors de l\'envoi de la notification d\'acceptation: ' . $e->getMessage());
         }
 
-        return response()->json(['message' => 'Offre acceptée avec succès.']);
+        return response()->json(['message' => 'Offer accepted successfully.']);
     }
 
     /**
@@ -155,14 +155,14 @@ class OfferApplicationController extends Controller
             $user = $request->user();
 
             if (!$user->is_professional) {
-                return response()->json(['message' => 'Seuls les professionnels peuvent refuser des offres.'], 403);
+                return response()->json(['message' => 'Only professionals can decline offers.'], 403);
             }
 
             $application = OfferApplication::findOrFail($id);
 
             // Vérifier que l'application appartient à l'utilisateur
             if ($application->freelanceProfile->user_id !== $user->id) {
-                return response()->json(['message' => 'Non autorisé à refuser cette offre.'], 403);
+                return response()->json(['message' => 'Not authorized to decline this offer.'], 403);
             }
 
             // Mettre à jour le statut de l'application
@@ -178,10 +178,10 @@ class OfferApplicationController extends Controller
                 Log::error('Erreur lors de l\'envoi de la notification de refus: ' . $e->getMessage());
             }
 
-            return response()->json(['message' => 'Offre refusée avec succès.']);
+            return response()->json(['message' => 'Offer declined successfully.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors du refus de l\'offre: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du refus de l\'offre.'], 500);
+            return response()->json(['message' => 'Error while declining the offer.'], 500);
         }
     }
 

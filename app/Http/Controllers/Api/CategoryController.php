@@ -26,7 +26,7 @@ class CategoryController extends Controller
             return response()->json(['categories' => $categories], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des catégories: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des catégories.'], 500);
+            return response()->json(['message' => 'Error while retrieving categories.'], 500);
         }
     }
 
@@ -46,13 +46,13 @@ class CategoryController extends Controller
                 ->find($id);
 
             if (!$category) {
-                return response()->json(['message' => 'Catégorie non trouvée.'], 404);
+                return response()->json(['message' => 'Category not found.'], 404);
             }
 
             return response()->json(['category' => $category], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la catégorie: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération de la catégorie.'], 500);
+            return response()->json(['message' => 'Error while retrieving the category.'], 500);
         }
     }
 
@@ -70,7 +70,7 @@ class CategoryController extends Controller
                 ->first();
 
             if (!$parentCategory) {
-                return response()->json(['message' => 'Catégorie parente non trouvée.'], 404);
+                return response()->json(['message' => 'Parent category not found.'], 404);
             }
 
             $subcategories = Category::active()
@@ -85,7 +85,7 @@ class CategoryController extends Controller
             ], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des sous-catégories: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des sous-catégories.'], 500);
+            return response()->json(['message' => 'Error while retrieving subcategories.'], 500);
         }
     }
 
@@ -108,7 +108,7 @@ class CategoryController extends Controller
             return response()->json(['categories' => $categories], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la hiérarchie: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération de la hiérarchie.'], 500);
+            return response()->json(['message' => 'Error while retrieving the category hierarchy.'], 500);
         }
     }
 }

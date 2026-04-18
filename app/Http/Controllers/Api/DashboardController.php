@@ -27,7 +27,7 @@ class DashboardController extends Controller
             $user = $request->user();
 
             if (!$user) {
-                return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+                return response()->json(['message' => 'User not authenticated.'], 401);
             }
 
             // Données communes pour tous les utilisateurs
@@ -45,7 +45,7 @@ class DashboardController extends Controller
             return response()->json($data, 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des données du tableau de bord: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des données du tableau de bord.'], 500);
+            return response()->json(['message' => 'Error while retrieving dashboard data.'], 500);
         }
     }
 
@@ -55,7 +55,7 @@ class DashboardController extends Controller
         $user = $request->user();
 
         if (!$user) {
-            return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+            return response()->json(['message' => 'User not authenticated.'], 401);
         }
 
         // Données communes pour tous les utilisateurs
@@ -163,8 +163,8 @@ class DashboardController extends Controller
         foreach ($recentApplications as $application) {
             $activities[] = [
                 'id' => $application->id,
-                'title' => 'Candidature à ' . $application->openOffer->title,
-                'description' => 'Statut: ' . $this->translateApplicationStatus($application->status),
+                'title' => 'Application to ' . $application->openOffer->title,
+                'description' => 'Status: ' . $this->translateApplicationStatus($application->status),
                 'timestamp' => $application->created_at->toISOString(),
                 'icon' => 'Briefcase',
                 'iconBackground' => 'bg-blue-100',
@@ -180,7 +180,7 @@ class DashboardController extends Controller
         foreach ($recentAttributions as $attribution) {
             $activities[] = [
                 'id' => $attribution->id,
-                'title' => 'Projet attribué: ' . $attribution->title,
+                'title' => 'Project assigned: ' . $attribution->title,
                 'description' => 'Client: ' . $attribution->user->first_name . ' ' . $attribution->user->last_name,
                 'timestamp' => $attribution->updated_at->toISOString(),
                 'icon' => 'CheckCircle',
@@ -307,15 +307,15 @@ class DashboardController extends Controller
         foreach ($recentApplications as $application) {
             $activities[] = [
                 'id' => $application->id,
-                'title' => 'Nouvelle candidature pour ' . $application->openOffer->title,
-                'description' => 'De: ' . $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name,
+                'title' => 'New application for ' . $application->openOffer->title,
+                'description' => 'From: ' . $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name,
                 'timestamp' => $application->created_at->toISOString(),
                 'icon' => 'Users',
                 'iconBackground' => 'bg-blue-100',
                 'iconColor' => 'text-blue-600',
                 'user' => [
                     'name' => $application->freelanceProfile && $application->freelanceProfile->user ?
-                        $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name : 'Utilisateur inconnu',
+                        $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name : 'Unknown user',
                     'avatar' => $this->getUserAvatar($application->freelanceProfile ? $application->freelanceProfile->user : null),
                 ],
             ];
@@ -329,7 +329,7 @@ class DashboardController extends Controller
         foreach ($recentCompletions as $completion) {
             $activities[] = [
                 'id' => $completion->id,
-                'title' => 'Projet terminé: ' . $completion->title,
+                'title' => 'Project completed: ' . $completion->title,
                 'description' => 'Budget: ' . $completion->budget,
                 'timestamp' => $completion->updated_at->toISOString(),
                 'icon' => 'CheckCircle',
@@ -407,8 +407,8 @@ class DashboardController extends Controller
         foreach ($recentApplications as $application) {
             $activities[] = [
                 'id' => $application->id,
-                'title' => 'Candidature à ' . $application->openOffer->title,
-                'description' => 'Statut: ' . $this->translateApplicationStatus($application->status),
+                'title' => 'Application to ' . $application->openOffer->title,
+                'description' => 'Status: ' . $this->translateApplicationStatus($application->status),
                 'timestamp' => $application->created_at->toISOString(),
                 'icon' => 'Briefcase',
                 'iconBackground' => 'bg-blue-100',
@@ -424,7 +424,7 @@ class DashboardController extends Controller
         foreach ($recentAttributions as $attribution) {
             $activities[] = [
                 'id' => $attribution->id,
-                'title' => 'Projet attribué: ' . $attribution->title,
+                'title' => 'Project assigned: ' . $attribution->title,
                 'description' => 'Client: ' . $attribution->user->first_name . ' ' . $attribution->user->last_name,
                 'timestamp' => $attribution->updated_at->toISOString(),
                 'icon' => 'CheckCircle',
@@ -481,15 +481,15 @@ class DashboardController extends Controller
         foreach ($recentApplications as $application) {
             $activities[] = [
                 'id' => $application->id,
-                'title' => 'Nouvelle candidature pour ' . $application->openOffer->title,
-                'description' => 'De: ' . $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name,
+                'title' => 'New application for ' . $application->openOffer->title,
+                'description' => 'From: ' . $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name,
                 'timestamp' => $application->created_at->toISOString(),
                 'icon' => 'Users',
                 'iconBackground' => 'bg-blue-100',
                 'iconColor' => 'text-blue-600',
                 'user' => [
                     'name' => $application->freelanceProfile && $application->freelanceProfile->user ?
-                        $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name : 'Utilisateur inconnu',
+                        $application->freelanceProfile->user->first_name . ' ' . $application->freelanceProfile->user->last_name : 'Unknown user',
                     'avatar' => $this->getUserAvatar($application->freelanceProfile ? $application->freelanceProfile->user : null),
                 ],
             ];
@@ -503,7 +503,7 @@ class DashboardController extends Controller
         foreach ($recentCompletions as $completion) {
             $activities[] = [
                 'id' => $completion->id,
-                'title' => 'Projet terminé: ' . $completion->title,
+                'title' => 'Project completed: ' . $completion->title,
                 'description' => 'Budget: ' . $completion->budget,
                 'timestamp' => $completion->updated_at->toISOString(),
                 'icon' => 'CheckCircle',
@@ -534,9 +534,9 @@ class DashboardController extends Controller
     private function translateApplicationStatus(string $status): string
     {
         $translations = [
-            'pending' => 'En attente',
-            'accepted' => 'Acceptée',
-            'rejected' => 'Rejetée',
+            'pending' => 'Pending',
+            'accepted' => 'Accepted',
+            'rejected' => 'Rejected',
         ];
 
         return $translations[$status] ?? $status;

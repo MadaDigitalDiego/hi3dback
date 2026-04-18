@@ -51,10 +51,10 @@ class ProfileController extends Controller
     {
         try {
             $profile = ProfessionalProfile::create(array_merge($request->validated(), ['user_id' => auth()->id()]));
-            return response()->json(['message' => 'Profil professionnel créé avec succès.', 'profile' => $profile], 201);
+            return response()->json(['message' => 'Professional profile created successfully.', 'profile' => $profile], 201);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la création du profil professionnel: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la création du profil professionnel.'], 500);
+            return response()->json(['message' => 'Error while creating the professional profile.'], 500);
         }
     }
 
@@ -64,13 +64,13 @@ class ProfileController extends Controller
             $profile = ClientProfile::where('user_id', $user_id)->first();
 
             if (!$profile) {
-                return response()->json(['message' => 'Profil client introuvable.'], 404);
+                return response()->json(['message' => 'Client profile not found.'], 404);
             }
 
             return response()->json(['profile' => $profile], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du profil client pour l\'utilisateur ID ' . $user_id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération du profil client.'], 500);
+            return response()->json(['message' => 'Error while retrieving the client profile.'], 500);
         }
     }
 
@@ -85,7 +85,7 @@ class ProfileController extends Controller
             $user = auth()->user();
 
             if ($user->is_professional) {
-                return response()->json(['message' => 'L\'utilisateur authentifié n\'est pas un client.'], 400);
+                return response()->json(['message' => 'The authenticated user is not a client.'], 400);
             }
 
             $profile = ClientProfile::where('user_id', $user->id)->first();
@@ -115,7 +115,7 @@ class ProfileController extends Controller
             return response()->json(['profile' => $profileData], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du profil client authentifié: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération du profil client.'], 500);
+            return response()->json(['message' => 'Error while retrieving the client profile.'], 500);
         }
     }
 
@@ -154,7 +154,7 @@ class ProfileController extends Controller
             return response()->json(['profile' => $profileData], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du profil client authentifié: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération du profil client.'], 500);
+            return response()->json(['message' => 'Error while retrieving the client profile.'], 500);
         }
     }
 
@@ -238,7 +238,7 @@ class ProfileController extends Controller
 
             // Retourner une réponse JSON
             return response()->json([
-                'message' => $profile->wasRecentlyCreated ? 'Profil client créé avec succès.' : 'Profil client mis à jour avec succès.',
+                'message' => $profile->wasRecentlyCreated ? 'Client profile created successfully.' : 'Client profile updated successfully.',
                 'profile' => $profile,
             ], 200);
 
@@ -247,7 +247,7 @@ class ProfileController extends Controller
             Log::error('Erreur lors de la création ou mise à jour du profil client: ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
             return response()->json([
-                'message' => 'Une erreur est survenue lors de la création ou de la mise à jour du profil client.',
+                'message' => 'An error occurred while creating or updating the client profile.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -343,14 +343,14 @@ class ProfileController extends Controller
 
             // Retourner une réponse de succès
             return response()->json([
-                'message' => 'Profil client mis à jour avec succès.',
+                'message' => 'Client profile updated successfully.',
                 'profile' => $profile
             ], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour du profil client: ' . $e->getMessage());
             Log::error('Trace: ' . $e->getTraceAsString());
             return response()->json([
-                'message' => 'Une erreur est survenue lors de la mise à jour du profil client.',
+                'message' => 'An error occurred while updating the client profile.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -370,7 +370,7 @@ class ProfileController extends Controller
 
             // Si aucun profil n'est trouvé, retourner une erreur 404
             if (!$profile) {
-                return response()->json(['message' => 'Profil client non trouvé.'], 404);
+                return response()->json(['message' => 'Client profile not found.'], 404);
             }
 
             // Traiter l'upload de l'avatar si présent
@@ -408,13 +408,13 @@ class ProfileController extends Controller
 
             // Retourner une réponse de succès
             return response()->json([
-                'message' => 'Profil client complété avec succès.',
+                'message' => 'Client profile completed successfully.',
                 'profile' => $profile
             ], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la complétion du profil client: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Une erreur est survenue lors de la complétion du profil client.',
+                'message' => 'An error occurred while completing the client profile.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -433,7 +433,7 @@ class ProfileController extends Controller
 
             if (!$profile) {
                 return response()->json([
-                    'message' => 'Profil client non trouvé.',
+                    'message' => 'Client profile not found.',
                     'completion_percentage' => 0
                 ], 404);
             }
@@ -448,7 +448,7 @@ class ProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du statut de complétion du profil: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Une erreur est survenue lors de la récupération du statut de complétion du profil.',
+                'message' => 'An error occurred while retrieving the profile completion status.',
                 'error' => $e->getMessage(),
                 'completion_percentage' => 0
             ], 500);
@@ -507,7 +507,7 @@ class ProfileController extends Controller
             return response()->json(['profile' => $profileData], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du profil: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération du profil.'], 500);
+            return response()->json(['message' => 'Error while retrieving the profile.'], 500);
         }
     }
 
@@ -526,7 +526,7 @@ class ProfileController extends Controller
 
                 if (!$profile) {
                     return response()->json([
-                        'message' => 'Profil professionnel non trouvé.',
+                        'message' => 'Professional profile not found.',
                         'completion_percentage' => 0
                     ], 404);
                 }
@@ -537,7 +537,7 @@ class ProfileController extends Controller
 
                 if (!$profile) {
                     return response()->json([
-                        'message' => 'Profil client non trouvé.',
+                        'message' => 'Client profile not found.',
                         'completion_percentage' => 0
                     ], 404);
                 }
@@ -552,7 +552,7 @@ class ProfileController extends Controller
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du statut de complétion du profil: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erreur lors de la récupération du statut de complétion du profil.',
+                'message' => 'Error while retrieving the profile completion status.',
                 'error' => $e->getMessage(),
                 'completion_percentage' => 0
             ], 500);
@@ -762,7 +762,7 @@ class ProfileController extends Controller
                 $user->update($request->only(['first_name', 'last_name', 'email']));
 
                 return response()->json([
-                    'message' => 'Profil mis à jour avec succès',
+                    'message' => 'Profile updated successfully',
                     'profile' => $profile->fresh()
                 ]);
 
@@ -773,7 +773,7 @@ class ProfileController extends Controller
                 $profile->save();
 
                 return response()->json([
-                    'message' => 'Profil client mis à jour',
+                    'message' => 'Client profile updated',
                     'profile' => $profile
                 ]);
             }
@@ -787,7 +787,7 @@ class ProfileController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Erreur serveur',
+                'message' => 'Server error',
                 'error' => $e->getMessage(),
                 'exception' => get_class($e),
                 'trace' => $e->getTrace(),
@@ -801,14 +801,14 @@ class ProfileController extends Controller
             $user = auth()->user();
             if ($user && method_exists($user, 'delete')) {
                 $user->delete(); // La suppression en cascade est gérée par la contrainte foreign key dans les migrations
-                return response()->json(['message' => 'Compte supprimé avec succès.']);
+                return response()->json(['message' => 'Account deleted successfully.']);
             } else {
                 Log::warning('Impossible de supprimer le compte: utilisateur non trouvé ou méthode delete non disponible');
-                return response()->json(['message' => 'Impossible de supprimer le compte.'], 400);
+                return response()->json(['message' => 'Unable to delete the account.'], 400);
             }
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression du compte utilisateur ID ' . auth()->id() . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression du compte.'], 500);
+            return response()->json(['message' => 'Error while deleting the account.'], 500);
         }
     }
 
@@ -843,13 +843,13 @@ class ProfileController extends Controller
             $profile->update($data);
 
             return response()->json([
-                'message' => 'Profil client mis à jour avec succès.',
+                'message' => 'Client profile updated successfully.',
                 'profile' => $profile
             ], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erreur lors de la mise à jour du profil.',
+                'message' => 'Error while updating the profile.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -966,7 +966,7 @@ class ProfileController extends Controller
             $profile = $user->freelanceProfile;
 
             if (!$profile) {
-                return response()->json(['message' => 'Profil freelance non trouvé.'], 404);
+                return response()->json(['message' => 'Freelance profile not found.'], 404);
             }
 
             $profile->availability_status = $request->availability_status;
@@ -974,7 +974,7 @@ class ProfileController extends Controller
             $profile->save();
 
             return response()->json([
-                'message' => 'Disponibilité mise à jour avec succès.',
+                'message' => 'Availability updated successfully.',
                 'availability_status' => $profile->availability_status,
                 'estimated_response_time' => $profile->estimated_response_time,
             ], 200);

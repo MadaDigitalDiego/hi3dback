@@ -24,7 +24,7 @@ class AchievementController extends Controller
         $profile = $user->freelanceProfile;
 
         if (!$profile) {
-            return response()->json(['message' => 'Profil freelance non trouvé.'], 404);
+            return response()->json(['message' => 'Freelance profile not found.'], 404);
         }
 
         $achievements = $profile->achievements;
@@ -43,7 +43,7 @@ class AchievementController extends Controller
         $professionalProfile = $user->professionalProfile;
 
         if (!$professionalProfile) {
-            return response()->json(['message' => 'Profil freelance non trouvé.'], 404);
+            return response()->json(['message' => 'Freelance profile not found.'], 404);
         }
 
         $achievement = new Achievement($achievementData);
@@ -52,11 +52,11 @@ class AchievementController extends Controller
 
         return response()->json([
             'achievement' => $achievement,
-            'message' => 'Réalisation/Certification ajoutée avec succès.'
+            'message' => 'Achievement/Certification added successfully.'
         ], 201);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'ajout d\'une réalisation/certification: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de l\'ajout de la réalisation/certification. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while adding the achievement/certification. Please try again later.'], 500);
         }
     }
 
@@ -84,10 +84,10 @@ class AchievementController extends Controller
                 return response()->json(['achievement' => $achievement], 200);
             }
 
-            return response()->json(['message' => 'Réalisation non trouvée ou accès non autorisé.'], 404);
+            return response()->json(['message' => 'Achievement not found or access not authorized.'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage de la réalisation: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération de la réalisation.'], 500);
+            return response()->json(['message' => 'Error while retrieving the achievement.'], 500);
         }
     }
 
@@ -101,15 +101,15 @@ class AchievementController extends Controller
             $profile = $user->professionalProfile;
 
             if (!$profile || $achievement->professional_profile_id !== $profile->id) {
-                return response()->json(['message' => 'Non autorisé à modifier cette réalisation.'], 403);
+                return response()->json(['message' => 'Not authorized to update this achievement.'], 403);
             }
 
             $achievementData = $request->validated();
             $achievement->update($achievementData);
-            return response()->json(['achievement' => $achievement, 'message' => 'Réalisation/Certification mise à jour avec succès.'], 200);
+            return response()->json(['achievement' => $achievement, 'message' => 'Achievement/Certification updated successfully.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour de la réalisation/certification: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour de la réalisation/certification. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while updating the achievement/certification. Please try again later.'], 500);
         }
     }
 
@@ -123,14 +123,14 @@ class AchievementController extends Controller
             $profile = $user->freelanceProfile;
 
             if (!$profile || $achievement->professional_profile_id !== $profile->id) {
-                return response()->json(['message' => 'Non autorisé à supprimer cette réalisation.'], 403);
+                return response()->json(['message' => 'Not authorized to delete this achievement.'], 403);
             }
 
             $achievement->delete();
-            return response()->json(['message' => 'Réalisation/Certification supprimée avec succès.'], 200);
+            return response()->json(['message' => 'Achievement/Certification deleted successfully.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression de la réalisation/certification: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression de la réalisation/certification. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while deleting the achievement/certification. Please try again later.'], 500);
         }
     }
 
@@ -150,7 +150,7 @@ class AchievementController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération des réalisations.'
+                'message' => 'Error while retrieving achievements.'
             ], 500);
         }
     }
@@ -180,7 +180,7 @@ class AchievementController extends Controller
             Log::error('Erreur lors de la récupération des réalisations du professionnel: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération des réalisations du professionnel.'
+                'message' => 'Error while retrieving professional achievements.'
             ], 500);
         }
     }
@@ -200,13 +200,13 @@ class AchievementController extends Controller
             // Support pour le nouveau format (files array)
             if ($achievement->files && is_array($achievement->files)) {
                 if (!isset($achievement->files[$fileIndex])) {
-                    return response()->json(['message' => 'Fichier non trouvé pour cette réalisation.'], 404);
+                    return response()->json(['message' => 'File not found for this achievement.'], 404);
                 }
 
                 $file = $achievement->files[$fileIndex];
 
                 if (!isset($file['path']) || !Storage::disk('public')->exists($file['path'])) {
-                    return response()->json(['message' => 'Le fichier demandé n\'existe pas ou a été supprimé.'], 404);
+                    return response()->json(['message' => 'The requested file does not exist or has been deleted.'], 404);
                 }
 
                 $fileContent = Storage::disk('public')->get($file['path']);
@@ -221,7 +221,7 @@ class AchievementController extends Controller
             // Support pour l'ancien format (file_path)
             elseif ($achievement->file_path && $fileIndex === 0) {
                 if (!Storage::disk('public')->exists($achievement->file_path)) {
-                    return response()->json(['message' => 'Le fichier demandé n\'existe pas ou a été supprimé.'], 404);
+                    return response()->json(['message' => 'The requested file does not exist or has been deleted.'], 404);
                 }
 
                 $fileContent = Storage::disk('public')->get($achievement->file_path);
@@ -232,10 +232,10 @@ class AchievementController extends Controller
                     ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
             }
 
-            return response()->json(['message' => 'Aucun fichier trouvé pour cette réalisation.'], 404);
+            return response()->json(['message' => 'No file found for this achievement.'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur lors du téléchargement du fichier pour la réalisation ID ' . $achievement->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du téléchargement du fichier.'], 500);
+            return response()->json(['message' => 'Error while downloading the file.'], 500);
         }
     }
 }

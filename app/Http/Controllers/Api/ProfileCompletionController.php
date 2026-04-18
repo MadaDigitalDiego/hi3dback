@@ -74,7 +74,7 @@ class ProfileCompletionController extends Controller
             ], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des données de complétion du profil: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des données de complétion du profil.'], 500);
+            return response()->json(['message' => 'Error while retrieving profile completion data.'], 500);
         }
     }
 
@@ -99,7 +99,7 @@ class ProfileCompletionController extends Controller
             }
 
             if (!$profile) {
-                return response()->json(['message' => 'Erreur lors de la création/récupération du profil.'], 500);
+                return response()->json(['message' => 'Error while creating/retrieving the profile.'], 500);
             }
 
             $validationRules = $this->getValidationRulesForStep($step, $user->is_professional);
@@ -150,7 +150,7 @@ class ProfileCompletionController extends Controller
                     $profile->hourly_rate = $validatedData['hourly_rate'] ?? null;
                     break;
                 default:
-                    return response()->json(['message' => 'Étape invalide.'], 400); // 400 Bad Request
+                    return response()->json(['message' => 'Invalid step.'], 400); // 400 Bad Request
             }
 
             $profile->user_id = $user->id;
@@ -164,13 +164,13 @@ class ProfileCompletionController extends Controller
 
 
             return response()->json([
-                'message' => 'Étape mise à jour avec succès.',
+                'message' => 'Step updated successfully.',
                 'completion_percentage' => $completionPercentage
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour de l\'étape du profil: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour de l\'étape du profil. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while updating the profile step. Please try again later.'], 500);
         }
     }
 
@@ -415,7 +415,7 @@ class ProfileCompletionController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de tous les profils freelance: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des profils freelance.'], 500);
+            return response()->json(['message' => 'Error while retrieving freelance profiles.'], 500);
         }
     }
 
@@ -439,7 +439,7 @@ class ProfileCompletionController extends Controller
             }
 
             if (!$profile) {
-                return response()->json(['message' => 'Erreur lors de la création/récupération du profil.'], 500);
+                return response()->json(['message' => 'Error while creating/retrieving the profile.'], 500);
             }
 
             // Validation des données
@@ -563,14 +563,14 @@ class ProfileCompletionController extends Controller
             $profileData['email'] = $user->email;
 
             return response()->json([
-                'message' => 'Profil complété avec succès.',
+                'message' => 'Profile completed successfully.',
                 'profile' => $profileData,
                 'completion_percentage' => $completionPercentage
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors de la complétion du profil: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la complétion du profil: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Error while completing the profile: ' . $e->getMessage()], 500);
         }
     }
 
@@ -586,7 +586,7 @@ class ProfileCompletionController extends Controller
             $user = $request->user();
 
             if (!$user->is_professional) {
-                return response()->json(['message' => 'Seuls les professionnels peuvent télécharger des éléments de portfolio.'], 403);
+                return response()->json(['message' => 'Only professionals can upload portfolio items.'], 403);
             }
 
             $profile = $user->freelanceProfile()->firstOrNew(['user_id' => $user->id]);
@@ -616,7 +616,7 @@ class ProfileCompletionController extends Controller
             $profile->save();
 
             return response()->json([
-                'message' => 'Fichier de portfolio téléchargé avec succès.',
+                'message' => 'Portfolio file uploaded successfully.',
                 'file' => [
                     'path' => $path,
                     'name' => $file->getClientOriginalName(),
@@ -626,7 +626,7 @@ class ProfileCompletionController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Erreur lors du téléchargement du fichier de portfolio: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du téléchargement du fichier de portfolio.'], 500);
+            return response()->json(['message' => 'Error while uploading the portfolio file.'], 500);
         }
     }
 
@@ -643,13 +643,13 @@ class ProfileCompletionController extends Controller
             $user = $request->user();
 
             if (!$user->is_professional) {
-                return response()->json(['message' => 'Seuls les professionnels peuvent supprimer des éléments de portfolio.'], 403);
+                return response()->json(['message' => 'Only professionals can delete portfolio items.'], 403);
             }
 
             $profile = $user->freelanceProfile;
 
             if (!$profile) {
-                return response()->json(['message' => 'Profil non trouvé.'], 404);
+                return response()->json(['message' => 'Profile not found.'], 404);
             }
 
             $portfolio = $profile->portfolio ?? [];
@@ -667,19 +667,19 @@ class ProfileCompletionController extends Controller
             }
 
             if (!$found) {
-                return response()->json(['message' => 'Élément de portfolio non trouvé.'], 404);
+                return response()->json(['message' => 'Portfolio item not found.'], 404);
             }
 
             $profile->portfolio = $newPortfolio;
             $profile->save();
 
             return response()->json([
-                'message' => 'Élément de portfolio supprimé avec succès.'
+                'message' => 'Portfolio item deleted successfully.'
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression de l\'\u00e9lément de portfolio: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression de l\'\u00e9lément de portfolio.'], 500);
+            return response()->json(['message' => 'Error while deleting the portfolio item.'], 500);
         }
     }
 
@@ -708,13 +708,13 @@ class ProfileCompletionController extends Controller
             Log::info('Profil récupéré: ' . ($profile->id ?? 'nouveau profil'));
 
             if (!$profile) {
-                return response()->json(['message' => 'Erreur lors de la création/récupération du profil.'], 500);
+                return response()->json(['message' => 'Error while creating/retrieving the profile.'], 500);
             }
 
             // Vérifier si un fichier a été envoyé
             if (!$request->hasFile('profile_picture')) {
                 Log::error('Aucun fichier n\'a été envoyé');
-                return response()->json(['message' => 'Aucun fichier n\'a été envoyé'], 400);
+                return response()->json(['message' => 'No file was uploaded.'], 400);
             }
 
             Log::info('Fichier reçu: ' . $request->file('profile_picture')->getClientOriginalName());
@@ -747,13 +747,13 @@ class ProfileCompletionController extends Controller
             $profile->save();
 
             return response()->json([
-                'message' => 'Photo de profil téléchargée avec succès.',
+                'message' => 'Profile picture uploaded successfully.',
                 'avatar_path' => $avatarPath
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Erreur lors du téléchargement de la photo de profil: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du téléchargement de la photo de profil.'], 500);
+            return response()->json(['message' => 'Error while uploading the profile picture.'], 500);
         }
     }
 

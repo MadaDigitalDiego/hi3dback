@@ -20,7 +20,7 @@ class ExperienceController extends Controller
         $profile = $user->freelanceProfile;
 
         if (!$profile) {
-            return response()->json(['message' => 'Profil freelance non trouvé.'], 404);
+            return response()->json(['message' => 'Freelance profile not found.'], 404);
         }
 
         $experiences = $profile->experiences()->with('projects')->get(); // Charger les projets associés
@@ -37,17 +37,17 @@ class ExperienceController extends Controller
             $profile = $user->freelanceProfile;
 
             if (!$profile) {
-                return response()->json(['message' => 'Profil freelance non trouvé.'], 404);
+                return response()->json(['message' => 'Freelance profile not found.'], 404);
             }
 
             $experience = new Experience($request->validated());
             $experience->freelance_profile_id = $profile->id;
             $experience->save();
 
-            return response()->json(['experience' => $experience, 'message' => 'Expérience ajoutée avec succès.'], 201); // 201 Created
+            return response()->json(['experience' => $experience, 'message' => 'Experience added successfully.'], 201); // 201 Created
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'ajout d\'une expérience: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de l\'ajout de l\'expérience. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while adding the experience. Please try again later.'], 500);
         }
     }
 
@@ -66,10 +66,10 @@ class ExperienceController extends Controller
     {
         try {
             $experience->update($request->validated());
-            return response()->json(['experience' => $experience, 'message' => 'Expérience mise à jour avec succès.'], 200);
+            return response()->json(['experience' => $experience, 'message' => 'Experience updated successfully.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour de l\'expérience: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour de l\'expérience. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while updating the experience. Please try again later.'], 500);
         }
     }
 
@@ -80,10 +80,10 @@ class ExperienceController extends Controller
     {
         try {
             $experience->delete();
-            return response()->json(['message' => 'Expérience supprimée avec succès.'], 200);
+            return response()->json(['message' => 'Experience deleted successfully.'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression de l\'expérience: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression de l\'expérience. Veuillez réessayer plus tard.'], 500);
+            return response()->json(['message' => 'Error while deleting the experience. Please try again later.'], 500);
         }
     }
 }

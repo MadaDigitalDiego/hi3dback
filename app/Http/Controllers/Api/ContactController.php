@@ -22,7 +22,7 @@ class ContactController extends Controller
             return response()->json(['contacts' => $contacts]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la liste des contacts: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des contacts.'], 500);
+            return response()->json(['message' => 'Error while retrieving contacts.'], 500);
         }
     }
 
@@ -44,10 +44,10 @@ class ContactController extends Controller
 
         try {
             $contact = Contact::create(array_merge($validator->validated(), ['user_id' => $request->user()->id]));
-            return response()->json(['contact' => $contact, 'message' => 'Contact ajouté avec succès.'], 201);
+            return response()->json(['contact' => $contact, 'message' => 'Contact added successfully.'], 201);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'enregistrement d\'un nouveau contact: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de l\'ajout du contact.'], 500);
+            return response()->json(['message' => 'Error while adding the contact.'], 500);
         }
     }
 
@@ -57,13 +57,13 @@ class ContactController extends Controller
     public function show(Contact $contact): JsonResponse
     {
         if ($contact->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Non autorisé.'], 403);
+            return response()->json(['message' => 'Unauthorized.'], 403);
         }
         try {
             return response()->json(['contact' => $contact]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage du contact ID ' . $contact->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération du contact.'], 500);
+            return response()->json(['message' => 'Error while retrieving the contact.'], 500);
         }
     }
 
@@ -73,7 +73,7 @@ class ContactController extends Controller
     public function update(Request $request, Contact $contact): JsonResponse
     {
         if ($contact->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Non autorisé.'], 403);
+            return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -89,10 +89,10 @@ class ContactController extends Controller
 
         try {
             $contact->update($validator->validated());
-            return response()->json(['contact' => $contact, 'message' => 'Contact mis à jour avec succès.']);
+            return response()->json(['contact' => $contact, 'message' => 'Contact updated successfully.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la mise à jour du contact ID ' . $contact->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour du contact.'], 500);
+            return response()->json(['message' => 'Error while updating the contact.'], 500);
         }
     }
 
@@ -102,14 +102,14 @@ class ContactController extends Controller
     public function destroy(Contact $contact): JsonResponse
     {
         if ($contact->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Non autorisé.'], 403);
+            return response()->json(['message' => 'Unauthorized.'], 403);
         }
         try {
             $contact->delete();
-            return response()->json(['message' => 'Contact supprimé avec succès.']);
+            return response()->json(['message' => 'Contact deleted successfully.']);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la suppression du contact ID ' . $contact->id . ': ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la suppression du contact.'], 500);
+            return response()->json(['message' => 'Error while deleting the contact.'], 500);
         }
     }
 }

@@ -106,7 +106,7 @@ class ProfessionalController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des professionnels: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des professionnels.'], 500);
+            return response()->json(['message' => 'Error while retrieving professionals.'], 500);
         }
     }
 
@@ -128,7 +128,7 @@ class ProfessionalController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de tous les profils freelance: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des profils freelance.'], 500);
+            return response()->json(['message' => 'Error while retrieving freelance profiles.'], 500);
         }
     }
     /**
@@ -155,7 +155,7 @@ class ProfessionalController extends Controller
             return response()->json(['professionals' => $professionals], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la liste publique des professionnels: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des professionnels.'], 500);
+            return response()->json(['message' => 'Error while retrieving professionals.'], 500);
         }
     }
 
@@ -175,7 +175,7 @@ class ProfessionalController extends Controller
             return response()->json(['professionals' => $professionals], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la liste protégée des professionnels: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des professionnels.'], 500);
+            return response()->json(['message' => 'Error while retrieving professionals.'], 500);
         }
     }
 
@@ -205,7 +205,7 @@ class ProfessionalController extends Controller
             return response()->json(['professionals' => $professionals], 200);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération de la liste des professionnels avec disponibilité: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la récupération des professionnels.'], 500);
+            return response()->json(['message' => 'Error while retrieving professionals.'], 500);
         }
     }
 
@@ -327,7 +327,7 @@ class ProfessionalController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération du professionnel: ' . $e->getMessage());
-            return response()->json(['message' => 'Professionnel non trouvé.'], 404);
+            return response()->json(['message' => 'Professional not found.'], 404);
         }
     }
     /**
@@ -481,7 +481,7 @@ class ProfessionalController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors du filtrage des professionnels: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors du filtrage des professionnels.'], 500);
+            return response()->json(['message' => 'Error while filtering professionals.'], 500);
         }
     }
 }

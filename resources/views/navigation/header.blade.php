@@ -69,7 +69,7 @@ $context = $context ?? 'default';
         {{-- Utilisateur connecté - Barre d'icônes --}}
         <div class="text-black flex items-center gap-[10px]" style="width: 182px; height: 48px; border-radius: 8px; padding: 6px; background: #F0F0F0;">
           {{-- Bouton recherche (visible sur mobile seulement) --}}
-          <button type="button" id="hi3dMobileSearchBtn" class="lg:hidden flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <button type="button" id="hi3dMobileSearchBtn" class="lg:hidden flex items-center justify-center flex-shrink-0" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g clip-path="url(#hi3dClip0)">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M4.46962 11.16L0 15.6937L2.25 18L6.83437 13.527C7.99062 14.2465 9.32566 14.627 10.6875 14.625C14.7262 14.625 18 11.3434 18 7.3125C18 3.27375 14.7184 0 10.6875 0C6.64875 0 3.375 3.28163 3.375 7.3125C3.37297 8.67212 3.75219 10.0051 4.46962 11.16ZM15.7534 7.2585C15.7534 10.0485 13.4876 12.321 10.6909 12.321C7.90088 12.321 5.62838 10.0541 5.62838 7.2585C5.62838 4.4685 7.89525 2.196 10.6909 2.196C13.4809 2.196 15.7534 4.46175 15.7534 7.2585Z" fill="black"/>
@@ -83,20 +83,20 @@ $context = $context ?? 'default';
             </svg>
           </button>
           {{-- Favoris, Messages, Profile - visible sur desktop et mobile --}}
-          <a href="{{ $frontendUrl ?? '/' }}/favorite" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <a href="{{ $frontendUrl ?? '/' }}/favorite" class="flex items-center justify-center flex-shrink-0 lg:flex" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12.9375 2.25H5.0625C4.76413 2.25 4.47798 2.36853 4.267 2.5795C4.05603 2.79048 3.9375 3.07663 3.9375 3.375V15.75C3.93755 15.8504 3.96446 15.9489 4.01545 16.0354C4.06643 16.1219 4.13963 16.1931 4.22744 16.2418C4.31525 16.2904 4.41448 16.3147 4.51483 16.312C4.61519 16.3094 4.713 16.2799 4.79812 16.2267L9 13.6005L13.2026 16.2267C13.2877 16.2797 13.3854 16.309 13.4857 16.3116C13.5859 16.3142 13.685 16.2899 13.7727 16.2412C13.8604 16.1926 13.9335 16.1214 13.9845 16.0351C14.0354 15.9487 14.0624 15.8503 14.0625 15.75V3.375C14.0625 3.07663 13.944 2.79048 13.733 2.5795C13.522 2.36853 13.2359 2.25 12.9375 2.25Z" fill="black"/>
             </svg>
           </a>
           {{-- Messages --}}
-          <a href="{{ $frontendUrl ?? '/' }}/messages" class="relative flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <a href="{{ $frontendUrl ?? '/' }}/messages" class="relative flex items-center justify-center flex-shrink-0 lg:flex" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="18 12 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19.9603 24.0235H30.0398C30.6375 24.0235 31 23.727 31 23.2762C31 22.6587 30.3514 22.1028 29.8045 21.5532C29.3847 21.1271 29.2703 20.2501 29.2194 19.5399C29.1749 17.1684 28.5262 15.538 26.8347 14.9451C26.593 14.1361 25.938 13.5 24.9968 13.5C24.062 13.5 23.4006 14.1361 23.1654 14.9451C21.4738 15.538 20.8251 17.1684 20.7806 19.5399C20.7297 20.2501 20.6153 21.1271 20.1955 21.5532C19.6423 22.1028 19 22.6587 19 23.2762C19 23.727 19.3561 24.0235 19.9603 24.0235Z" fill="#0D0D0D"/>
             </svg>
             <span id="hi3dUnreadBadge" class="hidden absolute top-1 right-1 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full flex items-center justify-center" style="width: 16px; height: 16px;">0</span>
           </a>
           {{-- Profile --}}
-          <a href="{{ $frontendUrl ?? '/' }}/dashboard/profile" class="flex items-center justify-center" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <a href="{{ $frontendUrl ?? '/' }}/dashboard/profile" class="flex items-center justify-center flex-shrink-0 lg:flex" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="15" height="12" viewBox="0 0 15 12" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13.5937 2H7.96873L6.09374 0H1.40625C0.629589 0 0 0.671559 0 1.5V10.5C0 11.3285 0.629589 12 1.40625 12H13.5937C14.3704 12 15 11.3285 15 10.5V3.50002C15 2.67157 14.3704 2 13.5937 2Z" fill="#0D0D0D"/>
             </svg>

@@ -1,1 +1,1 @@
-Nothing needs to be added to the .gitignore file since only a single source file was modified (`resources/views/navigation/header.blade.php`) and there are no build artifacts, dependencies, or temporary files in the changes.
+Nothing needs to be added to .gitignore since only a single PHP view file was modified and no build artifacts, dependencies, or temporary files were detected in the changes.

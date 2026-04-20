@@ -69,7 +69,7 @@ $context = $context ?? 'default';
         {{-- Utilisateur connecté - Barre d'icônes --}}
         <div class="text-black flex items-center gap-[10px]" style="height: 48px; border-radius: 8px; padding: 6px; background: #F0F0F0;">
           {{-- Bouton recherche (visible sur mobile seulement) --}}
-          <button type="button" id="hi3dMobileSearchBtn" class="flex lg:hidden items-center justify-center flex-shrink-0" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
+          <button type="button" id="hi3dMobileSearchBtn" class="hidden lg:flex items-center justify-center flex-shrink-0" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g clip-path="url(#hi3dClip0)">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M4.46962 11.16L0 15.6937L2.25 18L6.83437 13.527C7.99062 14.2465 9.32566 14.627 10.6875 14.625C14.7262 14.625 18 11.3434 18 7.3125C18 3.27375 14.7184 0 10.6875 0C6.64875 0 3.375 3.28163 3.375 7.3125C3.37297 8.67212 3.75219 10.0051 4.46962 11.16ZM15.7534 7.2585C15.7534 10.0485 13.4876 12.321 10.6909 12.321C7.90088 12.321 5.62838 10.0541 5.62838 7.2585C5.62838 4.4685 7.89525 2.196 10.6909 2.196C13.4809 2.196 15.7534 4.46175 15.7534 7.2585Z" fill="black"/>
@@ -413,7 +413,7 @@ $context = $context ?? 'default';
     if (isAuthenticated && authUser) {
       // Show connected user menu - Mobile: loupe, favoris, messages, profil | Desktop: favoris, messages, profil
       rightPart.innerHTML = '<div class="text-black flex items-center gap-[10px]" style="width: 182px; height: 48px; border-radius: 8px; padding: 6px; background: #F0F0F0;">' +
-        '<button type="button" id="hi3dMobileSearchBtn" class="flex lg:hidden items-center justify-center flex-shrink-0" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">' +
+        '<button type="button" id="hi3dMobileSearchBtn" class="hidden lg:flex items-center justify-center flex-shrink-0" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">' +
           '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">' +
             '<g clip-path="url(#hi3dClip0)"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.46962 11.16L0 15.6937L2.25 18L6.83437 13.527C7.99062 14.2465 9.32566 14.627 10.6875 14.625C14.7262 14.625 18 11.3434 18 7.3125C18 3.27375 14.7184 0 10.6875 0C6.64875 0 3.375 3.28163 3.375 7.3125C3.37297 8.67212 3.75219 10.0051 4.46962 11.16ZM15.7534 7.2585C15.7534 10.0485 13.4876 12.321 10.6909 12.321C7.90088 12.321 5.62838 10.0541 5.62838 7.2585C5.62838 4.4685 7.89525 2.196 10.6909 2.196C13.4809 2.196 15.7534 4.46175 15.7534 7.2585Z" fill="black"/>' +
             '<circle cx="2" cy="2" r="2" transform="matrix(-1 0 0 1 14 4)" fill="#0D0D0D"/>' +

@@ -67,7 +67,7 @@ $context = $context ?? 'default';
     <div class="flex items-center gap-3 ml-auto">
       @if($isAuthenticated && $authUser)
         {{-- Utilisateur connecté - Barre d'icônes --}}
-        <div class="text-black flex items-center gap-[10px]" style="width: 182px; height: 48px; border-radius: 8px; padding: 6px; background: #F0F0F0;">
+        <div class="text-black flex items-center gap-[10px]" style="height: 48px; border-radius: 8px; padding: 6px; background: #F0F0F0;">
           {{-- Bouton recherche (visible sur mobile seulement) --}}
           <button type="button" id="hi3dMobileSearchBtn" class="flex lg:hidden items-center justify-center flex-shrink-0" style="width: 50px; height: 40px; border-radius: 8px; background: #F0F0F0;">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">

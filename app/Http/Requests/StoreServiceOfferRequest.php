@@ -54,6 +54,8 @@ class StoreServiceOfferRequest extends FormRequest
             'delivery_method' => 'nullable|string',
             'why_choose_me' => 'nullable|string',
             'youtube_link' => 'nullable|string|max:2048',
+            'youtube_links' => 'nullable|array',
+            'youtube_links.*' => 'nullable|string|max:2048',
         ];
     }
 

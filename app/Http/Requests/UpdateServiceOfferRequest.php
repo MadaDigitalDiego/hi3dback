@@ -49,6 +49,8 @@ class UpdateServiceOfferRequest extends FormRequest
             'delivery_method' => 'sometimes|string',
             'why_choose_me' => 'sometimes|string',
             'youtube_link' => 'sometimes|nullable|string|max:2048',
+            'youtube_links' => 'sometimes|nullable|array',
+            'youtube_links.*' => 'nullable|string|max:2048',
         ];
     }
 

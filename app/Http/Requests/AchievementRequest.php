@@ -32,6 +32,8 @@ class AchievementRequest extends FormRequest
             'gallery_photos' => 'nullable|array',
             'gallery_photos.*' => 'string|max:255',
             'youtube_link' => 'nullable|string|max:255',
+            'youtube_links' => 'nullable|array',
+            'youtube_links.*' => 'nullable|string|max:2048',
             'status' => 'nullable|string|max:255',
         ];
     }

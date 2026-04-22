@@ -41,6 +41,14 @@ class ServiceOfferResource extends JsonResource
             }
         }
 
+        $youtubeLinks = $this->youtube_links;
+        if (!is_array($youtubeLinks)) {
+            $youtubeLinks = [];
+        }
+        if (empty($youtubeLinks) && $this->youtube_link) {
+            $youtubeLinks = [$this->youtube_link];
+        }
+
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
@@ -76,6 +84,7 @@ class ServiceOfferResource extends JsonResource
             'delivery_method' => $this->delivery_method,
             'why_choose_me' => $this->why_choose_me,
             'youtube_link' => $this->youtube_link,
+            'youtube_links' => $youtubeLinks,
             'status' => $this->status,
             'likes' => $this->likes,
             'views' => $this->views,

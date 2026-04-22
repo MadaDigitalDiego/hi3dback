@@ -39,6 +39,23 @@ class ServiceOfferController extends Controller
         try {
             $validatedData = $request->validated();
 
+            if (array_key_exists('youtube_links', $validatedData)) {
+                $youtubeLinks = $validatedData['youtube_links'];
+                if (!is_array($youtubeLinks)) {
+                    $youtubeLinks = [];
+                }
+                $youtubeLinks = array_values(array_filter($youtubeLinks, function ($value) {
+                    return is_string($value) && trim($value) !== '';
+                }));
+                $validatedData['youtube_links'] = $youtubeLinks;
+
+                if (empty($validatedData['youtube_link'] ?? null) && !empty($youtubeLinks)) {
+                    $validatedData['youtube_link'] = $youtubeLinks[0];
+                }
+            } elseif (!empty($validatedData['youtube_link'] ?? null)) {
+                $validatedData['youtube_links'] = [$validatedData['youtube_link']];
+            }
+
             // Gestion de l'upload des fichiers si présents
             $filePaths = [];
             if ($request->hasFile('files')) {
@@ -133,6 +150,27 @@ class ServiceOfferController extends Controller
             }
 
             $validatedData = $request->validated();
+
+            if (array_key_exists('youtube_links', $validatedData)) {
+                $youtubeLinks = $validatedData['youtube_links'];
+                if (!is_array($youtubeLinks)) {
+                    $youtubeLinks = [];
+                }
+                $youtubeLinks = array_values(array_filter($youtubeLinks, function ($value) {
+                    return is_string($value) && trim($value) !== '';
+                }));
+                $validatedData['youtube_links'] = $youtubeLinks;
+
+                if (empty($validatedData['youtube_link'] ?? null)) {
+                    $validatedData['youtube_link'] = !empty($youtubeLinks) ? $youtubeLinks[0] : null;
+                }
+            } elseif (array_key_exists('youtube_link', $validatedData)) {
+                if (!empty($validatedData['youtube_link'])) {
+                    $validatedData['youtube_links'] = [$validatedData['youtube_link']];
+                } else {
+                    $validatedData['youtube_links'] = [];
+                }
+            }
 
             // Gestion des fichiers
             if ($request->hasFile('files')) {

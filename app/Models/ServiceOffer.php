@@ -38,12 +38,14 @@ class ServiceOffer extends Model
         'delivery_method',
         'why_choose_me',
         'youtube_link',
+        'youtube_links',
     ];
 
     protected $casts = [
         'categories' => 'array', // Cast 'categories' to array
         'files' => 'array',      // Cast 'files' to array
         'is_private' => 'boolean',
+        'youtube_links' => 'array',
     ];
 
     public function user(): BelongsTo

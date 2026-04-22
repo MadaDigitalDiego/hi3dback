@@ -19,12 +19,14 @@ class Achievement extends Model
         'cover_photo',
         'gallery_photos',
         'youtube_link',
+        'youtube_links',
         'status',
         'date_obtained',
     ];
 
     protected $casts = [
         'gallery_photos' => 'array',
+        'youtube_links' => 'array',
     ];
 
     /**
@@ -48,6 +50,7 @@ class Achievement extends Model
             'cover_photo' => $this->cover_photo,
             'gallery_photos' => $this->gallery_photos,
             'youtube_link' => $this->youtube_link,
+            'youtube_links' => $this->youtube_links,
             'status' => $this->status,
             'professional_profile_id' => $this->professional_profile_id,
             'professional_name' => $this->professionalProfile ?

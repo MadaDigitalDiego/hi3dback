@@ -62,6 +62,11 @@ class DashboardProjectController extends Controller
                 'galleryPhotos' => 'nullable|array',
                 'galleryPhotos.*' => 'file|image|max:8192',
                 'youtubeLink' => 'nullable|string|max:255',
+                'youtube_link' => 'nullable|string|max:2048',
+                'youtubeLinks' => 'nullable|array',
+                'youtubeLinks.*' => 'nullable|string|max:2048',
+                'youtube_links' => 'nullable|array',
+                'youtube_links.*' => 'nullable|string|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -77,6 +82,30 @@ class DashboardProjectController extends Controller
             Log::info('Authenticated user: ' . $user->id . ' - ' . $user->email);
 
             $projectData = $validator->validated();
+
+            if (array_key_exists('youtubeLinks', $projectData) || array_key_exists('youtube_links', $projectData)) {
+                $youtubeLinks = $projectData['youtubeLinks'] ?? $projectData['youtube_links'] ?? [];
+                if (!is_array($youtubeLinks)) {
+                    $youtubeLinks = [];
+                }
+                $youtubeLinks = array_values(array_filter($youtubeLinks, function ($value) {
+                    return is_string($value) && trim($value) !== '';
+                }));
+
+                $projectData['youtube_links'] = $youtubeLinks;
+
+                if (empty($projectData['youtube_link'] ?? null) && array_key_exists('youtubeLink', $projectData)) {
+                    $projectData['youtube_link'] = $projectData['youtubeLink'] ?? null;
+                }
+
+                if (empty($projectData['youtube_link'] ?? null)) {
+                    $projectData['youtube_link'] = !empty($youtubeLinks) ? $youtubeLinks[0] : null;
+                }
+            } elseif (array_key_exists('youtubeLink', $projectData) || array_key_exists('youtube_link', $projectData)) {
+                $youtubeLink = $projectData['youtubeLink'] ?? $projectData['youtube_link'] ?? null;
+                $projectData['youtube_link'] = $youtubeLink;
+                $projectData['youtube_links'] = $youtubeLink ? [$youtubeLink] : [];
+            }
             Log::info('Validated data: ' . json_encode($projectData));
 
             // Process cover photo
@@ -107,9 +136,23 @@ class DashboardProjectController extends Controller
                 'category' => $projectData['category'],
                 'cover_photo' => $coverPhotoPath,
                 'gallery_photos' => $galleryPhotoPaths,
-                'youtube_link' => $projectData['youtubeLink'] ?? null,
+                'youtube_link' => $projectData['youtubeLink'] ?? $projectData['youtube_link'] ?? null,
+                'youtube_links' => null,
                 'status' => 'open',
             ];
+
+            $youtubeLinks = $projectData['youtubeLinks'] ?? $projectData['youtube_links'] ?? null;
+            if (is_array($youtubeLinks)) {
+                $youtubeLinks = array_values(array_filter($youtubeLinks, function ($value) {
+                    return is_string($value) && trim($value) !== '';
+                }));
+                $newProject['youtube_links'] = $youtubeLinks;
+                if (empty($newProject['youtube_link']) && !empty($youtubeLinks)) {
+                    $newProject['youtube_link'] = $youtubeLinks[0];
+                }
+            } elseif (!empty($newProject['youtube_link'])) {
+                $newProject['youtube_links'] = [$newProject['youtube_link']];
+            }
 
             Log::info('Creating project with data: ' . json_encode($newProject));
             $project = Achievement::create($newProject);
@@ -162,6 +205,11 @@ class DashboardProjectController extends Controller
                 'galleryPhotos' => 'nullable|array',
                 'galleryPhotos.*' => 'file|image|max:8192',
                 'youtubeLink' => 'nullable|string|max:255',
+                'youtube_link' => 'nullable|string|max:2048',
+                'youtubeLinks' => 'nullable|array',
+                'youtubeLinks.*' => 'nullable|string|max:2048',
+                'youtube_links' => 'nullable|array',
+                'youtube_links.*' => 'nullable|string|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -178,6 +226,30 @@ class DashboardProjectController extends Controller
                 ->firstOrFail();
 
             $projectData = $validator->validated();
+
+            if (array_key_exists('youtubeLinks', $projectData) || array_key_exists('youtube_links', $projectData)) {
+                $youtubeLinks = $projectData['youtubeLinks'] ?? $projectData['youtube_links'] ?? [];
+                if (!is_array($youtubeLinks)) {
+                    $youtubeLinks = [];
+                }
+                $youtubeLinks = array_values(array_filter($youtubeLinks, function ($value) {
+                    return is_string($value) && trim($value) !== '';
+                }));
+
+                $projectData['youtube_links'] = $youtubeLinks;
+
+                if (empty($projectData['youtube_link'] ?? null) && array_key_exists('youtubeLink', $projectData)) {
+                    $projectData['youtube_link'] = $projectData['youtubeLink'] ?? null;
+                }
+
+                if (empty($projectData['youtube_link'] ?? null)) {
+                    $projectData['youtube_link'] = !empty($youtubeLinks) ? $youtubeLinks[0] : null;
+                }
+            } elseif (array_key_exists('youtubeLink', $projectData) || array_key_exists('youtube_link', $projectData)) {
+                $youtubeLink = $projectData['youtubeLink'] ?? $projectData['youtube_link'] ?? null;
+                $projectData['youtube_link'] = $youtubeLink;
+                $projectData['youtube_links'] = $youtubeLink ? [$youtubeLink] : [];
+            }
 
             // Update cover photo
             if ($request->hasFile('coverPhoto')) {

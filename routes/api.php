@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\UsageController;
 use App\Http\Controllers\Api\StripeConfigurationController;
+use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Api\NavigationController;
 use App\Http\Controllers\ActiveCampaignController;
 use App\Http\Controllers\Api\ContactFormController;
@@ -381,3 +382,6 @@ Route::middleware(['auth:sanctum', 'session.expiration', 'session.activity', 've
 
 // Route publique pour récupérer la clé publique Stripe (pour le frontend)
 Route::get('/stripe/public-key', [StripeConfigurationController::class, 'getPublicKey']);
+
+// Route publique pour les paramètres du site (contenu About + réseaux sociaux)
+Route::get('/site-settings', [SiteSettingController::class, 'index']);

@@ -63,7 +63,7 @@ class ServiceOfferController extends Controller
                     try {
                         $path = app(ImageStorageService::class)->storeAsWebp($file, 'service_offer_files', 'public');
                         $filePaths[] = [
-                            'path' => $path,
+                            'path' => '/storage/' . $path,
                             'original_name' => $file->getClientOriginalName(),
                             'mime_type' => $file->getMimeType(),
                             'size' => $file->getSize()
@@ -190,7 +190,7 @@ class ServiceOfferController extends Controller
                     try {
                         $path = app(ImageStorageService::class)->storeAsWebp($file, 'service_offer_files', 'public');
                         $filePaths[] = [
-                            'path' => $path,
+                            'path' => '/storage/' . $path,
                             'original_name' => $file->getClientOriginalName(),
                             'mime_type' => $file->getMimeType(),
                             'size' => $file->getSize()

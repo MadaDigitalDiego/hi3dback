@@ -540,7 +540,7 @@ class ProfileCompletionController extends Controller
                 foreach ($request->file('portfolio') as $file) {
                     $path = app(ImageStorageService::class)->storeAsWebp($file, 'portfolio', 'public');
                     $portfolioFiles[] = [
-                        'path' => $path,
+                        'path' => '/storage/' . $path,
                         'name' => $file->getClientOriginalName(),
                         'type' => $file->getClientMimeType(),
                     ];
@@ -600,14 +600,14 @@ class ProfileCompletionController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            // Téléchargement du fichier
+            // Télécharger le fichier
             $file = $request->file('file');
             $path = app(ImageStorageService::class)->storeAsWebp($file, 'portfolio', 'public');
 
             // Ajouter le fichier au portfolio existant
             $portfolio = $profile->portfolio ?? [];
             $portfolio[] = [
-                'path' => $path,
+                'path' => '/storage/' . $path,
                 'name' => $file->getClientOriginalName(),
                 'type' => $file->getClientMimeType(),
             ];
@@ -618,7 +618,7 @@ class ProfileCompletionController extends Controller
             return response()->json([
                 'message' => 'Portfolio file uploaded successfully.',
                 'file' => [
-                    'path' => $path,
+                    'path' => '/storage/' . $path,
                     'name' => $file->getClientOriginalName(),
                     'type' => $file->getClientMimeType(),
                 ]
@@ -729,7 +729,7 @@ class ProfileCompletionController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            // Téléchargement du fichier
+            // Téléchargement du fichier avec conversion WebP
             $file = $request->file('profile_picture');
             Log::info('Détails du fichier: ' . json_encode([
                 'name' => $file->getClientOriginalName(),
@@ -737,7 +737,7 @@ class ProfileCompletionController extends Controller
                 'mime' => $file->getMimeType()
             ]));
 
-            $path = $file->store('profile_pictures', 'public');
+            $path = app(ImageStorageService::class)->storeAsWebp($file, 'avatars', 'public');
             Log::info('Fichier enregistré avec succès à: ' . $path);
 
             // Mise à jour de l'avatar avec le préfixe /storage/

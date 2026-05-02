@@ -29,15 +29,15 @@ class ProjectController extends Controller
 
             // Handle image upload
             if ($request->hasFile('image')) {
-                $path = app(ImageStorageService::class)->storeAsWebp($request->file('image'), 'project_images', 'public'); // Store in storage/app/public/project_images
-                $projectData['image_path'] = $path;
+                $path = app(ImageStorageService::class)->storeAsWebp($request->file('image'), 'project_images', 'public');
+                $projectData['image_path'] = '/storage/' . $path;
             }
 
             $project = new Project($projectData);
             $project->experience_id = $experience->id;
             $project->save();
 
-            return response()->json(['project' => $project, 'message' => 'Project added successfully.'], 201); // 201 Created
+            return response()->json(['project' => $project, 'message' => 'Project added successfully.'], 201);
         } catch (\Exception $e) {
             Log::error('Error adding project: ' . $e->getMessage());
             return response()->json(['message' => 'Error adding project. Please try again later.'], 500);
@@ -64,10 +64,11 @@ class ProjectController extends Controller
             if ($request->hasFile('image')) {
                 // Delete old image if it exists
                 if ($project->image_path) {
-                    Storage::disk('public')->delete($project->image_path);
+                    $oldPath = str_replace('/storage/', '', $project->image_path);
+                    Storage::disk('public')->delete($oldPath);
                 }
                 $path = app(ImageStorageService::class)->storeAsWebp($request->file('image'), 'project_images', 'public');
-                $projectData['image_path'] = $path;
+                $projectData['image_path'] = '/storage/' . $path;
             }
 
             $project->update($projectData);
@@ -86,7 +87,8 @@ class ProjectController extends Controller
         try {
             // Delete associated image if it exists
             if ($project->image_path) {
-                Storage::disk('public')->delete($project->image_path);
+                $imagePath = str_replace('/storage/', '', $project->image_path);
+                Storage::disk('public')->delete($imagePath);
             }
             $project->delete();
             return response()->json(['message' => 'Project deleted successfully.'], 200);

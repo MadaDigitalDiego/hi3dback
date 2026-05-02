@@ -110,6 +110,7 @@ class DashboardProjectController extends Controller
 
             // Process cover photo
             $coverPhotoPath = app(ImageStorageService::class)->storeAsWebp($request->file('coverPhoto'), 'project_covers', 'public');
+            $coverPhotoPath = '/storage/' . $coverPhotoPath;
             Log::info('Cover photo saved: ' . $coverPhotoPath);
 
             // Process gallery
@@ -121,7 +122,7 @@ class DashboardProjectController extends Controller
                     $path = app(ImageStorageService::class)->storeAsWebp($file, 'project_galleries', 'public');
                     $galleryPhotoPaths[] = [
                         'name' => $file->getClientOriginalName(),
-                        'path' => $path,
+                        'path' => '/storage/' . $path,
                         'size' => $file->getSize(),
                         'type' => $file->getMimeType(),
                     ];
@@ -255,10 +256,11 @@ class DashboardProjectController extends Controller
             if ($request->hasFile('coverPhoto')) {
                 // Delete old cover if it exists
                 if ($project->cover_photo) {
-                    \Storage::disk('public')->delete($project->cover_photo);
+                    $oldPath = str_replace('/storage/', '', $project->cover_photo);
+                    \Storage::disk('public')->delete($oldPath);
                 }
                 $coverPhotoPath = app(ImageStorageService::class)->storeAsWebp($request->file('coverPhoto'), 'project_covers', 'public');
-                $projectData['cover_photo'] = $coverPhotoPath;
+                $projectData['cover_photo'] = '/storage/' . $coverPhotoPath;
             }
 
             // Update gallery
@@ -268,7 +270,7 @@ class DashboardProjectController extends Controller
                     $path = app(ImageStorageService::class)->storeAsWebp($file, 'project_galleries', 'public');
                     $galleryPhotoPaths[] = [
                         'name' => $file->getClientOriginalName(),
-                        'path' => $path,
+                        'path' => '/storage/' . $path,
                         'size' => $file->getSize(),
                         'type' => $file->getMimeType(),
                     ];

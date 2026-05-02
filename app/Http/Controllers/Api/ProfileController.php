@@ -531,7 +531,8 @@ class ProfileController extends Controller
                     ], 404);
                 }
 
-                $completionPercentage = $this->calculateProfileCompletionPercentage($profile, []);
+                $mergedData = array_merge($profile->toArray(), ['email' => $user->email]);
+                $completionPercentage = $this->calculateProfileCompletionPercentage($profile, $mergedData);
             } else {
                 $profile = ClientProfile::where('user_id', $user->id)->first();
 
@@ -542,7 +543,8 @@ class ProfileController extends Controller
                     ], 404);
                 }
 
-                $completionPercentage = $this->calculateProfileCompletionPercentage($profile, []);
+                $mergedData = array_merge($profile->toArray(), ['email' => $user->email]);
+                $completionPercentage = $this->calculateProfileCompletionPercentage($profile, $mergedData);
             }
 
             return response()->json([
@@ -599,7 +601,7 @@ class ProfileController extends Controller
     private function calculateProfessionalCompletion($profile, array $data): int
     {
         $fields = [
-            // Informations personnelles de base (30%)
+            // Informations personnelles (30%)
             'first_name' => 5,
             'last_name' => 5,
             'email' => 5,
@@ -623,18 +625,10 @@ class ProfileController extends Controller
             'years_of_experience' => 5,
             'hourly_rate' => 5,
             
-            // Services et disponibilité (10%)
-            'services_offered' => 5,
+            // Disponibilité (5%)
             'availability_status' => 5,
-            
-            // Langues (5%)
-            'languages' => 5,
-            
-            // Portfolio (5%)
-            'portfolio' => 5,
         ];
         
-        $totalWeight = array_sum($fields);
         $filledWeight = 0;
         
         foreach ($fields as $field => $weight) {
@@ -644,7 +638,18 @@ class ProfileController extends Controller
             }
         }
         
-        return min(100, max(0, round(($filledWeight / $totalWeight) * 100)));
+        // Bonus optionnels (5% chacun)
+        if ($this->isFieldFilledForCompletion($data['languages'] ?? null)) {
+            $filledWeight += 5;
+        }
+        if ($this->isFieldFilledForCompletion($data['portfolio'] ?? null)) {
+            $filledWeight += 5;
+        }
+        if ($this->isFieldFilledForCompletion($data['services_offered'] ?? null)) {
+            $filledWeight += 5;
+        }
+        
+        return min(100, max(0, $filledWeight));
     }
     
     /**

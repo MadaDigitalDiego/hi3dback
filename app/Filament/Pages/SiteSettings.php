@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use App\Models\SiteSetting;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -96,9 +97,13 @@ class SiteSettings extends Page implements HasForms
                                 TextInput::make('role')
                                     ->label('Poste')
                                     ->required(),
-                                TextInput::make('image')
-                                    ->label('URL de l\'image')
-                                    ->helperText('URL de l\'image du membre'),
+                                FileUpload::make('image')
+                                    ->label('Photo du membre')
+                                    ->image()
+                                    ->directory('site-settings/team')
+                                    ->visibility('public')
+                                    ->maxSize(2048)
+                                    ->helperText('Téléchargez une image (max 2MB) ou laissez vide'),
                                 Textarea::make('bio')
                                     ->label('Bio')
                                     ->rows(2),
